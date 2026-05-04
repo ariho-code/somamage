@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: #ffffff; border: 1px solid #e8eaed; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: #202124; margin-bottom: 8px; font-weight: 400; font-size: 24px;">Add Questions - {{ assignment.title }}</h2>
+                <p style="color: #5f6368; margin: 0; font-size: 14px;">{{ assignment.course.title }}</p>
+            </div>
+            <a href="{% url 'teacher_class_detail' assignment.course.grade.id %}" class="btn btn-secondary" style="border-radius: 4px; padding: 8px 24px;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Existing Questions -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h5 style="font-weight: 400; color: #202124;">Questions ({{ questions.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for question in questions %}
+                    <div style="padding: 16px; margin-bottom: 16px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid #1a73e8;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <strong style="color: #202124; font-size: 14px;">Question {{ forloop.counter }} ({{ question.points }} points)</strong>
+                                <p style="color: #202124; margin-top: 8px; font-size: 14px;">{{ question.question_text }}</p>
+                                {% if question.question_type == 'multiple_choice' or question.question_type == 'true_false' %}
+                                <div style="margin-top: 12px;">
+                                    {% for option in question.options.all %}
+                                    <div style="padding: 8px; margin-bottom: 4px; background: {% if option.is_correct %}#e8f5e9{% else %}#ffffff{% endif %}; border-radius: 4px; border: 1px solid {% if option.is_correct %}#34a853{% else %}#e8eaed{% endif %};">
+                                        <span style="color: #202124; font-size: 14px;">
+                                            {% if option.is_correct %}<i class="fas fa-check-circle" style="color: #34a853;"></i> {% endif %}{{ option.option_text }}
+                                        </span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'edit_quiz_question' question.id %}" class="btn btn-sm btn-secondary" style="border-radius: 4px; padding: 4px 12px; font-size: 12px; margin-left: 8px;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: #5f6368;">
+                        <i class="fas fa-question-circle" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <p>No questions added yet. Add your first question below.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Add Question Form -->
+            <div class="card" style="position: sticky; top: 100px;">
+                <div class="card-header">
+                    <h5 style="font-weight: 400; color: #202124;">Add Question</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="addQuestionForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_question">
+                        
+                        <div class="form-group">
+                            <label>Question Text *</label>
+                            <textarea name="question_text" class="form-control" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Question Type *</label>
+                            <select name="question_type" class="form-control" id="questionType" required>
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="true_false">True/False</option>
+                                <option value="short_answer">Short Answer</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Points *</label>
+                            <input type="number" name="points" class="form-control" value="1" step="0.01" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Order</label>
+                            <input type="number" name="order" class="form-control" value="{{ questions.count }}" min="0">
+                        </div>
+                        
+                        <!-- Options for Multiple Choice -->
+                        <div id="optionsContainer" style="display: none;">
+                            <label>Answer Options *</label>
+                            <div id="optionsList">
+                                <div class="option-item" style="margin-bottom: 8px;">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="text" name="options[]" class="form-control" placeholder="Option text...">
+                                        <input type="checkbox" name="is_correct[]" value="0" class="form-check-input" title="Correct answer">
+                                    </div>
+                                </div>
+                                <div class="option-item" style="margin-bottom: 8px;">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="text" name="options[]" class="form-control" placeholder="Option text...">
+                                        <input type="checkbox" name="is_correct[]" value="1" class="form-check-input" title="Correct answer">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="addOption()" style="border-radius: 4px; padding: 4px 12px; font-size: 12px; margin-top: 8px;">
+                                <i class="fas fa-plus"></i> Add Option
+                            </button>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block" style="border-radius: 4px; padding: 10px; font-size: 14px; margin-top: 16px;">
+                            <i class="fas fa-plus"></i> Add Question
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let optionIndex = 2;
+    
+    function addOption() {
+        const optionsList = document.getElementById('optionsList');
+        const newOption = document.createElement('div');
+        newOption.className = 'option-item';
+        newOption.style.marginBottom = '8px';
+        newOption.innerHTML = `
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" name="options[]" class="form-control" placeholder="Option text...">
+                <input type="checkbox" name="is_correct[]" value="${optionIndex}" class="form-check-input" title="Correct answer">
+                <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()" style="border-radius: 4px; padding: 4px 8px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        optionsList.appendChild(newOption);
+        optionIndex++;
+    }
+    
+    document.getElementById('questionType').addEventListener('change', function() {
+        const optionsContainer = document.getElementById('optionsContainer');
+        if (this.value === 'multiple_choice' || this.value === 'true_false') {
+            optionsContainer.style.display = 'block';
+            if (this.value === 'true_false') {
+                // Pre-fill True/False options
+                const optionsList = document.getElementById('optionsList');
+                optionsList.innerHTML = `
+                    <div class="option-item" style="margin-bottom: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" name="options[]" class="form-control" value="True" readonly>
+                            <input type="checkbox" name="is_correct[]" value="0" class="form-check-input" title="Correct answer">
+                        </div>
+                    </div>
+                    <div class="option-item" style="margin-bottom: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" name="options[]" class="form-control" value="False" readonly>
+                            <input type="checkbox" name="is_correct[]" value="1" class="form-check-input" title="Correct answer">
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            optionsContainer.style.display = 'none';
+        }
+    });
+    
+    // Trigger on load
+    document.getElementById('questionType').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}
+

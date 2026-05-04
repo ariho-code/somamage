@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card">
+        <h2><i class="fas fa-history"></i> Login History</h2>
+        <p>View your recent login activity and device information</p>
+    </div>
+    
+    <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+                <table class="table" style="margin: 0;">
+                    <thead style="background: var(--gray-50);">
+                        <tr>
+                            <th style="padding: 16px; font-weight: 600;">Login Time</th>
+                            <th style="padding: 16px; font-weight: 600;">IP Address</th>
+                            <th style="padding: 16px; font-weight: 600;">Device</th>
+                            <th style="padding: 16px; font-weight: 600;">Browser</th>
+                            <th style="padding: 16px; font-weight: 600;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for login in logins %}
+                        <tr style="border-bottom: 1px solid var(--gray-200);">
+                            <td style="padding: 16px;">{{ login.login_time|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 16px; font-family: monospace;">{{ login.ip_address }}</td>
+                            <td style="padding: 16px;">
+                                <i class="fas fa-{{ login.device|lower|cut:' '|cut:'pc'|default:'desktop' }}"></i>
+                                {{ login.device|default:"Unknown" }}
+                            </td>
+                            <td style="padding: 16px;">{{ login.browser|default:"Unknown" }}</td>
+                            <td style="padding: 16px;">
+                                {% if login.is_successful %}
+                                <span style="color: var(--success); font-weight: 600;">
+                                    <i class="fas fa-check-circle"></i> Success
+                                </span>
+                                {% else %}
+                                <span style="color: var(--danger); font-weight: 600;">
+                                    <i class="fas fa-times-circle"></i> Failed
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="padding: 60px; text-align: center; color: var(--gray-500);">
+                                <i class="fas fa-history" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                                No login history available
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    {% if logins.has_other_pages %}
+    <div class="mt-4" style="display: flex; justify-content: center;">
+        <nav>
+            <ul class="pagination">
+                {% if logins.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ logins.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ logins.number }} of {{ logins.paginator.num_pages }}</span></li>
+                {% if logins.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ logins.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Report Card Detail{% endblock %}
+{% block content %}
+<style>
+.report-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px 15px 0 0;
+}
+.student-photo-section {
+    text-align: center;
+    padding: 20px;
+}
+.student-photo {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+.school-logo {
+    max-width: 100px;
+    max-height: 100px;
+    margin-bottom: 10px;
+}
+.badge-section {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+.action-buttons-group {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.action-buttons-group .btn {
+    margin-right: 10px;
+}
+
+.action-buttons-group .btn:last-child {
+    margin-right: 0;
+}
+
+/* Print Styles */
+@media print {
+    /* Hide all chrome — nav, sidebar, buttons, modals */
+    nav, .navbar, .sidebar, .sidebar-wrapper,
+    #sidebar, #sidebarMenu, .left-panel,
+    .action-buttons-group, .btn, .modal,
+    .alert, footer, .breadcrumb,
+    .d-flex.justify-content-between { display: none !important; }
+
+    /* Reset page */
+    html, body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 11pt !important;
+    }
+
+    /* Make the card fill the full page */
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Keep header colour */
+    .report-card-header {
+        background: #667eea !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color: white !important;
+    }
+
+    /* Keep table header colour */
+    thead, th {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Avoid breaking rows across pages */
+    tr { page-break-inside: avoid; }
+    .section { page-break-inside: avoid; }
+
+    @page {
+        size: A4 portrait;
+        margin: 1.2cm;
+    }
+}
+</style>
+
+<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+    <!-- Report Card Header with School Details -->
+    <div class="report-card-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                {% if report_card.enrollment.grade.school.logo %}
+                <img src="{{ report_card.enrollment.grade.school.logo.url }}" alt="School Logo" class="school-logo">
+                {% endif %}
+            </div>
+            <div class="col-md-6 text-center">
+                <h2 class="mb-2">{{ report_card.enrollment.grade.school.name|default:"School Name" }}</h2>
+                {% if report_card.enrollment.grade.school.motto %}
+                <p class="mb-1"><em>{{ report_card.enrollment.grade.school.motto }}</em></p>
+                {% endif %}
+                <p class="mb-0">{{ report_card.enrollment.grade.school.address|default:"" }}</p>
+            </div>
+            <div class="col-md-3 text-center">
+                {% if report_card.enrollment.student.photo %}
+                <img src="{{ report_card.enrollment.student.photo.url }}" alt="Student Photo" class="student-photo">
+                {% else %}
+                <div class="student-photo" style="background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user fa-4x"></i>
+                </div>
+                {% endif %}
+                <div class="badge-section">
+                    <strong>Term:</strong> {{ report_card.term.name }}<br>
+                    <strong>Academic Year:</strong> {{ report_card.term.academic_year.name }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Student Information Section -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5 class="mb-3"><i class="fas fa-user-graduate"></i> Student Information</h5>
+                <div class="border p-4 rounded shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Name</strong>
+                        <span class="h6">{% if report_card.enrollment.student.user %}{{ report_card.enrollment.student.user.get_full_name|default:report_card.enrollment.student.user.username }}{% else %}{{ report_card.enrollment.student.get_full_name|default:report_card.enrollment.student.first_name|default:"Student" }}{% endif %}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Admission Number</strong>
+                        <span class="badge badge-secondary">{{ report_card.enrollment.student.admission_number }}</span>
+                    </div>
+                    {% if report_card.enrollment.student.index_number %}
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Index Number</strong>
+                        <span class="badge badge-secondary">{{ report_card.enrollment.student.index_number }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Grade/Class</strong>
+                        <span class="badge badge-primary">{{ report_card.enrollment.grade.name }}</span>
+                    </div>
+                    {% if report_card.enrollment.student.date_of_birth %}
+                    <div>
+                        <strong class="text-muted d-block mb-1">Date of Birth</strong>
+                        <span>{{ report_card.enrollment.student.date_of_birth }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5 class="mb-3"><i class="fas fa-chart-line"></i> Performance Summary</h5>
+                <div class="border p-4 rounded shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Average Score</strong>
+                        <span class="badge badge-primary badge-lg" style="font-size: 1.2em; padding: 8px 15px;">{{ report_card.average_score|floatformat:2 }}%</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Total Points</strong>
+                        <span class="h5">{{ report_card.total_points|floatformat:2 }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Overall Grade</strong>
+                        <span class="badge badge-info badge-lg" style="font-size: 1.1em; padding: 8px 15px;">{{ report_card.overall_grade|default:"--" }}</span>
+                    </div>
+                    {% if report_card.position %}
+                    <div class="mb-3">
+                        <strong class="text-muted d-block mb-1">Class Position</strong>
+                        <span class="badge badge-success badge-lg" style="font-size: 1.1em; padding: 8px 15px;">
+                            {{ report_card.position }}{% if report_card.position == 1 %}st{% elif report_card.position == 2 %}nd{% elif report_card.position == 3 %}rd{% else %}th{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <strong class="text-muted d-block mb-1">Attendance</strong>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar {% if attendance_rate >= 90 %}bg-success{% elif attendance_rate >= 75 %}bg-info{% elif attendance_rate >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ attendance_rate }}%" 
+                                 aria-valuenow="{{ attendance_rate }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ attendance_rate|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ report_card.days_present }} / {{ report_card.days_present|add:report_card.days_absent }} days</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mb-3"><i class="fas fa-book"></i> Subject Marks</h5>
+        <div class="table-responsive">
+            {% if marks_by_subject %}
+            <!-- Show subjects with papers grouped (for O-Level) or without papers (for Primary) -->
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th><i class="fas fa-book"></i> Subject</th>
+                        {% if enrollment.grade.level == 'O' or enrollment.grade.level == 'A' %}
+                        <th><i class="fas fa-file-alt"></i> Paper</th>
+                        {% endif %}
+                        <th><i class="fas fa-percent"></i> Score</th>
+                        <th><i class="fas fa-award"></i> Grade</th>
+                        <th><i class="fas fa-star"></i> Points</th>
+                        <th><i class="fas fa-chalkboard-teacher"></i> Teacher</th>
+                        {% if enrollment.grade.level == 'O' %}
+                        <th><i class="fas fa-tag"></i> Type</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject_id, subject_data in marks_by_subject.items %}
+                        {% if subject_data.subject.has_papers %}
+                            {% for paper in subject_data.papers %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ subject_data.papers|length }}">
+                                    <strong>{{ subject_data.subject.name }}</strong>
+                                    {% if enrollment.grade.level == 'O' %}
+                                    <br><small class="text-muted">
+                                        {% if subject_data.is_compulsory %}
+                                        <span class="badge badge-primary badge-sm">Compulsory</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary badge-sm">Optional</span>
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                {% if enrollment.grade.level == 'O' or enrollment.grade.level == 'A' %}
+                                <td>
+                                    <strong>{{ paper.paper_name|default:"N/A" }}</strong>
+                                    {% if paper.paper.code %}<br><small class="text-muted">{{ paper.paper.code }}</small>{% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if paper.weighted_average %}
+                                        <strong>{{ paper.weighted_average|floatformat:2 }}%</strong>
+                                    {% elif paper.avg %}
+                                        <strong>{{ paper.avg|floatformat:2 }}%</strong>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.grade %}
+                                    <span class="badge badge-{% if paper.grade == 'A' or paper.grade == 'D1' or paper.grade == '1' %}success{% elif paper.grade == 'B' or paper.grade == 'D2' or paper.grade == '2' %}info{% elif paper.grade == 'C' or paper.grade == 'C3' or paper.grade == 'C4' or paper.grade == 'C5' or paper.grade == '3' %}warning{% else %}danger{% endif %}">
+                                        {{ paper.grade }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.points %}
+                                        <strong>{{ paper.points|floatformat:1 }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.teacher %}
+                                        {{ paper.teacher.get_full_name|default:paper.teacher.username }}
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                {% if enrollment.grade.level == 'O' %}
+                                <td>
+                                    {# Type is already shown in subject name rowspan #}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td><strong>{{ subject_data.subject.name }}</strong></td>
+                                {% if enrollment.grade.level == 'O' or enrollment.grade.level == 'A' %}
+                                <td>--</td>
+                                {% endif %}
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                {% if enrollment.grade.level == 'O' %}
+                                <td>
+                                    {% if subject_data.is_compulsory %}
+                                    <span class="badge badge-primary">Compulsory</span>
+                                    {% else %}
+                                    <span class="badge badge-secondary">Optional</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {# Subject doesn't have papers - show single row #}
+                            {% with paper=subject_data.papers|first %}
+                            <tr>
+                                <td>
+                                    <strong>{{ subject_data.subject.name }}</strong>
+                                    {% if enrollment.grade.level == 'O' %}
+                                    <br><small class="text-muted">
+                                        {% if subject_data.is_compulsory %}
+                                        <span class="badge badge-primary badge-sm">Compulsory</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary badge-sm">Optional</span>
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                {% if enrollment.grade.level == 'O' or enrollment.grade.level == 'A' %}
+                                <td><span class="text-muted">N/A</span></td>
+                                {% endif %}
+                                <td>
+                                    {% if paper.weighted_average %}
+                                        <strong>{{ paper.weighted_average|floatformat:2 }}%</strong>
+                                    {% elif paper.avg %}
+                                        <strong>{{ paper.avg|floatformat:2 }}%</strong>
+                                    {% elif subject_data.weighted_average %}
+                                        <strong>{{ subject_data.weighted_average|floatformat:2 }}%</strong>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.grade %}
+                                    <span class="badge badge-{% if paper.grade == 'A' or paper.grade == 'D1' or paper.grade == '1' %}success{% elif paper.grade == 'B' or paper.grade == 'D2' or paper.grade == '2' %}info{% elif paper.grade == 'C' or paper.grade == 'C3' or paper.grade == 'C4' or paper.grade == 'C5' or paper.grade == '3' %}warning{% else %}danger{% endif %}">
+                                        {{ paper.grade }}
+                                    </span>
+                                    {% elif subject_data.letter_grade %}
+                                    <span class="badge badge-{% if subject_data.letter_grade == 'A' or subject_data.letter_grade == 'D1' or subject_data.letter_grade == '1' %}success{% elif subject_data.letter_grade == 'B' or subject_data.letter_grade == 'D2' or subject_data.letter_grade == '2' %}info{% elif subject_data.letter_grade == 'C' or subject_data.letter_grade == 'C3' or subject_data.letter_grade == 'C4' or subject_data.letter_grade == 'C5' or subject_data.letter_grade == '3' %}warning{% else %}danger{% endif %}">
+                                        {{ subject_data.letter_grade }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.points %}
+                                        <strong>{{ paper.points|floatformat:1 }}</strong>
+                                    {% elif subject_data.points %}
+                                        <strong>{{ subject_data.points|floatformat:1 }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if paper.teacher %}
+                                        {{ paper.teacher.get_full_name|default:paper.teacher.username }}
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                {% if enrollment.grade.level == 'O' %}
+                                <td>
+                                    {% if subject_data.is_compulsory %}
+                                    <span class="badge badge-primary">Compulsory</span>
+                                    {% else %}
+                                    <span class="badge badge-secondary">Optional</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endwith %}
+                        {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if enrollment.grade.level == 'O' or enrollment.grade.level == 'A' %}7{% else %}6{% endif %}" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                            No subjects assigned to this student.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <!-- Fallback: Show simple table if marks_by_subject is not available -->
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th><i class="fas fa-book"></i> Subject</th>
+                        <th><i class="fas fa-percent"></i> Score</th>
+                        <th><i class="fas fa-award"></i> Grade</th>
+                        <th><i class="fas fa-star"></i> Points</th>
+                        <th><i class="fas fa-chalkboard-teacher"></i> Teacher</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mark in marks %}
+                    <tr>
+                        <td>
+                            <strong>{{ mark.subject.name }}</strong>
+                            {% if mark.subject_paper %}<br><small class="text-muted">{{ mark.subject_paper.name }}</small>{% endif %}
+                        </td>
+                        <td>{{ mark.score|floatformat:2 }}%</td>
+                        <td>
+                            <span class="badge badge-{% if mark.grade == 'A' or mark.grade == '1' %}success{% elif mark.grade == 'B' or mark.grade == '2' %}info{% elif mark.grade == 'C' or mark.grade == '3' %}warning{% else %}danger{% endif %}">
+                                {{ mark.grade|default:"--" }}
+                            </span>
+                        </td>
+                        <td>{{ mark.points|floatformat:2 }}</td>
+                        <td>{{ mark.teacher.get_full_name|default:mark.teacher.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                            No marks recorded for this term.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        <!-- AI Suggestions (for teachers/admin) -->
+        {% if ai_comment_suggestion %}
+        {% if user.is_teacher or user.is_superadmin or user.is_headteacher %}
+        <div class="alert alert-info mt-4">
+            <h6><i class="fas fa-robot"></i> AI Assistant Suggestion</h6>
+            <p>{{ ai_comment_suggestion }}</p>
+            {% if not report_card.class_teacher_comment %}
+            <button class="btn btn-sm btn-primary" onclick="useAISuggestion('{{ ai_comment_suggestion|escapejs }}')">
+                <i class="fas fa-magic"></i> Use This Suggestion
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Promotion Eligibility (for headteacher/admin) -->
+        {% if promotion_info %}
+        {% if user.is_superadmin or user.is_headteacher %}
+        <div class="alert {% if promotion_info.eligible %}alert-success{% else %}alert-warning{% endif %} mt-4">
+            <h6><i class="fas fa-graduation-cap"></i> Promotion Eligibility</h6>
+            {% if promotion_info.eligible %}
+            <p><strong>✓ Student qualifies for promotion to the next class.</strong></p>
+            {% else %}
+            <p><strong>⚠ Student requires support before promotion.</strong></p>
+            <ul class="mb-0">
+                {% for reason in promotion_info.reasons %}
+                <li>{{ reason }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <p class="mb-0"><strong>Recommendation:</strong> {{ promotion_info.recommendation }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h5 style="margin: 0;">Class Teacher Comment</h5>
+                    {% if user.is_teacher or user.is_superadmin or user.is_headteacher %}
+                    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#teacherCommentModal">
+                        <i class="fas fa-{% if report_card.class_teacher_comment %}edit{% else %}plus{% endif %}"></i> {% if report_card.class_teacher_comment %}Edit{% else %}Add{% endif %} Comment
+                    </button>
+                    {% endif %}
+                </div>
+                {% if report_card.class_teacher_comment %}
+                    <p class="border p-3">{{ report_card.class_teacher_comment }}</p>
+                {% else %}
+                    <p class="text-muted">No comment added yet.</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h5 style="margin: 0;">Headteacher Comment</h5>
+                    {% if user.is_superadmin or user.is_headteacher %}
+                    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#headteacherCommentModal">
+                        <i class="fas fa-{% if report_card.headteacher_comment %}edit{% else %}plus{% endif %}"></i> {% if report_card.headteacher_comment %}Edit{% else %}Add{% endif %} Comment
+                    </button>
+                    {% endif %}
+                </div>
+                {% if report_card.headteacher_comment %}
+                    <p class="border p-3">{{ report_card.headteacher_comment }}</p>
+                {% else %}
+                    <p class="text-muted">No comment added yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <a href="{% url 'report_card_list' %}" class="btn btn-secondary mb-2">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+                <div class="action-buttons-group d-flex">
+                    <a href="{% url 'report_card_export_pdf' report_card.id %}" class="btn btn-success mr-2 mb-2" target="_blank">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                    <button onclick="window.print()" class="btn btn-primary mb-2">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Comment Modal -->
+<div class="modal fade" id="teacherCommentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'report_card_add_comment' report_card.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">{% if report_card.class_teacher_comment %}Edit{% else %}Add{% endif %} Class Teacher Comment</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <textarea name="comment" class="form-control" rows="4" required>{{ report_card.class_teacher_comment|default:"" }}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Headteacher Comment Modal -->
+<div class="modal fade" id="headteacherCommentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'report_card_add_headteacher_comment' report_card.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">{% if report_card.headteacher_comment %}Edit{% else %}Add{% endif %} Headteacher Comment</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <textarea name="comment" class="form-control" rows="4" required>{{ report_card.headteacher_comment|default:"" }}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function useAISuggestion(suggestion) {
+    document.querySelector('#teacherCommentModal textarea[name="comment"]').value = suggestion;
+    $('#teacherCommentModal').modal('show');
+}
+</script>
+{% endblock %}
+

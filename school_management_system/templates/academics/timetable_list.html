@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+{% load static academics_extras %}
+{% block title %}Timetable — EduManage{% endblock %}
+{% block page_title %}Timetable{% endblock %}
+{% block page_subtitle %}Weekly class schedule & period management{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ─────────────────────────────────────── */
+.tt-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Hero ─────────────────────────────────────────── */
+.tt-hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    position: relative; overflow: hidden; color: #fff;
+}
+.tt-hero::before {
+    content:''; position:absolute; top:-40px; right:-40px;
+    width:180px; height:180px; border-radius:50%;
+    background: rgba(255,255,255,0.07); pointer-events:none;
+}
+.tt-hero-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+.tt-hero-sub   { font-size:13px; opacity:.85; }
+.tt-hero-actions { display:flex; gap:10px; flex-shrink:0; position:relative; z-index:1; }
+.tt-hero-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:10px 18px; border-radius:10px; font-size:13px; font-weight:600;
+    cursor:pointer; border:none; transition:all 150ms ease;
+}
+.tt-hero-btn-primary { background:#fff; color:#4f46e5; }
+.tt-hero-btn-primary:hover { background:rgba(255,255,255,.9); transform:translateY(-1px); }
+.tt-hero-btn-ghost { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.25); }
+.tt-hero-btn-ghost:hover { background:rgba(255,255,255,.25); }
+
+/* ── Stats strip ─────────────────────────────────── */
+.tt-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.tt-stat-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:16px 20px; display:flex; align-items:center; gap:14px;
+    box-shadow:var(--shadow);
+}
+.tt-stat-icon {
+    width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    flex-shrink:0;
+}
+.tt-stat-icon.blue  { background:rgba(79,70,229,.12); color:#4f46e5; }
+.tt-stat-icon.green { background:rgba(16,185,129,.12); color:#10b981; }
+.tt-stat-icon.purple{ background:rgba(124,58,237,.12); color:#7c3aed; }
+.tt-stat-val  { font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:var(--text); line-height:1; }
+.tt-stat-lbl  { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+/* ── Body: sidebar + grid ────────────────────────── */
+.tt-body { display:flex; gap:20px; }
+
+/* Grade sidebar */
+.tt-sidebar {
+    width:200px; flex-shrink:0;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden;
+}
+.tt-sidebar-head {
+    padding:12px 16px; background:var(--surface);
+    border-bottom:1px solid var(--border);
+    font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.6px; color:var(--text-muted);
+}
+.tt-grade-item {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 16px; border-bottom:1px solid var(--border);
+    cursor:pointer; text-decoration:none; transition:background 150ms ease;
+    font-size:13.5px; font-weight:500; color:var(--text);
+}
+.tt-grade-item:last-child { border-bottom:none; }
+.tt-grade-item:hover { background:var(--surface); color:var(--text); }
+.tt-grade-item.active { background:rgba(79,70,229,.08); color:#4f46e5; font-weight:700; }
+.tt-grade-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    background:var(--border-hover);
+}
+.tt-grade-item.active .tt-grade-dot { background:#4f46e5; }
+
+/* Grid container */
+.tt-grid-wrap { flex:1; min-width:0; }
+
+/* Empty state */
+.tt-empty {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:60px 24px; text-align:center; box-shadow:var(--shadow);
+}
+.tt-empty-icon { font-size:48px; color:var(--text-dim); margin-bottom:16px; }
+.tt-empty-title { font-family:'Poppins',sans-serif; font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.tt-empty-sub   { font-size:13.5px; color:var(--text-muted); }
+
+/* Grade header */
+.tt-grade-header {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:14px 20px; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    box-shadow:var(--shadow);
+}
+.tt-grade-name { font-family:'Poppins',sans-serif; font-size:16px; font-weight:800; color:var(--text); }
+.tt-grade-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+/* Day columns */
+.tt-days-grid {
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap:10px;
+}
+.tt-day-col { display:flex; flex-direction:column; gap:8px; }
+.tt-day-head {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:10px 12px; text-align:center;
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--text-muted);
+}
+.tt-day-head.today { background:rgba(79,70,229,.1); border-color:rgba(79,70,229,.25); color:#4f46e5; }
+
+/* Slot card */
+.tt-slot {
+    border-radius:10px; padding:10px 12px;
+    cursor:pointer; transition:all 150ms ease;
+    position:relative; border:1px solid transparent;
+}
+.tt-slot:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.12); }
+.tt-slot-time { font-size:10px; font-weight:600; opacity:.75; margin-bottom:4px; letter-spacing:.2px; }
+.tt-slot-subject { font-size:12.5px; font-weight:700; line-height:1.3; margin-bottom:3px; }
+.tt-slot-teacher { font-size:11px; opacity:.8; }
+.tt-slot-room { font-size:10px; opacity:.65; margin-top:2px; }
+.tt-slot-del {
+    position:absolute; top:6px; right:6px;
+    width:20px; height:20px; border-radius:5px;
+    background:rgba(0,0,0,.15); border:none; cursor:pointer;
+    display:none; align-items:center; justify-content:center;
+    color:inherit; font-size:9px; transition:background 150ms;
+}
+.tt-slot:hover .tt-slot-del { display:flex; }
+.tt-slot-del:hover { background:rgba(239,68,68,.6); }
+
+/* Add slot button (empty day cell) */
+.tt-add-slot {
+    border:2px dashed var(--border); border-radius:10px;
+    padding:16px 10px; text-align:center; cursor:pointer;
+    color:var(--text-dim); font-size:12px; transition:all 150ms ease;
+    background:transparent;
+}
+.tt-add-slot:hover { border-color:#4f46e5; color:#4f46e5; background:rgba(79,70,229,.04); }
+.tt-add-slot i { display:block; font-size:16px; margin-bottom:4px; }
+
+/* Subject colour palette — 12 colours rotating */
+.sc-0 { background:#ede9fe; color:#5b21b6; border-color:#c4b5fd; }
+.sc-1 { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+.sc-2 { background:#fef3c7; color:#92400e; border-color:#fcd34d; }
+.sc-3 { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+.sc-4 { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
+.sc-5 { background:#fce7f3; color:#9d174d; border-color:#f9a8d4; }
+.sc-6 { background:#ccfbf1; color:#134e4a; border-color:#5eead4; }
+.sc-7 { background:#ffedd5; color:#9a3412; border-color:#fdba74; }
+.sc-8 { background:#e0e7ff; color:#3730a3; border-color:#a5b4fc; }
+.sc-9 { background:#f0fdf4; color:#14532d; border-color:#86efac; }
+.sc-10{ background:#fff1f2; color:#9f1239; border-color:#fda4af; }
+.sc-11{ background:#f5f3ff; color:#4c1d95; border-color:#ddd6fe; }
+[data-theme="dark"] .sc-0  { background:#2d1b69; color:#c4b5fd; border-color:#4c1d95; }
+[data-theme="dark"] .sc-1  { background:#064e3b; color:#6ee7b7; border-color:#065f46; }
+[data-theme="dark"] .sc-2  { background:#451a03; color:#fcd34d; border-color:#78350f; }
+[data-theme="dark"] .sc-3  { background:#450a0a; color:#fca5a5; border-color:#7f1d1d; }
+[data-theme="dark"] .sc-4  { background:#1e3a5f; color:#93c5fd; border-color:#1e40af; }
+[data-theme="dark"] .sc-5  { background:#500724; color:#f9a8d4; border-color:#831843; }
+[data-theme="dark"] .sc-6  { background:#042f2e; color:#5eead4; border-color:#134e4a; }
+[data-theme="dark"] .sc-7  { background:#431407; color:#fdba74; border-color:#7c2d12; }
+[data-theme="dark"] .sc-8  { background:#1e1b4b; color:#a5b4fc; border-color:#312e81; }
+[data-theme="dark"] .sc-9  { background:#052e16; color:#86efac; border-color:#14532d; }
+[data-theme="dark"] .sc-10 { background:#4c0519; color:#fda4af; border-color:#881337; }
+[data-theme="dark"] .sc-11 { background:#2e1065; color:#ddd6fe; border-color:#4c1d95; }
+
+/* ── Modal ────────────────────────────────────────── */
+.tt-form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.tt-form-row.full { grid-template-columns:1fr; }
+.tt-form-row.three { grid-template-columns:1fr 1fr 1fr; }
+.tt-form-group label { display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:6px; }
+.tt-form-group select,
+.tt-form-group input { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); font-size:13.5px; outline:none; transition:border-color 150ms; }
+.tt-form-group select:focus,
+.tt-form-group input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.12); }
+
+/* Mobile tabs for days */
+.tt-mobile-tabs { display:none; }
+
+/* ── Print ────────────────────────────────────────── */
+@media print {
+    .tt-hero, .tt-stats, .tt-sidebar, .tt-grade-header button,
+    .tt-add-slot, .tt-slot-del, .tt-hero-actions, .modal { display:none !important; }
+    .tt-body { flex-direction:column; }
+    .tt-days-grid { grid-template-columns:repeat(6,1fr); gap:6px; }
+    .tt-slot { break-inside:avoid; }
+    body { background:#fff; }
+}
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 900px) {
+    .tt-body { flex-direction:column; }
+    .tt-sidebar { width:100%; }
+    .tt-sidebar-inner { display:flex; flex-wrap:wrap; gap:0; }
+    .tt-grade-item { border-right:1px solid var(--border); border-bottom:none; }
+    .tt-days-grid { grid-template-columns:repeat(3,1fr); }
+}
+@media (max-width: 640px) {
+    .tt-stats { grid-template-columns:1fr 1fr; }
+    .tt-days-grid { grid-template-columns:1fr; }
+    .tt-hero { flex-direction:column; }
+    .tt-form-row { grid-template-columns:1fr; }
+    .tt-form-row.three { grid-template-columns:1fr; }
+    .tt-hero-actions { width:100%; flex-direction:column; }
+    .tt-hero-btn { justify-content:center; }
+    .tt-mobile-tabs { display:flex; flex-wrap:nowrap; overflow-x:auto; gap:6px; padding-bottom:2px; margin-bottom:10px; }
+    .tt-mobile-tab { padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap; border:1px solid var(--border); background:var(--surface); color:var(--text-muted); cursor:pointer; flex-shrink:0; }
+    .tt-mobile-tab.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+    .tt-day-col { display:none; }
+    .tt-day-col.mobile-active { display:flex; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tt-wrap">
+
+<!-- Hero -->
+<div class="tt-hero">
+    <div style="position:relative;z-index:1;">
+        <div class="tt-hero-title">School Timetable</div>
+        <div class="tt-hero-sub">Visual weekly schedule — manage every class period</div>
+    </div>
+    <div class="tt-hero-actions">
+        <button class="tt-hero-btn tt-hero-btn-ghost" onclick="window.print()">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <button class="tt-hero-btn tt-hero-btn-primary" onclick="openAddModal()">
+            <i class="fas fa-plus"></i> Add Slot
+        </button>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="tt-stats">
+    <div class="tt-stat-card">
+        <div class="tt-stat-icon blue"><i class="fas fa-clock"></i></div>
+        <div><div class="tt-stat-val">{{ total_slots }}</div><div class="tt-stat-lbl">Total Periods</div></div>
+    </div>
+    <div class="tt-stat-card">
+        <div class="tt-stat-icon green"><i class="fas fa-layer-group"></i></div>
+        <div><div class="tt-stat-val">{{ grades.count }}</div><div class="tt-stat-lbl">Classes</div></div>
+    </div>
+    <div class="tt-stat-card">
+        <div class="tt-stat-icon purple"><i class="fas fa-book-open"></i></div>
+        <div><div class="tt-stat-val">{{ subjects.count }}</div><div class="tt-stat-lbl">Subjects</div></div>
+    </div>
+</div>
+
+<!-- Body -->
+<div class="tt-body">
+
+    <!-- Grade sidebar -->
+    <div class="tt-sidebar">
+        <div class="tt-sidebar-head">Classes</div>
+        <div class="tt-sidebar-inner">
+            {% for grade in grades %}
+            <a href="?grade={{ grade.pk }}" class="tt-grade-item {% if selected_grade_id == grade.pk|stringformat:'s' %}active{% endif %}">
+                <span class="tt-grade-dot"></span>
+                {{ grade.name }}
+            </a>
+            {% empty %}
+            <div style="padding:16px;font-size:13px;color:var(--text-muted);">No classes found.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="tt-grid-wrap">
+
+        {% if not selected_grade %}
+        <div class="tt-empty">
+            <div class="tt-empty-icon"><i class="fas fa-calendar-week"></i></div>
+            <div class="tt-empty-title">Select a Class</div>
+            <div class="tt-empty-sub">Choose a class from the sidebar to view its weekly timetable.</div>
+        </div>
+
+        {% else %}
+        <!-- Grade header -->
+        <div class="tt-grade-header">
+            <div>
+                <div class="tt-grade-name">{{ selected_grade.name }}</div>
+                <div class="tt-grade-meta">
+                    {% with day_count=grid.values|length %}
+                    Weekly schedule — 6 days
+                    {% endwith %}
+                </div>
+            </div>
+            <button class="tt-hero-btn tt-hero-btn-primary" style="background:var(--accent);color:#fff;" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Add Period
+            </button>
+        </div>
+
+        <!-- Mobile day tabs -->
+        <div class="tt-mobile-tabs" id="mobileTabs">
+            {% for day_num, day_name in days %}
+            <div class="tt-mobile-tab {% if forloop.first %}active{% endif %}" onclick="switchDay({{ day_num }}, this)">{{ day_name|slice:":3" }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Days grid -->
+        <div class="tt-days-grid">
+            {% for day_num, day_name in days %}
+            <div class="tt-day-col {% if forloop.first %}mobile-active{% endif %}" id="dayCol{{ day_num }}">
+                <div class="tt-day-head {% if day_num == today_weekday %}today{% endif %}">
+                    {{ day_name }}
+                </div>
+                {% for slot in grid|get_item:day_num %}
+                <div class="tt-slot sc-{{ slot.subject.pk|mod_12 }}" onclick="openEditModal({{ slot.pk }})" id="slot-{{ slot.pk }}">
+                    <button class="tt-slot-del" onclick="deleteSlot(event, {{ slot.pk }})"><i class="fas fa-times"></i></button>
+                    <div class="tt-slot-time">{{ slot.start_time|time:"H:i" }} – {{ slot.end_time|time:"H:i" }}</div>
+                    <div class="tt-slot-subject">{{ slot.subject.name }}</div>
+                    {% if slot.teacher %}
+                    <div class="tt-slot-teacher"><i class="fas fa-user" style="font-size:9px;margin-right:3px;"></i>{{ slot.teacher.get_full_name }}</div>
+                    {% endif %}
+                    {% if slot.room %}
+                    <div class="tt-slot-room"><i class="fas fa-door-open" style="font-size:9px;margin-right:3px;"></i>{{ slot.room }}</div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                {% endfor %}
+                <div class="tt-add-slot" onclick="openAddModal({{ day_num }})">
+                    <i class="fas fa-plus"></i>Add period
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- ── Add / Edit Modal ────────────────────────────── -->
+<div class="modal fade" id="slotModal" tabindex="-1" role="dialog" aria-labelledby="slotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="slotModalLabel">Add Period</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <div class="modal-body" style="padding:20px 24px;">
+                <div id="slotFormError" style="display:none;" class="alert alert-danger" role="alert"></div>
+                <div class="tt-form-row full">
+                    <div class="tt-form-group">
+                        <label>Class / Grade</label>
+                        <select id="slotGrade">
+                            {% for grade in grades %}
+                            <option value="{{ grade.pk }}" {% if grade == selected_grade %}selected{% endif %}>{{ grade.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="tt-form-row">
+                    <div class="tt-form-group">
+                        <label>Subject</label>
+                        <select id="slotSubject">
+                            <option value="">— Select subject —</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.pk }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="tt-form-group">
+                        <label>Teacher <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                        <select id="slotTeacher">
+                            <option value="">— None —</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.pk }}">{{ teacher.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="tt-form-row full">
+                    <div class="tt-form-group">
+                        <label>Day</label>
+                        <select id="slotDay">
+                            {% for day_num, day_name in days %}
+                            <option value="{{ day_num }}">{{ day_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="tt-form-row three">
+                    <div class="tt-form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="slotStart" value="08:00">
+                    </div>
+                    <div class="tt-form-group">
+                        <label>End Time</label>
+                        <input type="time" id="slotEnd" value="09:00">
+                    </div>
+                    <div class="tt-form-group">
+                        <label>Room <span style="font-weight:400;text-transform:none;letter-spacing:0;">(opt.)</span></label>
+                        <input type="text" id="slotRoom" placeholder="e.g. S1">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" id="slotSaveBtn" class="btn btn-primary" onclick="saveSlot()">
+                    <span id="slotSaveBtnText">Save Period</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Delete Confirm Modal ────────────────────────── -->
+<div class="modal fade" id="delSlotModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content text-center" style="padding:28px 24px;">
+            <div style="font-size:40px;color:var(--danger);margin-bottom:12px;"><i class="fas fa-trash"></i></div>
+            <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;">Delete Period?</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">This will permanently remove this time slot from the timetable.</div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger" id="confirmDelBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var TIMETABLE_CREATE_URL = "{% url 'timetable_create' %}";
+var CSRF_TOKEN = "{{ csrf_token }}";
+var editingSlotId = null;
+var pendingDeleteId = null;
+var selectedGradeId = "{{ selected_grade_id|default:'' }}";
+var currentGradePage = "{{ request.get_full_path }}";
+
+// Today's weekday (0=Mon ... 6=Sun) → map to our 0-5
+var jsDay = new Date().getDay(); // 0=Sun
+var todayWeekday = jsDay === 0 ? 6 : jsDay - 1; // convert Sun=0 to Mon=0 scale
+document.querySelectorAll('.tt-day-head').forEach(function(h, i) {
+    if (i === todayWeekday) h.classList.add('today');
+});
+
+function openAddModal(presetDay) {
+    editingSlotId = null;
+    document.getElementById('slotModalLabel').textContent = 'Add Period';
+    document.getElementById('slotSaveBtnText').textContent = 'Save Period';
+    document.getElementById('slotFormError').style.display = 'none';
+    if (presetDay !== undefined) {
+        document.getElementById('slotDay').value = presetDay;
+    }
+    document.getElementById('slotSubject').value = '';
+    document.getElementById('slotTeacher').value = '';
+    document.getElementById('slotStart').value = '08:00';
+    document.getElementById('slotEnd').value = '09:00';
+    document.getElementById('slotRoom').value = '';
+    $('#slotModal').modal('show');
+}
+
+function openEditModal(slotId) {
+    var url = '/academics/timetable/' + slotId + '/edit/';
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            var s = data.slot;
+            editingSlotId = slotId;
+            document.getElementById('slotModalLabel').textContent = 'Edit Period';
+            document.getElementById('slotSaveBtnText').textContent = 'Update Period';
+            document.getElementById('slotFormError').style.display = 'none';
+            document.getElementById('slotGrade').value   = s.grade;
+            document.getElementById('slotSubject').value = s.subject;
+            document.getElementById('slotTeacher').value = s.teacher || '';
+            document.getElementById('slotDay').value     = s.day_of_week;
+            document.getElementById('slotStart').value   = s.start_time;
+            document.getElementById('slotEnd').value     = s.end_time;
+            document.getElementById('slotRoom').value    = s.room;
+            $('#slotModal').modal('show');
+        });
+}
+
+function saveSlot() {
+    var btn = document.getElementById('slotSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    var errEl = document.getElementById('slotFormError');
+    errEl.style.display = 'none';
+
+    var grade   = document.getElementById('slotGrade').value;
+    var subject = document.getElementById('slotSubject').value;
+    var teacher = document.getElementById('slotTeacher').value;
+    var day     = document.getElementById('slotDay').value;
+    var start   = document.getElementById('slotStart').value;
+    var end     = document.getElementById('slotEnd').value;
+    var room    = document.getElementById('slotRoom').value;
+
+    if (!subject) {
+        errEl.textContent = 'Please select a subject.';
+        errEl.style.display = '';
+        btn.disabled = false;
+        btn.innerHTML = '<span id="slotSaveBtnText">' + (editingSlotId ? 'Update Period' : 'Save Period') + '</span>';
+        return;
+    }
+
+    var url = editingSlotId
+        ? '/academics/timetable/' + editingSlotId + '/edit/'
+        : TIMETABLE_CREATE_URL;
+
+    var body = new FormData();
+    body.append('csrfmiddlewaretoken', CSRF_TOKEN);
+    body.append('grade', grade);
+    body.append('subject', subject);
+    body.append('teacher', teacher);
+    body.append('day_of_week', day);
+    body.append('start_time', start);
+    body.append('end_time', end);
+    body.append('room', room);
+
+    fetch(url, { method: 'POST', body: body })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            if (!data.success) {
+                errEl.textContent = data.error || 'Something went wrong.';
+                errEl.style.display = '';
+                btn.innerHTML = '<span id="slotSaveBtnText">' + (editingSlotId ? 'Update Period' : 'Save Period') + '</span>';
+                return;
+            }
+            $('#slotModal').modal('hide');
+            // Reload with same grade selected
+            var sep = window.location.href.indexOf('?') === -1 ? '?' : '&';
+            var gradeParam = grade ? '?grade=' + grade : '';
+            window.location.href = window.location.pathname + gradeParam;
+        })
+        .catch(() => {
+            btn.disabled = false;
+            errEl.textContent = 'Network error — please try again.';
+            errEl.style.display = '';
+            btn.innerHTML = '<span id="slotSaveBtnText">' + (editingSlotId ? 'Update Period' : 'Save Period') + '</span>';
+        });
+}
+
+function deleteSlot(e, slotId) {
+    e.stopPropagation();
+    pendingDeleteId = slotId;
+    $('#delSlotModal').modal('show');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var confirmBtn = document.getElementById('confirmDelBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteId) return;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting…';
+            var url = '/academics/timetable/' + pendingDeleteId + '/delete/';
+            var body = new FormData();
+            body.append('csrfmiddlewaretoken', CSRF_TOKEN);
+            fetch(url, { method: 'POST', body: body })
+                .then(r => r.json())
+                .then(data => {
+                    $('#delSlotModal').modal('hide');
+                    if (data.success) {
+                        var el = document.getElementById('slot-' + pendingDeleteId);
+                        if (el) { el.style.opacity = '0'; el.style.transform = 'scale(.9)'; el.style.transition = 'all 200ms'; setTimeout(() => el.remove(), 200); }
+                    }
+                });
+        });
+    }
+});
+
+function switchDay(dayNum, tabEl) {
+    document.querySelectorAll('.tt-mobile-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tt-day-col').forEach(c => c.classList.remove('mobile-active'));
+    tabEl.classList.add('active');
+    var col = document.getElementById('dayCol' + dayNum);
+    if (col) col.classList.add('mobile-active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,877 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Grading Settings — EduManage{% endblock %}
+{% block page_title %}Grading Settings{% endblock %}
+{% block page_subtitle %}Uganda curriculum grade scales — O-Level (NLSC), A-Level, and Primary{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --gs-ol:  #4f46e5; --gs-ol-bg: rgba(79,70,229,.1);
+  --gs-al:  #d97706; --gs-al-bg: rgba(217,119,6,.1);
+  --gs-pr:  #059669; --gs-pr-bg: rgba(5,150,105,.1);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.gs-page { display:flex; flex-direction:column; gap:24px; }
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.gs-hero {
+  background:linear-gradient(135deg,#1e1b4b 0%,#312e81 45%,#4338ca 100%);
+  border-radius:var(--radius); padding:28px 32px; color:#fff;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  position:relative; overflow:hidden;
+}
+.gs-hero::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:220px; height:220px; border-radius:50%;
+  background:rgba(255,255,255,.06); pointer-events:none;
+}
+.gs-hero::after {
+  content:''; position:absolute; bottom:-30px; right:120px;
+  width:120px; height:120px; border-radius:50%;
+  background:rgba(255,255,255,.04); pointer-events:none;
+}
+.gs-hero-left  { position:relative; z-index:1; }
+.gs-hero-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+  border-radius:20px; padding:3px 12px; font-size:11px; font-weight:700;
+  letter-spacing:.5px; text-transform:uppercase; margin-bottom:10px;
+}
+.gs-hero-title { font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; margin-bottom:4px; }
+.gs-hero-sub   { font-size:13px; opacity:.8; line-height:1.6; }
+.gs-hero-icons { display:flex; gap:12px; position:relative; z-index:1; }
+.gs-hero-icon-box {
+  width:52px; height:52px; border-radius:14px;
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────────────────────── */
+.gs-tabs {
+  display:flex; gap:4px; border-bottom:2px solid var(--border);
+  margin-bottom:0; padding:0;
+}
+.gs-tab-btn {
+  display:flex; align-items:center; gap:8px;
+  padding:11px 20px; border:none; background:transparent; cursor:pointer;
+  font-size:13px; font-weight:600; color:var(--text-muted);
+  border-bottom:2px solid transparent; margin-bottom:-2px;
+  border-radius:8px 8px 0 0; transition:all 150ms;
+}
+.gs-tab-btn:hover { color:var(--text); background:var(--surface); }
+.gs-tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--surface); }
+.gs-tab-icon {
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+}
+.gs-tab-btn[data-tab="olevel"] .gs-tab-icon  { background:var(--gs-ol-bg); color:var(--gs-ol); }
+.gs-tab-btn[data-tab="alevel"] .gs-tab-icon  { background:var(--gs-al-bg); color:var(--gs-al); }
+.gs-tab-btn[data-tab="primary"] .gs-tab-icon { background:var(--gs-pr-bg); color:var(--gs-pr); }
+.gs-tab-count {
+  padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;
+  background:var(--border); color:var(--text-muted);
+}
+.gs-tab-btn.active .gs-tab-count { background:var(--accent); color:#fff; }
+
+/* ── Tab Panels ──────────────────────────────────────────────────────────── */
+.gs-panel      { display:none; }
+.gs-panel.show { display:block; }
+
+/* ── Panel header ────────────────────────────────────────────────────────── */
+.gs-panel-header {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px 24px; margin-bottom:16px;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+  flex-wrap:wrap;
+}
+.gs-ph-left { display:flex; align-items:center; gap:14px; }
+.gs-ph-icon {
+  width:46px; height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+}
+.gs-ph-icon.olevel  { background:var(--gs-ol-bg); color:var(--gs-ol); }
+.gs-ph-icon.alevel  { background:var(--gs-al-bg); color:var(--gs-al); }
+.gs-ph-icon.primary { background:var(--gs-pr-bg); color:var(--gs-pr); }
+.gs-ph-title { font-family:'Poppins',sans-serif; font-size:16px; font-weight:800; color:var(--text); }
+.gs-ph-sub   { font-size:12.5px; color:var(--text-muted); margin-top:2px; }
+.gs-ph-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* ── NLSC Info Banner ────────────────────────────────────────────────────── */
+.gs-nlsc-banner {
+  background:linear-gradient(135deg,rgba(79,70,229,.06) 0%,rgba(99,102,241,.04) 100%);
+  border:1px solid rgba(79,70,229,.2); border-radius:var(--radius);
+  padding:16px 20px; margin-bottom:16px;
+}
+.gs-nlsc-title {
+  font-family:'Poppins',sans-serif; font-size:13px; font-weight:700;
+  color:var(--gs-ol); margin-bottom:8px;
+  display:flex; align-items:center; gap:6px;
+}
+.gs-nlsc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.gs-nlsc-item {
+  display:flex; align-items:flex-start; gap:8px;
+  font-size:12px; color:var(--text-muted); line-height:1.5;
+}
+.gs-nlsc-dot {
+  width:6px; height:6px; border-radius:50%; margin-top:5px; flex-shrink:0;
+  background:var(--gs-ol);
+}
+.gs-nlsc-item strong { color:var(--text); }
+
+/* ── Grade scale table ───────────────────────────────────────────────────── */
+.gs-table-wrap {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden; box-shadow:var(--shadow);
+}
+.gs-table {
+  width:100%; border-collapse:collapse;
+}
+.gs-table thead th {
+  background:var(--surface); padding:11px 16px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+  color:var(--text-muted); border-bottom:1px solid var(--border); text-align:left;
+}
+.gs-table tbody tr { border-bottom:1px solid var(--border); transition:background 120ms; }
+.gs-table tbody tr:last-child { border-bottom:none; }
+.gs-table tbody tr:hover { background:var(--surface); }
+.gs-table td { padding:12px 16px; font-size:13px; color:var(--text); vertical-align:middle; }
+.gs-table .td-grade { width:80px; }
+.gs-table .td-range { width:130px; }
+.gs-table .td-pts   { width:70px; }
+.gs-table .td-act   { width:80px; text-align:right; }
+
+/* Grade chips */
+.grade-chip {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:30px; border-radius:8px;
+  font-family:'Poppins',sans-serif; font-size:13px; font-weight:800;
+}
+.gc-d1 { background:#d1fae5; color:#065f46; }
+.gc-d2 { background:#a7f3d0; color:#064e3b; }
+.gc-c3,.gc-c4 { background:#dbeafe; color:#1e40af; }
+.gc-c5,.gc-c6 { background:#e0e7ff; color:#3730a3; }
+.gc-p7,.gc-p8 { background:#fef3c7; color:#92400e; }
+.gc-f9 { background:#fee2e2; color:#991b1b; }
+.gc-a  { background:#d1fae5; color:#065f46; }
+.gc-b  { background:#d9f99d; color:#3f6212; }
+.gc-c  { background:#dbeafe; color:#1e40af; }
+.gc-d  { background:#e0e7ff; color:#3730a3; }
+.gc-e  { background:#fef3c7; color:#92400e; }
+.gc-o  { background:#fed7aa; color:#9a3412; }
+.gc-f  { background:#fee2e2; color:#991b1b; }
+.gc-1,.gc-2 { background:#d1fae5; color:#065f46; }
+.gc-3,.gc-4 { background:#dbeafe; color:#1e40af; }
+.gc-5,.gc-6 { background:#fef3c7; color:#92400e; }
+.gc-7 { background:#fee2e2; color:#991b1b; }
+.gc-default { background:var(--surface); color:var(--text-muted); }
+
+[data-theme="dark"] .gc-d1,.gc-d2 { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .gc-c3,.gc-c4 { background:#1e3a5f; color:#93c5fd; }
+[data-theme="dark"] .gc-c5,.gc-c6 { background:#1e1b4b; color:#a5b4fc; }
+[data-theme="dark"] .gc-p7,.gc-p8 { background:#451a03; color:#fcd34d; }
+[data-theme="dark"] .gc-f9 { background:#450a0a; color:#fca5a5; }
+[data-theme="dark"] .gc-a  { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .gc-f  { background:#450a0a; color:#fca5a5; }
+
+/* Range bar */
+.range-bar { display:flex; align-items:center; gap:6px; font-size:12px; }
+.range-track {
+  flex:1; max-width:100px; height:4px; background:var(--border); border-radius:2px; overflow:hidden;
+}
+.range-fill { height:100%; border-radius:2px; background:currentColor; opacity:.5; }
+
+/* Points badge */
+.pts-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:28px; height:22px; border-radius:6px; padding:0 6px;
+  font-size:12px; font-weight:800; font-family:'Poppins',sans-serif;
+}
+.pts-1,.pts-2 { background:#d1fae5; color:#065f46; }
+.pts-3,.pts-4 { background:#dbeafe; color:#1e40af; }
+.pts-5,.pts-6 { background:#fef3c7; color:#92400e; }
+.pts-7,.pts-8,.pts-9 { background:#fee2e2; color:#991b1b; }
+.pts-0 { background:#f1f5f9; color:#94a3b8; }
+[data-theme="dark"] .pts-1,.pts-2 { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .pts-3,.pts-4 { background:#1e3a5f; color:#93c5fd; }
+[data-theme="dark"] .pts-5,.pts-6 { background:#451a03; color:#fcd34d; }
+[data-theme="dark"] .pts-7,.pts-8,.pts-9 { background:#450a0a; color:#fca5a5; }
+
+/* Empty state */
+.gs-empty {
+  text-align:center; padding:48px 24px; color:var(--text-muted);
+}
+.gs-empty-icon { font-size:40px; margin-bottom:12px; opacity:.4; }
+.gs-empty-title { font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px; }
+
+/* Buttons */
+.gs-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:9px; font-size:12.5px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+  cursor:pointer; transition:all 140ms; text-decoration:none;
+}
+.gs-btn:hover { color:var(--text); border-color:var(--text-muted); text-decoration:none; }
+.gs-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.gs-btn-primary:hover { filter:brightness(1.08); color:#fff; transform:translateY(-1px); }
+.gs-btn-outline-ol { border-color:rgba(79,70,229,.3); color:var(--gs-ol); background:var(--gs-ol-bg); }
+.gs-btn-outline-ol:hover { background:var(--gs-ol); color:#fff; }
+.gs-btn-outline-al { border-color:rgba(217,119,6,.3); color:var(--gs-al); background:var(--gs-al-bg); }
+.gs-btn-outline-al:hover { background:var(--gs-al); color:#fff; }
+.gs-btn-outline-pr { border-color:rgba(5,150,105,.3); color:var(--gs-pr); background:var(--gs-pr-bg); }
+.gs-btn-outline-pr:hover { background:var(--gs-pr); color:#fff; }
+.gs-btn-danger { background:rgba(239,68,68,.08); color:#ef4444; border-color:rgba(239,68,68,.2); }
+.gs-btn-danger:hover { background:#ef4444; color:#fff; }
+.gs-btn-sm { padding:5px 10px; font-size:11.5px; }
+.gs-btn-icon { padding:6px; border-radius:7px; }
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+.gs-modal-backdrop {
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1050;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.gs-modal-backdrop.show { display:flex; }
+.gs-modal {
+  background:var(--card); border-radius:16px; width:100%; max-width:480px;
+  box-shadow:0 25px 60px rgba(0,0,0,.3); animation:modalIn 180ms ease;
+  position:relative; max-height:90vh; overflow-y:auto;
+}
+@keyframes modalIn { from { transform:translateY(20px) scale(.97); opacity:0; } to { transform:none; opacity:1; } }
+.gs-modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px 16px; border-bottom:1px solid var(--border);
+}
+.gs-modal-title {
+  font-family:'Poppins',sans-serif; font-size:15px; font-weight:800; color:var(--text);
+  display:flex; align-items:center; gap:10px;
+}
+.gs-modal-close {
+  width:32px; height:32px; border-radius:8px; border:none; background:var(--surface);
+  color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:16px; transition:all 150ms;
+}
+.gs-modal-close:hover { background:var(--border); color:var(--text); }
+.gs-modal-body { padding:20px 24px; }
+.gs-modal-footer {
+  padding:16px 24px; border-top:1px solid var(--border);
+  display:flex; justify-content:flex-end; gap:10px;
+}
+
+/* Form controls inside modal */
+.gs-field { margin-bottom:16px; }
+.gs-field label {
+  display:block; font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px; color:var(--text-muted); margin-bottom:5px;
+}
+.gs-field input, .gs-field select, .gs-field textarea {
+  width:100%; padding:10px 13px; border:1.5px solid var(--border);
+  border-radius:9px; background:var(--input-bg,var(--surface)); color:var(--text);
+  font-size:13px; outline:none; transition:border 150ms, box-shadow 150ms;
+}
+.gs-field input:focus, .gs-field select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(var(--accent-rgb),.1); }
+.gs-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* Toast */
+.gs-toast {
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15); padding:14px 18px;
+  display:flex; align-items:center; gap:12px; min-width:260px; max-width:360px;
+  transform:translateY(80px); opacity:0; transition:all 300ms ease;
+  pointer-events:none;
+}
+.gs-toast.show { transform:none; opacity:1; }
+.gs-toast-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.gs-toast.success .gs-toast-icon { background:#d1fae5; color:#065f46; }
+.gs-toast.error   .gs-toast-icon { background:#fee2e2; color:#991b1b; }
+.gs-toast-msg { font-size:13px; color:var(--text); font-weight:600; }
+
+/* Delete confirm modal */
+#deleteConfirmModal .gs-modal { max-width:380px; }
+.del-icon { width:56px; height:56px; border-radius:16px; background:#fee2e2; color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 14px; }
+
+@media (max-width:600px) {
+  .gs-hero { flex-direction:column; text-align:center; }
+  .gs-tabs { overflow-x:auto; }
+  .gs-tab-btn { white-space:nowrap; }
+  .gs-ph-actions { width:100%; }
+  .gs-table .td-range, .gs-table .td-pts { display:none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gs-page">
+
+<!-- Hero -->
+<div class="gs-hero">
+  <div class="gs-hero-left">
+    <div class="gs-hero-badge"><i class="fas fa-star"></i> Uganda Curriculum</div>
+    <div class="gs-hero-title">Grading Configuration</div>
+    <div class="gs-hero-sub">
+      Configure grade scales for O-Level (NLSC 2020), A-Level (UACE), and Primary (PLE) systems.<br>
+      All changes apply system-wide — mark entry, report cards, and marksheets update instantly.
+    </div>
+  </div>
+  <div class="gs-hero-icons">
+    <div class="gs-hero-icon-box"><i class="fas fa-graduation-cap"></i></div>
+    <div class="gs-hero-icon-box"><i class="fas fa-star"></i></div>
+  </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+  {{ message }}
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Tab Bar -->
+<div>
+  <div class="gs-tabs" id="gsTabs">
+    {% for system in systems %}
+    {% if system.level == "O-Level" %}
+    <button class="gs-tab-btn active" data-tab="olevel" data-sys-id="{{ system.pk }}" onclick="switchTab('olevel')">
+      <div class="gs-tab-icon"><i class="fas fa-graduation-cap"></i></div>
+      O-Level <span class="gs-tab-count" id="cnt-olevel">{{ system.scales.count }}</span>
+    </button>
+    {% elif system.level == "A-Level" %}
+    <button class="gs-tab-btn" data-tab="alevel" data-sys-id="{{ system.pk }}" onclick="switchTab('alevel')">
+      <div class="gs-tab-icon"><i class="fas fa-star"></i></div>
+      A-Level <span class="gs-tab-count" id="cnt-alevel">{{ system.scales.count }}</span>
+    </button>
+    {% elif system.level == "Primary" %}
+    <button class="gs-tab-btn" data-tab="primary" data-sys-id="{{ system.pk }}" onclick="switchTab('primary')">
+      <div class="gs-tab-icon"><i class="fas fa-book"></i></div>
+      Primary <span class="gs-tab-count" id="cnt-primary">{{ system.scales.count }}</span>
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- ═══════════════ O-LEVEL PANEL ═══════════════ -->
+  {% for system in systems %}{% if system.level == "O-Level" %}
+  <div class="gs-panel show" id="panel-olevel" data-sys-id="{{ system.pk }}">
+
+    <!-- NLSC Info Banner -->
+    <div class="gs-nlsc-banner" style="margin-top:16px;">
+      <div class="gs-nlsc-title"><i class="fas fa-info-circle"></i> Uganda New Lower Secondary Curriculum (NLSC)</div>
+      <div class="gs-nlsc-grid">
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot"></div><div><strong>School-Based Assessment (SBA):</strong> 40% of final grade — continuous classroom assessment</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot"></div><div><strong>UNEB External Exam:</strong> 60% of final grade — standardised national examination</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot"></div><div><strong>Aggregate:</strong> Best 8 subjects (D1=1 pt … F9=9 pts). Division I: 7–32, Div II: 33–45, Div III: 46–58, Div IV: 59–72</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot"></div><div><strong>D1 threshold raised to 80%</strong> under NLSC (was 75% under old curriculum). Competency-based approach.</div></div>
+      </div>
+    </div>
+
+    <div class="gs-panel-header">
+      <div class="gs-ph-left">
+        <div class="gs-ph-icon olevel"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+          <div class="gs-ph-title">O-Level Grade Scales — NLSC</div>
+          <div class="gs-ph-sub">Grades D1–F9 · Points 1–9 · Active system for S1–S4</div>
+        </div>
+      </div>
+      <div class="gs-ph-actions">
+        <button class="gs-btn gs-btn-outline-ol" onclick="openAddModal('{{ system.pk }}','olevel','O-Level')">
+          <i class="fas fa-plus"></i> Add Scale
+        </button>
+        <button class="gs-btn" onclick="resetDefaults('{{ system.pk }}','olevel','O-Level')">
+          <i class="fas fa-redo"></i> Reset Defaults
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-table-wrap">
+      <table class="gs-table" id="table-olevel">
+        <thead>
+          <tr>
+            <th class="td-grade">Grade</th>
+            <th class="td-range">Score Range</th>
+            <th class="td-pts">Points</th>
+            <th>Remark</th>
+            <th class="td-act"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-olevel">
+          {% for scale in system.scales.all %}
+          <tr data-scale-id="{{ scale.pk }}">
+            <td class="td-grade"><span class="grade-chip gc-{{ scale.grade|lower }}">{{ scale.grade }}</span></td>
+            <td class="td-range">
+              <div class="range-bar">
+                <span>{{ scale.min_score|floatformat:0 }}–{{ scale.max_score|floatformat:0 }}%</span>
+                <div class="range-track">
+                  <div class="range-fill gc-{{ scale.grade|lower }}" style="width:{{ scale.max_score }}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="td-pts"><span class="pts-badge pts-{{ scale.points|floatformat:0 }}">{{ scale.points|floatformat:0 }}</span></td>
+            <td>{{ scale.remark }}</td>
+            <td class="td-act">
+              <button class="gs-btn gs-btn-danger gs-btn-sm gs-btn-icon"
+                onclick="confirmDelete('{{ scale.pk }}','{{ system.pk }}','{{ scale.grade }}','olevel')"
+                title="Delete this scale"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr id="empty-olevel"><td colspan="5" class="gs-empty"><div class="gs-empty-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="gs-empty-title">No scales yet</div><p>Click "Add Scale" or "Reset Defaults" to get started.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+
+  <!-- ═══════════════ A-LEVEL PANEL ═══════════════ -->
+  {% for system in systems %}{% if system.level == "A-Level" %}
+  <div class="gs-panel" id="panel-alevel" data-sys-id="{{ system.pk }}">
+
+    <div class="gs-nlsc-banner" style="margin-top:16px;border-color:rgba(217,119,6,.2);background:linear-gradient(135deg,rgba(217,119,6,.06),rgba(245,158,11,.03));">
+      <div class="gs-nlsc-title" style="color:var(--gs-al)"><i class="fas fa-info-circle"></i> Uganda Advanced Certificate of Education (UACE)</div>
+      <div class="gs-nlsc-grid">
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-al)"></div><div><strong>Grades A–F + O subsidiary:</strong> A(6pts), B(5), C(4), D(3), E(2), O(1), F(0)</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-al)"></div><div><strong>3 Principals + 1 Subsidiary</strong> — aggregate from best 3 principal subjects</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-al)"></div><div><strong>Grade A:</strong> 80%+ · <strong>Grade F:</strong> below 35% · University entry typically requires 2+ principals</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-al)"></div><div><strong>O grade</strong> (35–39%) is subsidiary-only pass, not counted in principal aggregates</div></div>
+      </div>
+    </div>
+
+    <div class="gs-panel-header">
+      <div class="gs-ph-left">
+        <div class="gs-ph-icon alevel"><i class="fas fa-star"></i></div>
+        <div>
+          <div class="gs-ph-title">A-Level Grade Scales — UACE</div>
+          <div class="gs-ph-sub">Grades A–F · Points 0–6 · Active system for S5–S6</div>
+        </div>
+      </div>
+      <div class="gs-ph-actions">
+        <button class="gs-btn gs-btn-outline-al" onclick="openAddModal('{{ system.pk }}','alevel','A-Level')">
+          <i class="fas fa-plus"></i> Add Scale
+        </button>
+        <button class="gs-btn" onclick="resetDefaults('{{ system.pk }}','alevel','A-Level')">
+          <i class="fas fa-redo"></i> Reset Defaults
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-table-wrap">
+      <table class="gs-table" id="table-alevel">
+        <thead>
+          <tr>
+            <th class="td-grade">Grade</th>
+            <th class="td-range">Score Range</th>
+            <th class="td-pts">Points</th>
+            <th>Remark</th>
+            <th class="td-act"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-alevel">
+          {% for scale in system.scales.all %}
+          <tr data-scale-id="{{ scale.pk }}">
+            <td class="td-grade"><span class="grade-chip gc-{{ scale.grade|lower }}">{{ scale.grade }}</span></td>
+            <td class="td-range">
+              <div class="range-bar">
+                <span>{{ scale.min_score|floatformat:0 }}–{{ scale.max_score|floatformat:0 }}%</span>
+                <div class="range-track">
+                  <div class="range-fill gc-{{ scale.grade|lower }}" style="width:{{ scale.max_score }}%"></div>
+                </div>
+              </div>
+            </td>
+            <td class="td-pts"><span class="pts-badge pts-{{ scale.points|floatformat:0 }}">{{ scale.points|floatformat:0 }}</span></td>
+            <td>{{ scale.remark }}</td>
+            <td class="td-act">
+              <button class="gs-btn gs-btn-danger gs-btn-sm gs-btn-icon"
+                onclick="confirmDelete('{{ scale.pk }}','{{ system.pk }}','{{ scale.grade }}','alevel')"
+                title="Delete this scale"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr id="empty-alevel"><td colspan="5" class="gs-empty"><div class="gs-empty-icon"><i class="fas fa-star"></i></div><div class="gs-empty-title">No scales yet</div><p>Click "Add Scale" or "Reset Defaults" to get started.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+
+  <!-- ═══════════════ PRIMARY PANEL ═══════════════ -->
+  {% for system in systems %}{% if system.level == "Primary" %}
+  <div class="gs-panel" id="panel-primary" data-sys-id="{{ system.pk }}">
+
+    <div class="gs-nlsc-banner" style="margin-top:16px;border-color:rgba(5,150,105,.2);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(16,185,129,.03));">
+      <div class="gs-nlsc-title" style="color:var(--gs-pr)"><i class="fas fa-info-circle"></i> Uganda Primary Leaving Examination (PLE)</div>
+      <div class="gs-nlsc-grid">
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-pr)"></div><div><strong>Grades 1–7:</strong> Grade 1 (80%+) down to Grade 7 (below 30%)</div></div>
+        <div class="gs-nlsc-item"><div class="gs-nlsc-dot" style="background:var(--gs-pr)"></div><div><strong>PLE Aggregate:</strong> Best 4 subjects — Division I to IV then Ungraded (U)</div></div>
+      </div>
+    </div>
+
+    <div class="gs-panel-header">
+      <div class="gs-ph-left">
+        <div class="gs-ph-icon primary"><i class="fas fa-book"></i></div>
+        <div>
+          <div class="gs-ph-title">Primary Grade Scales — PLE</div>
+          <div class="gs-ph-sub">Grades 1–7 · Active system for P1–P7</div>
+        </div>
+      </div>
+      <div class="gs-ph-actions">
+        <button class="gs-btn gs-btn-outline-pr" onclick="openAddModal('{{ system.pk }}','primary','Primary')">
+          <i class="fas fa-plus"></i> Add Scale
+        </button>
+        <button class="gs-btn" onclick="resetDefaults('{{ system.pk }}','primary','Primary')">
+          <i class="fas fa-redo"></i> Reset Defaults
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-table-wrap">
+      <table class="gs-table">
+        <thead>
+          <tr>
+            <th class="td-grade">Grade</th>
+            <th class="td-range">Score Range</th>
+            <th class="td-pts">Points</th>
+            <th>Remark</th>
+            <th class="td-act"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-primary">
+          {% for scale in system.scales.all %}
+          <tr data-scale-id="{{ scale.pk }}">
+            <td class="td-grade"><span class="grade-chip gc-{{ scale.grade|lower }}">{{ scale.grade }}</span></td>
+            <td class="td-range">
+              <div class="range-bar">
+                <span>{{ scale.min_score|floatformat:0 }}–{{ scale.max_score|floatformat:0 }}%</span>
+                <div class="range-track">
+                  <div class="range-fill" style="width:{{ scale.max_score }}%;background:#059669;opacity:.5;"></div>
+                </div>
+              </div>
+            </td>
+            <td class="td-pts"><span class="pts-badge pts-{{ scale.points|floatformat:0 }}">{{ scale.points|floatformat:0 }}</span></td>
+            <td>{{ scale.remark }}</td>
+            <td class="td-act">
+              <button class="gs-btn gs-btn-danger gs-btn-sm gs-btn-icon"
+                onclick="confirmDelete('{{ scale.pk }}','{{ system.pk }}','{{ scale.grade }}','primary')"
+                title="Delete this scale"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr id="empty-primary"><td colspan="5" class="gs-empty"><div class="gs-empty-icon"><i class="fas fa-book"></i></div><div class="gs-empty-title">No scales yet</div><p>Click "Add Scale" or "Reset Defaults" to get started.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+
+</div><!-- end tab container -->
+</div><!-- end gs-page -->
+
+<!-- ═══════════ ADD SCALE MODAL ═══════════ -->
+<div class="gs-modal-backdrop" id="addScaleModal">
+  <div class="gs-modal">
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        <div class="gs-ph-icon" id="addModalIcon" style="width:34px;height:34px;border-radius:9px;font-size:15px;flex-shrink:0;"></div>
+        <span id="addModalTitle">Add Grade Scale</span>
+      </div>
+      <button class="gs-modal-close" onclick="closeModal('addScaleModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="gs-modal-body">
+      <input type="hidden" id="addSysId">
+      <input type="hidden" id="addTabKey">
+      <div class="gs-grid-2">
+        <div class="gs-field">
+          <label>Grade Code <span style="color:#ef4444">*</span></label>
+          <input type="text" id="addGrade" placeholder="e.g. D1, C3, A" maxlength="10">
+        </div>
+        <div class="gs-field">
+          <label>Points <span style="color:#ef4444">*</span></label>
+          <input type="number" id="addPoints" placeholder="0–9" min="0" max="20" step="1">
+        </div>
+      </div>
+      <div class="gs-grid-2">
+        <div class="gs-field">
+          <label>Min Score (%) <span style="color:#ef4444">*</span></label>
+          <input type="number" id="addMin" placeholder="0" min="0" max="100" step="0.01">
+        </div>
+        <div class="gs-field">
+          <label>Max Score (%) <span style="color:#ef4444">*</span></label>
+          <input type="number" id="addMax" placeholder="100" min="0" max="100" step="0.01">
+        </div>
+      </div>
+      <div class="gs-field">
+        <label>Remark</label>
+        <input type="text" id="addRemark" placeholder="e.g. Distinction 1 — Excellent" maxlength="100">
+      </div>
+      <div id="addError" style="display:none;padding:8px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:12.5px;margin-top:4px;"></div>
+    </div>
+    <div class="gs-modal-footer">
+      <button class="gs-btn" onclick="closeModal('addScaleModal')">Cancel</button>
+      <button class="gs-btn gs-btn-primary" id="addScaleBtn" onclick="submitAddScale()">
+        <i class="fas fa-plus"></i> Add Scale
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DELETE CONFIRM MODAL ═══════════ -->
+<div class="gs-modal-backdrop" id="deleteConfirmModal">
+  <div class="gs-modal">
+    <div class="gs-modal-body" style="text-align:center;padding:32px 24px;">
+      <div class="del-icon"><i class="fas fa-trash"></i></div>
+      <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px;">Delete Grade Scale?</div>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:0;">This will permanently delete the <strong id="delGradeLabel"></strong> grade scale. Existing mark entries will retain their saved grade text but future grading lookups will be affected.</p>
+      <input type="hidden" id="delScaleId">
+      <input type="hidden" id="delSysId">
+      <input type="hidden" id="delTabKey">
+    </div>
+    <div class="gs-modal-footer" style="justify-content:center;gap:12px;">
+      <button class="gs-btn" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+      <button class="gs-btn gs-btn-danger" onclick="executeDelete()"><i class="fas fa-trash"></i> Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="gs-toast" id="gsToast">
+  <div class="gs-toast-icon" id="gsToastIcon"></div>
+  <div class="gs-toast-msg" id="gsToastMsg"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+const GRADING_URL = '{% url "grading_settings" %}';
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.gs-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.gs-panel').forEach(p => p.classList.toggle('show', p.id === 'panel-' + tab));
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('gsToast');
+  const i = document.getElementById('gsToastIcon');
+  const m = document.getElementById('gsToastMsg');
+  t.className = 'gs-toast ' + type;
+  i.innerHTML = type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+  m.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── Modal helpers ────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.gs-modal-backdrop').forEach(bd => {
+  bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
+});
+
+// ── Add Scale Modal ──────────────────────────────────────────────────────────
+const levelColors = { olevel:'var(--gs-ol-bg)', alevel:'var(--gs-al-bg)', primary:'var(--gs-pr-bg)' };
+const levelTextC  = { olevel:'var(--gs-ol)',    alevel:'var(--gs-al)',    primary:'var(--gs-pr)'    };
+const levelIcons  = { olevel:'graduation-cap',  alevel:'star',            primary:'book'            };
+
+function openAddModal(sysId, tabKey, levelName) {
+  document.getElementById('addSysId').value  = sysId;
+  document.getElementById('addTabKey').value = tabKey;
+  document.getElementById('addModalTitle').textContent = 'Add ' + levelName + ' Grade Scale';
+  const icon = document.getElementById('addModalIcon');
+  icon.style.background = levelColors[tabKey];
+  icon.style.color = levelTextC[tabKey];
+  icon.innerHTML = '<i class="fas fa-' + levelIcons[tabKey] + '"></i>';
+  document.getElementById('addGrade').value = '';
+  document.getElementById('addPoints').value = '';
+  document.getElementById('addMin').value = '';
+  document.getElementById('addMax').value = '';
+  document.getElementById('addRemark').value = '';
+  document.getElementById('addError').style.display = 'none';
+  openModal('addScaleModal');
+  setTimeout(() => document.getElementById('addGrade').focus(), 100);
+}
+
+async function submitAddScale() {
+  const sysId  = document.getElementById('addSysId').value;
+  const tabKey = document.getElementById('addTabKey').value;
+  const grade  = document.getElementById('addGrade').value.trim().toUpperCase();
+  const points = document.getElementById('addPoints').value;
+  const min    = document.getElementById('addMin').value;
+  const max    = document.getElementById('addMax').value;
+  const remark = document.getElementById('addRemark').value.trim();
+  const errEl  = document.getElementById('addError');
+
+  if (!grade || points === '' || min === '' || max === '') {
+    errEl.textContent = 'Grade, Points, Min Score, and Max Score are required.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (parseFloat(min) > parseFloat(max)) {
+    errEl.textContent = 'Min score cannot be greater than max score.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('addScaleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding…';
+
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fd.append('action', 'scale_add');
+  fd.append('grading_system_id', sysId);
+  fd.append('grade', grade);
+  fd.append('points', points);
+  fd.append('min_score', min);
+  fd.append('max_score', max);
+  fd.append('remark', remark);
+
+  try {
+    const res = await fetch(GRADING_URL, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('addScaleModal');
+      appendScaleRow(tabKey, data.scale);
+      updateCount(tabKey, 1);
+      showToast('Grade scale "' + data.scale.grade + '" added.', 'success');
+    } else {
+      errEl.textContent = data.error || 'Failed to add scale.';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-plus"></i> Add Scale';
+  }
+}
+
+function appendScaleRow(tabKey, scale) {
+  const tbody = document.getElementById('tbody-' + tabKey);
+  const emptyRow = document.getElementById('empty-' + tabKey);
+  if (emptyRow) emptyRow.remove();
+
+  const pts = Math.round(parseFloat(scale.points));
+  const sysId = document.querySelector('[data-tab="' + tabKey + '"]').dataset.sysId;
+  const gradeL = scale.grade.toLowerCase();
+
+  const row = document.createElement('tr');
+  row.dataset.scaleId = scale.id;
+  row.innerHTML = `
+    <td class="td-grade"><span class="grade-chip gc-${gradeL}">${scale.grade}</span></td>
+    <td class="td-range">
+      <div class="range-bar">
+        <span>${parseFloat(scale.min_score).toFixed(0)}–${parseFloat(scale.max_score).toFixed(0)}%</span>
+        <div class="range-track"><div class="range-fill gc-${gradeL}" style="width:${scale.max_score}%"></div></div>
+      </div>
+    </td>
+    <td class="td-pts"><span class="pts-badge pts-${pts}">${pts}</span></td>
+    <td>${scale.remark || ''}</td>
+    <td class="td-act">
+      <button class="gs-btn gs-btn-danger gs-btn-sm gs-btn-icon"
+        onclick="confirmDelete('${scale.id}','${sysId}','${scale.grade}','${tabKey}')"
+        title="Delete this scale"><i class="fas fa-trash"></i></button>
+    </td>`;
+  tbody.appendChild(row);
+}
+
+// ── Delete ───────────────────────────────────────────────────────────────────
+function confirmDelete(scaleId, sysId, grade, tabKey) {
+  document.getElementById('delScaleId').value = scaleId;
+  document.getElementById('delSysId').value   = sysId;
+  document.getElementById('delTabKey').value  = tabKey;
+  document.getElementById('delGradeLabel').textContent = grade;
+  openModal('deleteConfirmModal');
+}
+
+async function executeDelete() {
+  const scaleId = document.getElementById('delScaleId').value;
+  const sysId   = document.getElementById('delSysId').value;
+  const tabKey  = document.getElementById('delTabKey').value;
+
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fd.append('action', 'scale_delete');
+  fd.append('grading_system_id', sysId);
+  fd.append('scale_id', scaleId);
+
+  try {
+    const res = await fetch(GRADING_URL, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('deleteConfirmModal');
+      const row = document.querySelector(`[data-scale-id="${scaleId}"]`);
+      if (row) row.remove();
+      updateCount(tabKey, -1);
+      showToast('Grade scale deleted.', 'success');
+    } else {
+      showToast(data.error || 'Delete failed.', 'error');
+    }
+  } catch(e) {
+    showToast('Network error.', 'error');
+  }
+}
+
+// ── Reset Defaults ───────────────────────────────────────────────────────────
+async function resetDefaults(sysId, tabKey, levelName) {
+  if (!confirm(`Reset all ${levelName} grade scales to Uganda curriculum defaults?\n\nThis will DELETE all current scales and restore the official UNEB grading.`)) return;
+
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fd.append('action', 'scale_reset');
+  fd.append('grading_system_id', sysId);
+
+  try {
+    const res = await fetch(GRADING_URL, { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:fd });
+    const data = await res.json();
+    if (data.success) {
+      rebuildTable(tabKey, data.scales, sysId);
+      showToast(levelName + ' scales reset to Uganda defaults.', 'success');
+    } else {
+      showToast(data.error || 'Reset failed.', 'error');
+    }
+  } catch(e) {
+    showToast('Network error.', 'error');
+  }
+}
+
+function rebuildTable(tabKey, scales, sysId) {
+  const tbody = document.getElementById('tbody-' + tabKey);
+  tbody.innerHTML = '';
+  if (!scales.length) {
+    tbody.innerHTML = `<tr id="empty-${tabKey}"><td colspan="5" class="gs-empty"><div class="gs-empty-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="gs-empty-title">No scales</div></td></tr>`;
+    updateCount(tabKey, 0, true);
+    return;
+  }
+  scales.forEach(s => appendScaleRow(tabKey, s));
+  updateCount(tabKey, scales.length, true);
+}
+
+// ── Count badge ──────────────────────────────────────────────────────────────
+function updateCount(tabKey, delta, absolute = false) {
+  const el = document.getElementById('cnt-' + tabKey);
+  if (!el) return;
+  el.textContent = absolute ? delta : (parseInt(el.textContent || '0') + delta);
+}
+
+// ── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.gs-modal-backdrop.show').forEach(m => m.classList.remove('show'));
+  }
+  if (e.key === 'Enter' && document.getElementById('addScaleModal').classList.contains('show')) {
+    submitAddScale();
+  }
+});
+</script>
+{% endblock %}

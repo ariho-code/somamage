@@ -1,0 +1,1001 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}O-Level Report Card{% endblock %}
+{% block content %}
+<div class="report-card-container">
+<style>
+/* O-Level Report Card Styles - Ugandan Format */
+.report-card-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Watermark - School Logo/Badge */
+.watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.25;
+    width: 700px;
+    height: 700px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.watermark img,
+.watermark-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.3;
+    filter: grayscale(60%);
+}
+
+/* Fallback watermark text if no logo */
+.watermark-text {
+    position: relative;
+    font-size: 180px;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.15);
+    z-index: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 30px;
+    font-family: 'Times New Roman', serif;
+    text-transform: uppercase;
+    transform: none;
+}
+
+/* School Logo/Seal - Original style without background or rounded */
+.school-seal {
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    position: relative;
+}
+
+.school-logo-img {
+    max-width: 120px;
+    max-height: 120px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* School Seal Display (below disclaimer) */
+.school-seal-display {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 10;
+    padding: 10px;
+    background: white;
+}
+
+.school-seal-display img {
+    max-width: 150px;
+    max-height: 150px;
+    opacity: 1;
+    border: 2px solid #1e3a8a;
+    border-radius: 8px;
+    padding: 5px;
+    background: white;
+    display: inline-block;
+}
+
+/* Header Section */
+.report-header {
+    text-align: center;
+    padding: 10px 20px;
+    background: white;
+    border-bottom: 3px solid #1e40af;
+    position: relative;
+    z-index: 1;
+}
+
+.school-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1e293b;
+    margin-bottom: 8px;
+    font-family: 'Times New Roman', serif;
+    letter-spacing: 1px;
+}
+
+.school-details {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 5px;
+    line-height: 1.6;
+}
+
+.school-motto {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1e40af;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.report-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1e293b;
+    text-transform: uppercase;
+    margin-top: 8px;
+    padding: 6px;
+    background: #f1f5f9;
+    border: 2px solid #1e40af;
+    letter-spacing: 1px;
+}
+
+/* Student Information Section */
+.student-info-section {
+    padding: 10px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.student-info-grid {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.student-photo-col {
+    text-align: center;
+}
+
+.student-photo {
+    width: 80px;
+    height: 100px;
+    border-radius: 6px;
+    border: 2px solid #1e40af;
+    object-fit: cover;
+    background: #f1f5f9;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.student-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    font-size: 13px;
+}
+
+.info-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #1e293b;
+    min-width: 120px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.info-value {
+    color: #334155;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Subject Performance Table */
+.subjects-table-section {
+    padding: 8px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.subjects-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.subjects-table thead {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+}
+
+.subjects-table th {
+    padding: 6px 4px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    text-transform: uppercase;
+    border: 1px solid #1e3a8a;
+    letter-spacing: 0.5px;
+}
+
+.subjects-table td {
+    padding: 5px 4px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    font-size: 10px;
+}
+
+.subjects-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.subjects-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.subject-code {
+    font-weight: bold;
+    color: #1e40af;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+    padding-left: 10px;
+}
+
+.paper-number {
+    font-weight: bold;
+    color: #475569;
+}
+
+.score-cell {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.grade-cell {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.grade-a {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.grade-b {
+    color: #22c55e;
+}
+
+.grade-c {
+    color: #3b82f6;
+}
+
+.grade-d {
+    color: #60a5fa;
+}
+
+.grade-e {
+    color: #f59e0b;
+}
+
+.grade-f, .grade-o {
+    color: #dc2626;
+}
+
+.comment-cell {
+    font-size: 10px;
+    font-style: italic;
+    color: #475569;
+    text-align: left;
+    padding-left: 8px;
+}
+
+/* Comments Section - Compact */
+.comments-section {
+    padding: 5px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.comment-box {
+    margin-bottom: 5px;
+    padding: 5px 8px;
+    background: #f8fafc;
+    border-left: 3px solid #1e40af;
+    border-radius: 4px;
+}
+
+.comment-label {
+    font-weight: bold;
+    font-size: 10px;
+    color: #1e293b;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+
+.comment-text {
+    font-size: 10px;
+    color: #334155;
+    line-height: 1.3;
+    margin-bottom: 0;
+    min-height: 25px;
+    padding: 2px 0;
+}
+
+.signature-line {
+    border-top: 1px solid #1e293b;
+    margin-top: 0;
+    padding-top: 25px;
+    font-size: 9px;
+    font-weight: bold;
+    color: #1e293b;
+    text-align: center;
+    min-height: 50px;
+    position: relative;
+}
+
+/* Term Dates */
+.term-dates {
+    padding: 5px 20px;
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    position: relative;
+    z-index: 1;
+    font-size: 9px;
+    color: #475569;
+}
+
+.term-dates div > div {
+    text-align: center;
+}
+
+/* Grading Scale - Compact */
+.grading-scale {
+    padding: 5px;
+    position: relative;
+    z-index: 1;
+    margin-top: 5px;
+}
+
+.grading-scale-title {
+    font-weight: bold;
+    font-size: 11px;
+    color: #1e293b;
+    margin-bottom: 6px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.grading-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    margin-top: 5px;
+}
+
+.grading-table th,
+.grading-table td {
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.grading-table thead {
+    background: #1e40af;
+    color: white;
+}
+
+.grading-table th {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 9px;
+}
+
+/* Disclaimer */
+.disclaimer {
+    text-align: center;
+    padding: 5px;
+    color: #dc2626;
+    font-weight: bold;
+    font-size: 10px;
+    position: relative;
+    z-index: 1;
+    border-top: 2px solid #dc2626;
+    margin-top: 5px;
+}
+
+/* Print Styles */
+@media print {
+    /* Reset all margins and padding */
+    * {
+        box-sizing: border-box;
+    }
+    
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        font-size: 12pt !important;
+        width: 100% !important;
+    }
+    
+    /* Hide navigation and UI elements */
+    .navbar,
+    .sidebar,
+    .header,
+    .footer,
+    .action-buttons,
+    .btn,
+    .modal,
+    .alert,
+    .breadcrumb,
+    nav,
+    header,
+    aside {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide content wrapper but keep report card */
+    .content {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: white !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure report card container is visible */
+    .report-card-container {
+        box-shadow: none !important;
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 15px !important;
+        position: relative !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        page-break-inside: avoid !important;
+        background: white !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Show all content inside report card */
+    .report-card-container * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .watermark {
+        opacity: 0.25 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        position: absolute !important;
+    }
+    
+    .watermark-logo {
+        opacity: 0.3 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .watermark-text {
+        opacity: 0.2 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .subjects-table thead {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .school-seal {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: white !important;
+    }
+    
+    .school-seal img {
+        opacity: 1 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .school-seal-display {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: white !important;
+    }
+    
+    .school-seal-display img {
+        opacity: 1 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .disclaimer {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+}
+
+/* Action Buttons */
+.action-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1000;
+}
+
+@media print {
+    .action-buttons {
+        display: none !important;
+    }
+}
+</style>
+
+<div class="report-card-container">
+    <!-- Watermark - School Badge/Logo/Seal -->
+    <div class="watermark">
+        {% if report_card.enrollment.grade.school.seal %}
+        <img src="{{ report_card.enrollment.grade.school.seal.url }}" alt="School Seal Watermark" class="watermark-logo">
+        {% elif report_card.enrollment.grade.school.logo %}
+        <img src="{{ report_card.enrollment.grade.school.logo.url }}" alt="School Logo Watermark" class="watermark-logo">
+        {% else %}
+        <div class="watermark-text" style="display: block;">{{ report_card.enrollment.grade.school.name|upper }}</div>
+        {% endif %}
+    </div>
+    
+    <!-- Header -->
+    <div class="report-header">
+        <!-- School Seal/Logo -->
+        <div class="school-seal">
+            {% if report_card.enrollment.grade.school.logo %}
+            <img src="{{ report_card.enrollment.grade.school.logo.url }}" alt="School Logo" class="school-logo-img">
+            {% endif %}
+        </div>
+        
+        <!-- School Name -->
+        <div class="school-name">{{ report_card.enrollment.grade.school.name|default:"SCHOOL NAME" }}</div>
+        
+        <!-- School Details -->
+        <div class="school-details">
+            {% if report_card.enrollment.grade.school.school_type %}
+            {{ report_card.enrollment.grade.school.get_school_type_display|upper }}<br>
+            {% endif %}
+            {% if report_card.enrollment.grade.school.address %}
+            P.O BOX {{ report_card.enrollment.grade.school.address|upper }}<br>
+            {% endif %}
+            {% if report_card.enrollment.grade.school.phone %}
+            {{ report_card.enrollment.grade.school.phone }}{% if report_card.enrollment.grade.school.email %}, {{ report_card.enrollment.grade.school.email }}{% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Motto -->
+        {% if report_card.enrollment.grade.school.motto %}
+        <div class="school-motto">MOTTO: {{ report_card.enrollment.grade.school.motto|upper }}</div>
+        {% endif %}
+        
+        <!-- Report Title -->
+        <div class="report-title">
+            {% with start_year=report_card.term.academic_year.start_date|date:"Y" end_year=report_card.term.academic_year.end_date|date:"Y" %}
+            {% if has_eot_exam %}
+            END OF {{ report_card.term.name|upper }} {% if start_year == end_year %}{{ start_year }}{% else %}{{ start_year }}/{{ end_year }}{% endif %} STUDENT REPORT CARD
+            {% else %}
+            {{ current_exam_name|default:report_card.term.name|upper }} {% if start_year == end_year %}{{ start_year }}{% else %}{{ start_year }}/{{ end_year }}{% endif %} STUDENT REPORT CARD
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    
+    <!-- Student Information -->
+    <div class="student-info-section">
+        <div class="student-info-grid">
+            <!-- Student Photo -->
+            <div class="student-photo-col">
+                {% if report_card.enrollment.student.photo %}
+                <img src="{{ report_card.enrollment.student.photo.url }}" alt="Student Photo" class="student-photo">
+                {% else %}
+                <div class="student-photo" style="display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+                    <i class="fas fa-user" style="font-size: 40px;"></i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Student Details -->
+            <div class="student-details-grid">
+                <div class="info-row">
+                    <span class="info-label">NAME:</span>
+                    <span class="info-value">{% if report_card.enrollment.student.user %}{{ report_card.enrollment.student.user.get_full_name|default:report_card.enrollment.student.user.username|upper }}{% else %}{{ report_card.enrollment.student.get_full_name|default:report_card.enrollment.student.first_name|default:"STUDENT"|upper }}{% endif %}</span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">STUDENT ID:</span>
+                    <span class="info-value">{{ report_card.enrollment.student.admission_number|default:"--" }}</span>
+                </div>
+                
+                {% if report_card.enrollment.student.index_number %}
+                <div class="info-row">
+                    <span class="info-label">PAYMENT CODE:</span>
+                    <span class="info-value">{{ report_card.enrollment.student.index_number }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <span class="info-label">CLASS:</span>
+                    <span class="info-value">{{ report_card.enrollment.grade.name|upper }}</span>
+                </div>
+                
+                {% if report_card.enrollment.stream %}
+                <div class="info-row">
+                    <span class="info-label">STREAM:</span>
+                    <span class="info-value">{{ report_card.enrollment.stream|upper }}</span>
+                </div>
+                {% endif %}
+                
+                {% if report_card.enrollment.student.gender %}
+                <div class="info-row">
+                    <span class="info-label">SEX:</span>
+                    <span class="info-value">{{ report_card.enrollment.student.get_gender_display|upper }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subject Performance Table -->
+    <div class="subjects-table-section">
+        <table class="subjects-table">
+            <thead>
+                <tr>
+                    <th>SUBJECT CODE</th>
+                    <th>SUBJECT NAME</th>
+                    <th>PAPER</th>
+                    {% comment %}Dynamic exam columns - show all exams added by school headteacher{% endcomment %}
+                    {% if all_exam_names and all_exam_names|length > 0 %}
+                        {% for exam_name in all_exam_names %}
+                            <th>{{ exam_name|upper }}</th>
+                        {% endfor %}
+                    {% else %}
+                        {% comment %}No exams added yet - show placeholder{% endcomment %}
+                        <th>EXAM 1</th>
+                        <th>EXAM 2</th>
+                    {% endif %}
+                    <th>AVG</th>
+                    <th>GRADE</th>
+                    <th>COMMENT</th>
+                    <th>INITIAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if marks_by_subject %}
+                    {% for subject_id, subject_data in marks_by_subject.items %}
+                        {% comment %}For O-Level, only show compulsory subjects and enrolled optionals{% endcomment %}
+                        {% if subject_data.papers|length > 0 %}
+                            {% for paper in subject_data.papers %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ subject_data.papers|length }}" class="subject-code">{{ subject_data.subject.code|default:subject_data.subject.name|slice:":10"|upper }}</td>
+                                <td rowspan="{{ subject_data.papers|length }}" class="subject-name">{{ subject_data.subject.name|upper }}</td>
+                                {% endif %}
+                                <td class="paper-number">
+                                    {% comment %}If subject has only one paper, show "1", otherwise show paper number{% endcomment %}
+                                    {% if subject_data.papers|length == 1 %}
+                                        1
+                                    {% else %}
+                                        {{ paper.paper_number|default:paper.paper_name|default:"1" }}
+                                    {% endif %}
+                                </td>
+                                {% comment %}Dynamic exam marks - show all exams added by school headteacher{% endcomment %}
+                                {% if all_exam_names and all_exam_names|length > 0 %}
+                                    {% for exam_name in all_exam_names %}
+                                        <td class="score-cell">
+                                            {% comment %}Get exam score from paper.exam_marks dictionary - iterate to find matching exam_name{% endcomment %}
+                                            {% if paper.exam_marks %}
+                                                {% for e_name, e_score in paper.exam_marks.items %}
+                                                    {% if e_name == exam_name %}
+                                                        {% if e_score %}
+                                                            {{ e_score|floatformat:0 }}
+                                                        {% else %}
+                                                            -- 
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% empty %}
+                                                    --
+                                                {% endfor %}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                {% else %}
+                                    {% comment %}No exams added yet - show placeholder{% endcomment %}
+                                    <td class="score-cell">--</td>
+                                    <td class="score-cell">--</td>
+                                {% endif %}
+                                <td class="score-cell">{% if paper.avg %}{{ paper.avg|floatformat:1 }}{% else %}--{% endif %}</td>
+                                {% if forloop.first %}
+                                <td rowspan="{{ subject_data.papers|length }}" class="grade-cell" style="font-size: 16px; font-weight: bold; color: {% if subject_data.letter_grade == 'A' %}#16a34a{% elif subject_data.letter_grade == 'B' %}#22c55e{% elif subject_data.letter_grade == 'C' %}#3b82f6{% elif subject_data.letter_grade == 'D' %}#60a5fa{% elif subject_data.letter_grade == 'E' %}#f59e0b{% else %}#dc2626{% endif %};">
+                                    {% if subject_data.letter_grade %}
+                                    {{ subject_data.letter_grade }}
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td class="comment-cell">{% if paper.comment %}{{ paper.comment }}{% else %}--{% endif %}</td>
+                                <td class="paper-number">{% if paper.teacher %}{{ paper.teacher.first_name|first|upper }}{{ paper.teacher.last_name|first|upper }}{% else %}--{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% comment %}Show empty row for subjects without papers - show "1" instead of N/A{% endcomment %}
+                            {% if subject_data.subject.has_papers %}
+                                {% comment %}Subject has papers but no marks yet - show paper number 1{% endcomment %}
+                                <tr>
+                                    <td class="subject-code">{{ subject_data.subject.code|default:subject_data.subject.name|slice:":10"|upper }}</td>
+                                    <td class="subject-name">{{ subject_data.subject.name|upper }}</td>
+                                    <td class="paper-number">1</td>
+                                    {% comment %}Show empty cells for all exam columns{% endcomment %}
+                                    {% if all_exam_names and all_exam_names|length > 0 %}
+                                        {% for exam_name in all_exam_names %}
+                                            <td class="score-cell">--</td>
+                                        {% endfor %}
+                                    {% else %}
+                                        <td class="score-cell">--</td>
+                                        <td class="score-cell">--</td>
+                                    {% endif %}
+                                    <td class="score-cell">--</td>
+                                    <td class="grade-cell">--</td>
+                                    <td class="comment-cell">--</td>
+                                    <td class="paper-number">--</td>
+                                </tr>
+                            {% else %}
+                                {% comment %}Subject doesn't have papers - show "1" as default{% endcomment %}
+                                <tr>
+                                    <td class="subject-code">{{ subject_data.subject.code|default:subject_data.subject.name|slice:":10"|upper }}</td>
+                                    <td class="subject-name">{{ subject_data.subject.name|upper }}</td>
+                                    <td class="paper-number">1</td>
+                                    {% comment %}Show empty cells for all exam columns{% endcomment %}
+                                    {% if all_exam_names and all_exam_names|length > 0 %}
+                                        {% for exam_name in all_exam_names %}
+                                            <td class="score-cell">--</td>
+                                        {% endfor %}
+                                    {% else %}
+                                        <td class="score-cell">--</td>
+                                        <td class="score-cell">--</td>
+                                    {% endif %}
+                                    <td class="score-cell">--</td>
+                                    <td class="grade-cell">--</td>
+                                    <td class="comment-cell">--</td>
+                                    <td class="paper-number">--</td>
+                                </tr>
+                            {% endif %}
+                        {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if all_exam_names and all_exam_names|length > 0 %}{{ all_exam_names|length|add:6 }}{% else %}8{% endif %}" style="text-align: center; padding: 20px; color: #94a3b8;">No marks recorded for this term.</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    {% for mark in marks %}
+                    <tr>
+                        <td class="subject-code">{{ mark.subject.code|default:mark.subject.name|slice:":10"|upper }}</td>
+                        <td class="subject-name">{{ mark.subject.name|upper }}</td>
+                        <td class="paper-number">1</td>
+                        <td class="score-cell">{{ mark.score|floatformat:0|default:"--" }}</td>
+                        <td class="score-cell">{{ mark.score|floatformat:0|default:"--" }}</td>
+                        <td class="score-cell">{{ mark.score|floatformat:1|default:"--" }}</td>
+                        <td class="grade-cell grade-{{ mark.grade|lower|default:"--" }}">{{ mark.grade|default:"--" }}</td>
+                        <td class="comment-cell">{{ mark.comments|default:"--" }}</td>
+                        <td class="paper-number">{{ mark.teacher.first_name|first|upper|default:"--" }}{{ mark.teacher.last_name|first|upper|default:"" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if all_exam_names and all_exam_names|length > 0 %}{{ all_exam_names|length|add:6 }}{% else %}8{% endif %}" style="text-align: center; padding: 20px; color: #94a3b8;">No marks recorded for this term.</td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Summary Section -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; margin-bottom: 5px; padding: 5px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 3px;">
+        <div style="text-align: center;">
+            <div style="font-size: 9px; font-weight: bold; color: #1e293b; margin-bottom: 2px;">AVERAGE SCORE</div>
+            <div style="font-size: 14px; font-weight: bold; color: #1e40af;">{{ report_card.average_score|floatformat:1|default:"0.0" }}%</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 9px; font-weight: bold; color: #1e293b; margin-bottom: 2px;">POSITION IN CLASS</div>
+            <div style="font-size: 14px; font-weight: bold; color: #059669;">
+                {% if class_position and total_students %}
+                    {{ class_position }} out of {{ total_students }}
+                {% else %}
+                    --
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comments Section - Compact -->
+    <div class="comments-section" style="margin-top: 5px;">
+        <div class="comment-box" style="margin-bottom: 4px;">
+            <div class="comment-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>TEACHER'S COMMENT:</span>
+                {% if user.is_teacher or user.is_superadmin or user.is_headteacher %}
+                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#teacherCommentModal" style="padding: 2px 6px; font-size: 8px;">
+                    <i class="fas fa-edit"></i> {% if report_card.class_teacher_comment %}Edit{% else %}Add{% endif %}
+                </button>
+                {% endif %}
+            </div>
+            <div class="comment-text">{{ report_card.class_teacher_comment|default:"--" }}</div>
+        </div>
+        
+        <div class="comment-box" style="margin-bottom: 4px;">
+            <div class="comment-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>HEAD TEACHER'S COMMENT:</span>
+                {% if user.is_superadmin or user.is_headteacher %}
+                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#headteacherCommentModal" style="padding: 2px 6px; font-size: 8px;">
+                    <i class="fas fa-edit"></i> {% if report_card.headteacher_comment %}Edit{% else %}Add{% endif %}
+                </button>
+                {% endif %}
+            </div>
+            <div class="comment-text">{{ report_card.headteacher_comment|default:"--" }}</div>
+        </div>
+        
+        <!-- Signatures in Column -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;">
+            <div class="signature-line" style="margin-top: 0; padding-top: 25px; font-size: 9px; min-height: 50px;">Teacher's Signature</div>
+            <div class="signature-line" style="margin-top: 0; padding-top: 25px; font-size: 9px; min-height: 50px;">Head Teacher's Signature</div>
+        </div>
+    </div>
+    
+    <!-- Teacher Comment Modal -->
+    <div class="modal fade" id="teacherCommentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'report_card_add_comment' report_card.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">{% if report_card.class_teacher_comment %}Edit{% else %}Add{% endif %} Class Teacher Comment</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea name="comment" class="form-control" rows="4" required>{{ report_card.class_teacher_comment|default:"" }}</textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Comment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Headteacher Comment Modal -->
+    <div class="modal fade" id="headteacherCommentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'report_card_add_headteacher_comment' report_card.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">{% if report_card.headteacher_comment %}Edit{% else %}Add{% endif %} Headteacher Comment</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea name="comment" class="form-control" rows="4" required>{{ report_card.headteacher_comment|default:"" }}</textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Comment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Term Dates - Compact -->
+    <div class="term-dates" style="padding: 4px; font-size: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="text-align: center;">
+                <strong>Term Ends On:</strong><br>
+                {{ report_card.term.end_date|date:"F d, Y"|default:"--" }}
+            </div>
+            <div style="text-align: center;">
+                <strong>Next Term Begins On:</strong><br>
+                {{ next_term_start_date|date:"F d, Y"|default:"--" }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Grading Scales - O-Level Grade Scale -->
+    <div class="grading-scale" style="margin-top: 5px; padding: 5px;">
+        <div class="grading-scale-title" style="font-size: 11px; margin-bottom: 5px;">O-LEVEL GRADE SCALE</div>
+        <table class="grading-table" style="font-size: 8px; width: 100%; margin-bottom: 8px;">
+            <thead>
+                <tr>
+                    <th style="padding: 4px;">GRADE</th>
+                    <th style="padding: 4px;">RANGE</th>
+                    <th style="padding: 4px;">POINTS</th>
+                    <th style="padding: 4px;">GRADE</th>
+                    <th style="padding: 4px;">RANGE</th>
+                    <th style="padding: 4px;">POINTS</th>
+                    <th style="padding: 4px;">GRADE</th>
+                    <th style="padding: 4px;">RANGE</th>
+                    <th style="padding: 4px;">POINTS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 3px;"><strong>A</strong></td>
+                    <td style="padding: 3px;">80-100</td>
+                    <td style="padding: 3px;">6</td>
+                    <td style="padding: 3px;"><strong>B</strong></td>
+                    <td style="padding: 3px;">70-79</td>
+                    <td style="padding: 3px;">5</td>
+                    <td style="padding: 3px;"><strong>C</strong></td>
+                    <td style="padding: 3px;">60-69</td>
+                    <td style="padding: 3px;">4</td>
+                </tr>
+                <tr>
+                    <td style="padding: 3px;"><strong>D</strong></td>
+                    <td style="padding: 3px;">50-59</td>
+                    <td style="padding: 3px;">3</td>
+                    <td style="padding: 3px;"><strong>E</strong></td>
+                    <td style="padding: 3px;">40-49</td>
+                    <td style="padding: 3px;">2</td>
+                    <td style="padding: 3px;"><strong>F</strong></td>
+                    <td style="padding: 3px;">0-39</td>
+                    <td style="padding: 3px;">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        This report is invalid without a valid school stamp or seal.
+    </div>
+    
+    <!-- School Seal -->
+    {% if report_card.enrollment.grade.school.seal %}
+    <div class="school-seal-display">
+        <img src="{{ report_card.enrollment.grade.school.seal.url }}" alt="School Seal">
+    </div>
+    {% endif %}
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+    <a href="{% url 'report_card_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+    <a href="{% url 'report_card_export_pdf' report_card.id %}" class="btn btn-success" target="_blank">
+        <i class="fas fa-download"></i> Download PDF
+    </a>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> Print
+    </button>
+</div>
+{% endblock %}
+

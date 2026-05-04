@@ -1,0 +1,1628 @@
+{% extends "base.html" %}
+{% block page_title %}Generate Report Cards{% endblock %}
+{% block content %}
+<div class="report-generation-container">
+    <!-- Header Section -->
+    <div class="generation-header">
+        <div class="header-content">
+            <h1><i class="fas fa-file-pdf"></i> Generate Academic Reports</h1>
+            <p>Create comprehensive report cards for students with AI-powered insights</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="progress-steps">
+        <div class="step active">
+            <div class="step-number">1</div>
+            <div class="step-info">
+                <span class="step-title">Select Term</span>
+                <span class="step-description">Choose academic period</span>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-info">
+                <span class="step-title">Configure Options</span>
+                <span class="step-description">Set generation preferences</span>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-info">
+                <span class="step-title">Review & Generate</span>
+                <span class="step-description">Create report cards</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Generation Card -->
+    <div class="generation-card">
+        <div class="card-header">
+            <h3><i class="fas fa-cogs"></i> Report Generation Settings</h3>
+            <div class="header-badge">
+                <i class="fas fa-sync-alt"></i>
+                <span>Auto-save Enabled</span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" id="reportGenerationForm" class="generation-form">
+                {% csrf_token %}
+                
+                <!-- Term Selection Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-calendar-alt"></i> Academic Period</h4>
+                        <span class="section-badge required">Required</span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="term" class="form-label">
+                                <i class="fas fa-layer-group"></i>
+                                Select Term
+                                <span class="required-asterisk">*</span>
+                            </label>
+                            <div class="input-container">
+                                <select name="term" id="term" class="form-select" required>
+                                    <option value="">-- Select Academic Term --</option>
+                                    {% for term in terms %}
+                                    <option value="{{ term.id }}" data-year="{{ term.academic_year.name }}" {% if selected_term and selected_term.id == term.id %}selected{% endif %}>
+                                        {{ term.name }} • {{ term.academic_year.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-icon">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <div class="help-text">
+                                <i class="fas fa-info-circle"></i>
+                                Choose the academic term for which to generate report cards
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-check"></i>
+                                Academic Year
+                            </label>
+                            <div class="info-display" id="yearDisplay">
+                                <i class="fas fa-university"></i>
+                                <span>{% if selected_term %}{{ selected_term.academic_year.name }}{% else %}Select a term to view academic year{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Exams Display Section -->
+                    {% if selected_term %}
+                    <div id="examsSection" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    {% else %}
+                    <div id="examsSection" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                    {% endif %}
+                        <label class="form-label">
+                            <i class="fas fa-file-alt"></i>
+                            Available Exams for Selected Term
+                        </label>
+                        <div id="examsDisplay" class="exams-display">
+                            {% if exam_count > 0 %}
+                                <div class="exams-list">
+                                    {% for exam in exams %}
+                                    <div class="exam-item">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span class="exam-name">{{ exam.name }}</span>
+                                        <span class="exam-weight">({{ exam.percentage_weight }}%)</span>
+                                        {% if not exam.is_active %}
+                                        <span class="badge badge-warning" style="margin-left: auto; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f59e0b; color: white;">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif selected_term %}
+                                <div class="alert alert-warning" style="padding: 12px 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    No exams found for {{ selected_term.name }}. Please create exams for this term before generating report cards.
+                                </div>
+                            {% else %}
+                                <div class="text-muted" style="padding: 20px; text-align: center; color: #6b7280;">
+                                    <i class="fas fa-info-circle"></i> Select a term to view available exams
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            These are the exams that will be included in the generated report cards
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-robot"></i> AI Assistant</h4>
+                        <span class="section-badge recommended">Recommended</span>
+                    </div>
+                    <div class="ai-toggle-section">
+                        <div class="toggle-container">
+                            <label class="toggle-label">
+                                <div class="toggle-content">
+                                    <div class="toggle-icon">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="toggle-text">
+                                        <span class="toggle-title">Enable AI-Powered Comments</span>
+                                        <span class="toggle-description">Generate intelligent, personalized comments based on student performance</span>
+                                    </div>
+                                </div>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" name="use_ai" id="use_ai" value="true" class="toggle-input">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- AI Configuration Options -->
+                        <div class="ai-options" id="aiOptions">
+                            <div class="options-grid">
+                                <div class="option-group">
+                                    <label class="option-label">
+                                        <input type="checkbox" name="ai_attendance" checked>
+                                        <span class="option-checkbox"></span>
+                                        <span class="option-text">
+                                            <span class="option-title">Include Attendance Analysis</span>
+                                            <span class="option-description">Analyze attendance patterns in comments</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="option-group">
+                                    <label class="option-label">
+                                        <input type="checkbox" name="ai_improvement" checked>
+                                        <span class="option-checkbox"></span>
+                                        <span class="option-text">
+                                            <span class="option-title">Highlight Improvement Areas</span>
+                                            <span class="option-description">Identify and suggest areas for growth</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="option-group">
+                                    <label class="option-label">
+                                        <input type="checkbox" name="ai_strengths" checked>
+                                        <span class="option-checkbox"></span>
+                                        <span class="option-text">
+                                            <span class="option-title">Emphasize Strengths</span>
+                                            <span class="option-description">Recognize student achievements and talents</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="option-group">
+                                    <label class="option-label">
+                                        <input type="checkbox" name="ai_recommendations" checked>
+                                        <span class="option-checkbox"></span>
+                                        <span class="option-text">
+                                            <span class="option-title">Provide Recommendations</span>
+                                            <span class="option-description">Offer actionable suggestions for improvement</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Options Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-sliders-h"></i> Generation Options</h4>
+                    </div>
+                    <div class="options-grid">
+                        <div class="option-card">
+                            <div class="option-header">
+                                <div class="option-icon">
+                                    <i class="fas fa-print"></i>
+                                </div>
+                                <h5>Output Format</h5>
+                            </div>
+                            <div class="option-body">
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="format" value="pdf" checked>
+                                        <span class="radio-checkmark"></span>
+                                        <span class="radio-text">
+                                            <span class="radio-title">PDF Documents</span>
+                                            <span class="radio-description">High-quality printable reports</span>
+                                        </span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="format" value="digital">
+                                        <span class="radio-checkmark"></span>
+                                        <span class="radio-text">
+                                            <span class="radio-title">Digital View</span>
+                                            <span class="radio-description">Web-based interactive reports</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="option-card">
+                            <div class="option-header">
+                                <div class="option-icon">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <h5>Include Analytics</h5>
+                            </div>
+                            <div class="option-body">
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="include_rank" checked>
+                                        <span class="checkbox-checkmark"></span>
+                                        <span class="checkbox-text">Class Ranking</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="include_graphs" checked>
+                                        <span class="checkbox-checkmark"></span>
+                                        <span class="checkbox-text">Performance Graphs</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="include_attendance">
+                                        <span class="checkbox-checkmark"></span>
+                                        <span class="checkbox-text">Attendance Summary</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Section -->
+                <div class="warning-section">
+                    <div class="warning-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h4>Important Notice</h4>
+                    </div>
+                    <div class="warning-content">
+                        <p><strong>Before generating report cards, please ensure:</strong></p>
+                        <ul class="warning-list">
+                            <li>All marks have been entered and verified for the selected term</li>
+                            <li>Attendance records are up to date</li>
+                            <li>Teacher comments have been reviewed (if not using AI)</li>
+                            <li>You have selected the correct academic term</li>
+                        </ul>
+                        <div class="verification-status">
+                            <i class="fas fa-check-circle"></i>
+                            <span>System will verify data completeness before generation</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card-footer">
+            <div class="footer-actions">
+                <button type="submit" form="reportGenerationForm" class="primary-action-btn generate-btn">
+                    <i class="fas fa-file-pdf"></i>
+                    <span class="btn-text">Generate Report Cards</span>
+                    <div class="btn-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                </button>
+                <a href="{% url 'report_card_list' %}" class="secondary-action-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Reports
+                </a>
+            </div>
+            
+            <div class="generation-info">
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Estimated generation time: 2-5 minutes</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-database"></i>
+                    <span>All data will be automatically saved</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Section -->
+    <div class="preview-section">
+        <div class="preview-header">
+            <h4><i class="fas fa-eye"></i> Report Preview</h4>
+            <span class="preview-badge">Live Preview</span>
+        </div>
+        <div class="preview-content">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <div class="preview-title">Sample Report Card</div>
+                    <div class="preview-grade">Grade 10A</div>
+                </div>
+                <div class="preview-body">
+                    <div class="preview-item">
+                        <i class="fas fa-user-graduate"></i>
+                        <span id="previewStudent">Student Name</span>
+                    </div>
+                    <div class="preview-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="previewTerm">Select a term</span>
+                    </div>
+                    <div class="preview-item">
+                        <i class="fas fa-robot"></i>
+                        <span id="previewAI">AI Comments: Disabled</span>
+                    </div>
+                    <div class="preview-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span id="previewFormat">Format: PDF</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Panel -->
+    <div class="stats-panel">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="studentCount">0</h3>
+                <p>Students to Process</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="subjectCount">0</h3>
+                <p>Subjects Included</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="completionRate">0%</h3>
+                <p>Data Completeness</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="estimateTime">2-5m</h3>
+                <p>Estimated Time</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .report-generation-container {
+        padding: 0;
+        animation: fadeInUp 0.8s ease-out;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    /* Header Styles */
+    .generation-header {
+        background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-xl);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .generation-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        animation: pulse 6s ease-in-out infinite;
+    }
+
+    .header-content h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .header-content p {
+        opacity: 0.9;
+        font-size: 16px;
+        margin: 0;
+    }
+
+    .graphic-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Progress Steps */
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        position: relative;
+    }
+
+    .progress-steps::before {
+        content: '';
+        position: absolute;
+        top: 25px;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: var(--gray-300);
+        z-index: 1;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+        z-index: 2;
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .step.active .step-number {
+        background: var(--gray-900);
+        color: white;
+        box-shadow: var(--shadow-md);
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--gray-600);
+        transition: var(--transition);
+    }
+
+    .step-title {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 2px;
+    }
+
+    .step-description {
+        font-size: 12px;
+        color: var(--gray-600);
+    }
+
+    /* Generation Card */
+    .generation-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 25px 30px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .card-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .header-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--success);
+        color: white;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: var(--gray-50);
+        border-radius: 16px;
+        padding: 25px;
+        border: 1px solid var(--gray-200);
+        margin-bottom: 25px;
+        transition: var(--transition);
+    }
+
+    .form-section:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .section-header h4 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .section-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .section-badge.required {
+        background: var(--danger);
+        color: white;
+    }
+
+    .section-badge.recommended {
+        background: var(--info);
+        color: white;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .required-asterisk {
+        color: var(--danger);
+        font-weight: 700;
+    }
+
+    .input-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 14px 16px 14px 48px;
+        border: 2px solid var(--gray-300);
+        border-radius: 12px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: white;
+        color: var(--gray-900);
+        font-weight: 500;
+        appearance: none;
+    }
+
+    .form-select:focus {
+        border-color: var(--gray-700);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        outline: none;
+        transform: translateY(-1px);
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-500);
+        transition: var(--transition);
+        pointer-events: none;
+    }
+
+    .form-select:focus + .input-icon {
+        color: var(--gray-700);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .help-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 6px;
+    }
+
+    .info-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 12px;
+        font-size: 14px;
+        color: var(--gray-700);
+    }
+
+    /* AI Toggle Section */
+    .ai-toggle-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid var(--gray-200);
+    }
+
+    .toggle-container {
+        margin-bottom: 20px;
+    }
+
+    .toggle-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 15px;
+        border-radius: 10px;
+        transition: var(--transition);
+    }
+
+    .toggle-label:hover {
+        background: var(--gray-50);
+    }
+
+    .toggle-content {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .toggle-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+    }
+
+    .toggle-title {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .toggle-description {
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 26px;
+    }
+
+    .toggle-input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--gray-300);
+        transition: var(--transition);
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 4px;
+        bottom: 4px;
+        background: white;
+        transition: var(--transition);
+        border-radius: 50%;
+    }
+
+    .toggle-input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .toggle-input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    .ai-options {
+        display: none;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .ai-options.show {
+        display: block;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .option-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        padding: 12px;
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .option-label:hover {
+        background: var(--gray-50);
+    }
+
+    .option-checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--gray-400);
+        border-radius: 4px;
+        position: relative;
+        margin-top: 2px;
+        transition: var(--transition);
+    }
+
+    .option-label input:checked + .option-checkbox {
+        background: var(--gray-800);
+        border-color: var(--gray-800);
+    }
+
+    .option-label input:checked + .option-checkbox:after {
+        content: "✓";
+        position: absolute;
+        color: white;
+        font-size: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .option-title {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 2px;
+    }
+
+    .option-description {
+        font-size: 12px;
+        color: var(--gray-600);
+    }
+
+    /* Option Cards */
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .option-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 20px;
+        transition: var(--transition);
+    }
+
+    .option-card:hover {
+        border-color: var(--gray-300);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .option-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .option-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--gray-100);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-700);
+        font-size: 16px;
+    }
+
+    .option-header h5 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .radio-group, .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .radio-label, .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: var(--transition);
+    }
+
+    .radio-label:hover, .checkbox-label:hover {
+        background: var(--gray-50);
+    }
+
+    .radio-checkmark, .checkbox-checkmark {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--gray-400);
+        border-radius: 50%;
+        position: relative;
+        margin-top: 2px;
+        transition: var(--transition);
+    }
+
+    .checkbox-checkmark {
+        border-radius: 4px;
+    }
+
+    .radio-label input:checked + .radio-checkmark {
+        border-color: var(--gray-800);
+    }
+
+    .radio-label input:checked + .radio-checkmark:after {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--gray-800);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .checkbox-label input:checked + .checkbox-checkmark {
+        background: var(--gray-800);
+        border-color: var(--gray-800);
+    }
+
+    .checkbox-label input:checked + .checkbox-checkmark:after {
+        content: "✓";
+        position: absolute;
+        color: white;
+        font-size: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .radio-title, .checkbox-text {
+        font-weight: 500;
+        color: var(--gray-900);
+    }
+
+    .radio-description {
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 2px;
+    }
+
+    /* Warning Section */
+    .warning-section {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 25px;
+    }
+
+    .warning-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .warning-header i {
+        color: var(--warning);
+        font-size: 18px;
+    }
+
+    .warning-header h4 {
+        margin: 0;
+        color: var(--gray-900);
+        font-weight: 600;
+    }
+
+    .warning-content p {
+        margin: 0 0 12px 0;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .warning-list {
+        margin: 0 0 15px 0;
+        padding-left: 20px;
+        color: var(--gray-700);
+    }
+
+    .warning-list li {
+        margin-bottom: 6px;
+    }
+
+    .verification-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--success);
+        font-weight: 500;
+    }
+
+    /* Card Footer */
+    .card-footer {
+        padding: 25px 30px;
+        border-top: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .footer-actions {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .primary-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 24px;
+        background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .primary-action-btn:hover {
+        background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .btn-loading {
+        display: none;
+    }
+
+    .generate-btn.loading .btn-text {
+        opacity: 0;
+    }
+
+    .generate-btn.loading .btn-loading {
+        display: block;
+        position: absolute;
+    }
+
+    .secondary-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 24px;
+        background: white;
+        color: var(--gray-700);
+        border: 2px solid var(--gray-300);
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        transition: var(--transition);
+    }
+
+    .secondary-action-btn:hover {
+        background: var(--gray-50);
+        color: var(--gray-900);
+        border-color: var(--gray-400);
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+
+    .generation-info {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+
+    /* Preview Section */
+    .preview-section {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    .preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 25px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .preview-header h4 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .preview-badge {
+        background: var(--info);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .preview-content {
+        padding: 25px;
+    }
+
+    .preview-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border: 2px solid var(--gray-200);
+        animation: pulsePreview 2s ease-in-out infinite;
+    }
+
+    .preview-card .preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: transparent;
+        border-bottom: 1px solid var(--gray-300);
+        padding: 0 0 15px 0;
+        margin-bottom: 15px;
+    }
+
+    .preview-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .preview-grade {
+        background: var(--gray-800);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .preview-body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .preview-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid var(--gray-200);
+    }
+
+    .preview-item i {
+        width: 16px;
+        color: var(--gray-600);
+        text-align: center;
+    }
+
+    .preview-item span {
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    /* Statistics Panel */
+    .stats-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: var(--transition);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--gray-100);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: var(--gray-700);
+    }
+
+    .stat-content h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0 0 4px 0;
+    }
+
+        .stat-content p {
+            color: var(--gray-600);
+            margin: 0;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        /* Exams Display Styles */
+        .exams-display {
+            margin-top: 10px;
+        }
+        
+        .exams-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .exam-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        
+        .exam-item:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            transform: translateX(5px);
+        }
+        
+        .exam-item i {
+            color: var(--gray-600);
+            width: 20px;
+        }
+        
+        .exam-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            flex: 1;
+        }
+        
+        .exam-weight {
+            color: var(--gray-600);
+            font-size: 13px;
+        }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.6;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulsePreview {
+        0%, 100% {
+            border-color: var(--gray-200);
+        }
+        50% {
+            border-color: var(--gray-400);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .generation-header {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .progress-steps {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progress-steps::before {
+            display: none;
+        }
+
+        .footer-actions {
+            flex-direction: column;
+        }
+
+        .options-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-panel {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .graphic-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .generation-header {
+            padding: 20px;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-footer {
+            padding: 20px;
+        }
+
+        .form-section {
+            padding: 20px;
+        }
+
+        .stats-panel {
+            grid-template-columns: 1fr;
+        }
+
+        .toggle-label {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .toggle-switch {
+            align-self: flex-end;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const termSelect = document.getElementById('term');
+        const yearDisplay = document.getElementById('yearDisplay');
+        const aiToggle = document.getElementById('use_ai');
+        const aiOptions = document.getElementById('aiOptions');
+        const generateBtn = document.querySelector('.generate-btn');
+        const form = document.getElementById('reportGenerationForm');
+
+        // Update year display and load exams when term is selected
+        termSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const year = selectedOption.getAttribute('data-year');
+            const termId = this.value;
+            
+            if (year && termId) {
+                yearDisplay.innerHTML = `<i class="fas fa-university"></i><span>${year}</span>`;
+                // Reload page with term parameter to get exams from backend
+                const url = new URL(window.location.href);
+                url.searchParams.set('term', termId);
+                window.location.href = url.toString();
+                updatePreview();
+                updateStatistics();
+            } else {
+                yearDisplay.innerHTML = '<i class="fas fa-university"></i><span>Select a term to view academic year</span>';
+                document.getElementById('examsSection').style.display = 'none';
+            }
+        });
+
+        // Toggle AI options
+        aiToggle.addEventListener('change', function() {
+            if (this.checked) {
+                aiOptions.classList.add('show');
+                updatePreview();
+            } else {
+                aiOptions.classList.remove('show');
+                updatePreview();
+            }
+        });
+
+        // Update preview based on form changes
+        function updatePreview() {
+            const termSelect = document.getElementById('term');
+            const selectedTerm = termSelect.options[termSelect.selectedIndex];
+            const aiEnabled = document.getElementById('use_ai').checked;
+            const format = document.querySelector('input[name="format"]:checked').value;
+
+            // Update term preview
+            if (selectedTerm.value) {
+                document.getElementById('previewTerm').textContent = selectedTerm.text;
+            } else {
+                document.getElementById('previewTerm').textContent = 'Select a term';
+            }
+
+            // Update AI preview
+            document.getElementById('previewAI').textContent = `AI Comments: ${aiEnabled ? 'Enabled' : 'Disabled'}`;
+
+            // Update format preview
+            document.getElementById('previewFormat').textContent = `Format: ${format.toUpperCase()}`;
+        }
+
+        // Update statistics (mock data for demo)
+        function updateStatistics() {
+            const termSelect = document.getElementById('term');
+            if (termSelect.value) {
+                document.getElementById('studentCount').textContent = '145';
+                document.getElementById('subjectCount').textContent = '12';
+                document.getElementById('completionRate').textContent = '92%';
+                document.getElementById('estimateTime').textContent = '3m';
+            } else {
+                document.getElementById('studentCount').textContent = '0';
+                document.getElementById('subjectCount').textContent = '0';
+                document.getElementById('completionRate').textContent = '0%';
+                document.getElementById('estimateTime').textContent = '2-5m';
+            }
+        }
+
+        // Form submission handling
+        form.addEventListener('submit', function(e) {
+            const termSelect = document.getElementById('term');
+            if (!termSelect.value) {
+                e.preventDefault();
+                alert('Please select an academic term before generating report cards.');
+                termSelect.focus();
+                return;
+            }
+
+            // Show loading state
+            generateBtn.classList.add('loading');
+            generateBtn.disabled = true;
+
+            // Simulate processing (in real implementation, this would be handled by the server)
+            setTimeout(() => {
+                generateBtn.classList.remove('loading');
+                generateBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Add animation to elements
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe animated elements
+        const animatedElements = document.querySelectorAll('.form-section, .option-card, .stat-card, .preview-card');
+        animatedElements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Add hover effects
+        const interactiveElements = document.querySelectorAll('.option-card, .stat-card, .action-btn');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+            });
+            
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Initialize preview and statistics
+        updatePreview();
+        updateStatistics();
+
+        // Listen for format changes
+        document.querySelectorAll('input[name="format"]').forEach(radio => {
+            radio.addEventListener('change', updatePreview);
+        });
+    });
+
+    // Additional utility functions
+    function validateForm() {
+        const termSelect = document.getElementById('term');
+        if (!termSelect.value) {
+            showNotification('Please select an academic term', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    function showNotification(message, type = 'info') {
+        // Implementation for showing notifications
+        alert(message); // Replace with proper notification system
+    }
+</script>
+{% endblock %}

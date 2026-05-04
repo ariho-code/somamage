@@ -1,0 +1,89 @@
+services:
+  # Web Service
+  - type: web
+    name: somamage-web
+    env: python
+    plan: starter
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn sms.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    healthCheckTimeout: 30
+    autoDeploy: yes
+    
+    # Environment variables (set these in Render dashboard)
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+        
+    # Static file serving
+    staticPublishPath: staticfiles
+    routes:
+      - type: rewrite
+        source: /static/*
+        destination: /static/$1
+
+  # Redis Service (for Celery)
+  - type: redis
+    name: somamage-redis
+    plan: starter
+    ipAllowList: []
+
+  # Celery Worker Service
+  - type: worker
+    name: somamage-celery
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A sms worker -l info
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: somamage-redis
+          property: connectionString
+
+  # Celery Beat Service (for scheduled tasks)
+  - type: worker
+    name: somamage-celery-beat
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A sms beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: somamage-redis
+          property: connectionString
+
+databases:
+  # PostgreSQL Database
+  - name: somamage-db
+    databaseName: somamage
+    user: somamage_user
+    plan: starter

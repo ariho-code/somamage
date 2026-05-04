@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: white; margin-bottom: 8px;">{{ assignment.title }}</h2>
+                <p style="color: rgba(255,255,255,0.9); margin: 0;">
+                    <a href="{% url 'course_detail' assignment.course.id %}" style="color: rgba(255,255,255,0.9); text-decoration: underline;">{{ assignment.course.title }}</a>
+                </p>
+            </div>
+            <div style="text-align: right; color: rgba(255,255,255,0.9);">
+                {% if assignment.due_date %}
+                <div style="font-size: 14px;">
+                    <i class="fas fa-calendar-alt"></i> Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+                <div style="font-size: 14px; margin-top: 8px;">
+                    <i class="fas fa-star"></i> {{ assignment.total_points }} points
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-info-circle"></i> Assignment Details</h4>
+                    
+                    <div style="margin-bottom: 24px; padding: 20px; background: var(--gray-50); border-radius: 12px;">
+                        <p style="color: var(--gray-700); margin: 0; line-height: 1.8; font-size: 15px;">{{ assignment.description|linebreaks }}</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="padding: 16px; background: var(--gray-50); border-radius: 12px;">
+                            <div style="font-size: 12px; color: var(--gray-600); margin-bottom: 4px;">Total Points</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--gray-900);">{{ assignment.total_points }}</div>
+                        </div>
+                        {% if assignment.due_date %}
+                        <div style="padding: 16px; background: var(--gray-50); border-radius: 12px;">
+                            <div style="font-size: 12px; color: var(--gray-600); margin-bottom: 4px;">Due Date</div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--gray-900);">{{ assignment.due_date|date:"M d, Y" }}</div>
+                            <div style="font-size: 12px; color: var(--gray-500);">{{ assignment.due_date|date:"H:i" }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if submission %}
+                    <div style="margin-top: 32px; padding: 24px; background: var(--gray-50); border-radius: 12px; border-left: 4px solid var(--success);">
+                        <h5 style="font-weight: 700; margin-bottom: 16px; color: var(--success);">
+                            <i class="fas fa-check-circle"></i> Submission Status
+                        </h5>
+                        <div style="margin-bottom: 12px;">
+                            <strong>Submitted:</strong> {{ submission.submitted_at|date:"M d, Y H:i" }}
+                        </div>
+                        {% if submission.submission_text %}
+                        <div style="margin-bottom: 12px;">
+                            <strong>Your Submission:</strong>
+                            <div style="padding: 12px; background: white; border-radius: 8px; margin-top: 8px;">
+                                {{ submission.submission_text|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if submission.submission_file %}
+                        <div style="margin-bottom: 12px;">
+                            <strong>File:</strong>
+                            <a href="{{ submission.submission_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary" style="margin-left: 8px;">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if submission.is_graded %}
+                        <div style="padding: 16px; background: white; border-radius: 8px; margin-top: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <strong>Score:</strong>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--success);">
+                                    {{ submission.score }} / {{ assignment.total_points }}
+                                </span>
+                            </div>
+                            {% if submission.feedback %}
+                            <div>
+                                <strong>Feedback:</strong>
+                                <div style="padding: 12px; background: var(--gray-50); border-radius: 8px; margin-top: 8px;">
+                                    {{ submission.feedback|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div style="padding: 12px; background: rgba(234, 179, 8, 0.1); border-radius: 8px; margin-top: 16px; color: var(--warning);">
+                            <i class="fas fa-clock"></i> Your submission is being reviewed
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% elif is_enrolled %}
+                    <div style="margin-top: 32px; padding: 24px; background: var(--gray-50); border-radius: 12px;">
+                        <h5 style="font-weight: 700; margin-bottom: 16px;"><i class="fas fa-paper-plane"></i> Submit Assignment</h5>
+                        <form method="post" action="{% url 'submit_assignment' assignment.id %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div style="margin-bottom: 16px;">
+                                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Your Answer / Submission Text</label>
+                                <textarea name="submission_text" class="form-control" rows="8" style="border-radius: 12px; border: 2px solid var(--gray-200); padding: 12px;" placeholder="Type your answer here..."></textarea>
+                            </div>
+                            <div style="margin-bottom: 16px;">
+                                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Or Upload File</label>
+                                <input type="file" name="submission_file" class="form-control" style="border-radius: 12px; border: 2px solid var(--gray-200); padding: 8px;" accept=".pdf,.doc,.docx,.txt">
+                                <small style="color: var(--gray-500);">Accepted formats: PDF, Word, Text</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 16px 32px; font-weight: 600; width: 100%;">
+                                <i class="fas fa-paper-plane"></i> Submit Assignment
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div style="margin-top: 32px; padding: 40px; text-align: center; background: var(--gray-50); border-radius: 12px;">
+                        <i class="fas fa-lock" style="font-size: 64px; color: var(--gray-400); margin-bottom: 24px;"></i>
+                        <h4>Enroll to Submit</h4>
+                        <p style="color: var(--gray-600); margin-bottom: 24px;">You need to enroll in this course to submit assignments.</p>
+                        <a href="{% url 'enroll_course' assignment.course.id %}" class="btn btn-primary" style="border-radius: 12px; padding: 12px 24px; font-weight: 600;">
+                            <i class="fas fa-plus"></i> Enroll in Course
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: sticky; top: 100px;">
+                <div class="card-body" style="padding: 24px;">
+                    <h5 style="font-weight: 700; margin-bottom: 20px;"><i class="fas fa-info-circle"></i> Assignment Info</h5>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Course:</strong>
+                        <p style="color: var(--gray-900); margin-top: 4px;">
+                            <a href="{% url 'course_detail' assignment.course.id %}">{{ assignment.course.title }}</a>
+                        </p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Total Points:</strong>
+                        <p style="color: var(--gray-900); margin-top: 4px; font-size: 20px; font-weight: 700;">{{ assignment.total_points }}</p>
+                    </div>
+                    
+                    {% if assignment.due_date %}
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Due Date:</strong>
+                        <p style="color: var(--gray-900); margin-top: 4px;">{{ assignment.due_date|date:"M d, Y" }}</p>
+                        <p style="color: var(--gray-600); font-size: 14px;">{{ assignment.due_date|date:"H:i" }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'course_detail' assignment.course.id %}" class="btn btn-outline-secondary btn-block" style="border-radius: 12px; margin-top: 24px;">
+                        <i class="fas fa-arrow-left"></i> Back to Course
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,2272 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SomaMange — School Management{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+    /* ═══════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════
+       LIGHT (default) — matches the public landing palette
+       Indigo primary + cyan accent on white. Professional, not loud.
+    ══════════════════════════════════════════════════════════════ */
+    :root {
+        --bg:           #ffffff;
+        --surface:      #f8fafc;
+        --surface-2:    #f1f5f9;
+        --sidebar-bg:   #ffffff;
+        --topbar-bg:    rgba(255,255,255,0.92);
+        --topbar-border: #e5e7eb;
+        --card:         #ffffff;
+        --card-elevated:#f8fafc;
+        --border:       #e5e7eb;
+        --border-hover: #cbd5e1;
+        --border-focus: rgba(79,70,229,0.45);
+
+        --accent:       #4f46e5;                      /* indigo-600 */
+        --accent-dim:   #4338ca;                      /* indigo-700 */
+        --accent-glow:  rgba(79,70,229,0.12);
+        --accent-glow2: rgba(79,70,229,0.06);
+        --link:         #4f46e5;
+
+        --text:         #0f172a;                      /* slate-900 */
+        --text-muted:   #475569;                      /* slate-600 */
+        --text-dim:     #94a3b8;                      /* slate-400 */
+
+        --success:      #10b981;
+        --warning:      #f59e0b;
+        --danger:       #ef4444;
+        --info:         #0891b2;                      /* cyan-600 */
+        --purple:       #7c3aed;
+
+        --input-bg:     #ffffff;
+        --input-border: #e5e7eb;
+        --table-stripe: rgba(15,23,42,0.025);
+        --table-hover:  rgba(79,70,229,0.05);
+        --badge-bg:     #f1f5f9;
+
+        --sidebar-w:    260px;
+        --topbar-h:     60px;
+        --radius:       16px;
+        --radius-sm:    10px;
+        --shadow:       0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.05);
+        --shadow-lg:    0 20px 50px rgba(15,23,42,.10), 0 8px 16px rgba(15,23,42,.06);
+        --transition:   200ms ease;
+        --transition-md:300ms ease;
+        color-scheme:   light;
+
+        /* Primary aliases (used by sub-templates that reference --primary) */
+        --primary:      #4f46e5;
+        --primary-hover:#4338ca;
+        --primary-soft: rgba(79,70,229,0.10);
+
+        /* Gray scale aliases (used by many sub-templates) */
+        --gray-50:  #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RESET + BASE
+    ═══════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        line-height: 1.55;
+        font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: 'Inter', sans-serif; cursor: pointer; }
+
+    /* ═══════════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════════ */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        width: var(--sidebar-w);
+        height: 100vh;
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        transition: transform var(--transition-md);
+        overflow: hidden;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+    }
+
+    .main-wrapper {
+        margin-left: var(--sidebar-w);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        transition: margin-left var(--transition-md);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SIDEBAR INTERNALS
+    ═══════════════════════════════════════════════════ */
+    .sb-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 18px 18px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    .sb-logo-icon {
+        width: 36px; height: 36px;
+        background: linear-gradient(135deg, var(--accent), #e55000);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 16px rgba(255,102,0,0.35);
+    }
+
+    .sb-logo-icon svg { width: 20px; height: 20px; fill: white; }
+
+    .sb-logo-text {
+        font-family: 'Poppins', sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: var(--text);
+    }
+
+    .sb-logo-text span { color: var(--accent); }
+
+    /* Sidebar scroll area */
+    .sb-nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px 0 4px;
+    }
+
+    .sb-nav::-webkit-scrollbar { width: 3px; }
+    .sb-nav::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* Group labels */
+    .nav-group-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        padding: 14px 18px 4px;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    /* Nav items */
+    .sb-nav ul { list-style: none; }
+
+    .sb-nav > ul > li { position: relative; }
+
+    .sb-nav a,
+    .sb-nav .nav-toggle {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        padding: 0 12px;
+        margin: 1px 8px;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: background var(--transition), color var(--transition);
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: calc(100% - 16px);
+        text-align: left;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sb-nav a:hover,
+    .sb-nav .nav-toggle:hover {
+        background: var(--surface-2);
+        color: var(--text);
+    }
+
+    .sb-nav a.active {
+        background: rgba(255,102,0,0.12);
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .sb-nav a.active::before {
+        content: '';
+        position: absolute;
+        left: -12px;
+        top: 8px; bottom: 8px;
+        width: 3px;
+        background: var(--accent);
+        border-radius: 0 2px 2px 0;
+    }
+
+    .nav-icon {
+        width: 20px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        opacity: 0.85;
+    }
+
+    .nav-badge {
+        margin-left: auto;
+        background: var(--accent);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+    }
+
+    /* Submenu */
+    .nav-submenu {
+        list-style: none;
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 300ms ease;
+    }
+
+    .nav-submenu.open { max-height: 300px; }
+
+    .nav-submenu a {
+        padding-left: 40px;
+        font-size: 13px;
+        height: 36px;
+        color: var(--text-dim);
+    }
+
+    .nav-submenu a:hover { color: var(--text); }
+    .nav-submenu a.active { color: var(--accent); background: var(--accent-glow2); }
+
+    .nav-toggle-arrow {
+        margin-left: auto;
+        width: 14px; height: 14px;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform var(--transition);
+        opacity: 0.5;
+        flex-shrink: 0;
+    }
+
+    .nav-toggle-arrow svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    .dropdown-parent.open .nav-toggle-arrow { transform: rotate(180deg); }
+
+    /* Sidebar footer */
+    .sb-footer {
+        padding: 12px 10px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    .sb-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        transition: background var(--transition);
+        cursor: pointer;
+    }
+
+    .sb-user:hover { background: var(--surface-2); }
+
+    .sb-avatar {
+        width: 34px; height: 34px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), #cc4400);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .sb-user-info { flex: 1; min-width: 0; }
+    .sb-user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sb-user-role { font-size: 11px; color: var(--text-muted); }
+
+    .sb-logout-btn {
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 7px;
+        background: var(--surface-2);
+        border: none;
+        color: var(--text-muted);
+        flex-shrink: 0;
+        transition: background var(--transition), color var(--transition);
+    }
+
+    .sb-logout-btn:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .sb-logout-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ═══════════════════════════════════════════════════
+       TOPBAR
+    ═══════════════════════════════════════════════════ */
+    .topbar {
+        position: fixed;
+        top: 0; left: var(--sidebar-w); right: 0;
+        height: var(--topbar-h);
+        background: var(--topbar-bg);
+        backdrop-filter: saturate(180%) blur(14px);
+        -webkit-backdrop-filter: saturate(180%) blur(14px);
+        border-bottom: 1px solid var(--topbar-border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        z-index: 900;
+        gap: 12px;
+        transition: left var(--transition-md);
+    }
+
+    .topbar-hamburger {
+        display: none;
+        width: 36px; height: 36px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        align-items: center; justify-content: center;
+        flex-shrink: 0;
+        transition: background var(--transition), border-color var(--transition);
+    }
+
+    .topbar-hamburger:hover { background: var(--surface-2); border-color: var(--border-hover); }
+    .topbar-hamburger svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .topbar-titles { flex: 1; min-width: 0; }
+
+    .topbar-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+
+    .topbar-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .top-icon-btn {
+        width: 36px; height: 36px;
+        border-radius: 9px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-muted);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background var(--transition), color var(--transition), border-color var(--transition);
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .top-icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-hover); }
+    .top-icon-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Notification badge */
+    .notif-badge {
+        position: absolute;
+        top: -4px; right: -4px;
+        min-width: 18px; height: 18px;
+        background: var(--danger);
+        color: white;
+        border-radius: 9px;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 4px;
+        border: 2px solid var(--bg);
+        line-height: 1;
+    }
+
+    /* Notification dropdown */
+    .notif-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 360px;
+        background: var(--card-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        z-index: 2000;
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+        animation: dropIn 150ms ease;
+    }
+
+    .notif-dropdown.open { display: flex; }
+
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .notif-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .notif-header-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .notif-mark-btn {
+        background: none;
+        border: none;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: background var(--transition);
+    }
+
+    .notif-mark-btn:hover { background: var(--accent-glow2); }
+
+    .notif-list {
+        max-height: 360px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .notif-item {
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: background var(--transition);
+        border-left: 3px solid transparent;
+    }
+
+    .notif-item:hover { background: var(--surface); }
+
+    .notif-item.unread {
+        background: rgba(59,130,246,0.06);
+        border-left-color: var(--info);
+    }
+
+    .notif-item-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .notif-item-msg   { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+    .notif-item-time  { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+    .notif-footer {
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .notif-footer a { font-size: 12px; font-weight: 600; color: var(--accent); }
+    .notif-footer a:hover { text-decoration: underline; }
+
+    .notif-empty {
+        padding: 32px 16px;
+        text-align: center;
+        color: var(--text-dim);
+        font-size: 13px;
+    }
+
+    /* Profile dropdown */
+    .profile-wrap {
+        position: relative;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 4px 10px 4px 4px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        cursor: pointer;
+        transition: background var(--transition), border-color var(--transition);
+    }
+
+    .profile-trigger:hover { background: var(--surface-2); border-color: var(--border-hover); }
+
+    .topbar-avatar {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), #cc4400);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 700; color: white;
+        overflow: hidden; flex-shrink: 0;
+    }
+
+    .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .topbar-user-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-chevron { width: 14px; height: 14px; stroke: var(--text-muted); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--transition); }
+    .profile-wrap.open .topbar-chevron { transform: rotate(180deg); }
+
+    .profile-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 230px;
+        background: var(--card-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        z-index: 2000;
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+        animation: dropIn 150ms ease;
+    }
+
+    .profile-dropdown.open { display: flex; }
+
+    .profile-dd-head {
+        padding: 14px 16px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .profile-dd-name { font-size: 14px; font-weight: 700; color: var(--text); font-family: 'Poppins', sans-serif; }
+    .profile-dd-role { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    .profile-dd-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        color: var(--text-muted);
+        font-size: 13.5px;
+        transition: background var(--transition), color var(--transition);
+    }
+
+    .profile-dd-item:hover { background: var(--surface); color: var(--text); }
+    .profile-dd-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .profile-dd-item.danger:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
+
+    .profile-dd-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+    /* School context chip in topbar */
+    .topbar-school {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px 5px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        transition: background var(--transition), border-color var(--transition);
+        max-width: 240px;
+    }
+    .topbar-school:hover { background: var(--surface-2); border-color: var(--border-hover); }
+    .topbar-school > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; min-width: 0; }
+    .topbar-school svg { stroke: var(--text-muted); flex-shrink: 0; }
+
+    .topbar-school-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+        flex-shrink: 0;
+    }
+
+    .topbar-school-name { font-size: 12.5px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .topbar-school-ctx  { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+
+    /* Search trigger button */
+    .search-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        transition: background var(--transition), border-color var(--transition), color var(--transition);
+        white-space: nowrap;
+    }
+
+    .search-btn:hover { background: var(--surface-2); border-color: var(--border-hover); color: var(--text); }
+    .search-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .search-btn .kbd-hint { font-size: 11px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: monospace; }
+
+    /* ═══════════════════════════════════════════════════
+       SEARCH MODAL
+    ═══════════════════════════════════════════════════ */
+    .search-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.72);
+        backdrop-filter: blur(8px);
+        z-index: 9000;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 80px;
+        animation: fadeInBg 150ms ease;
+    }
+
+    .search-modal-overlay.open { display: flex; }
+
+    @keyframes fadeInBg { from { opacity: 0; } to { opacity: 1; } }
+
+    .search-modal-box {
+        width: 100%;
+        max-width: 600px;
+        background: var(--card-elevated);
+        border: 1px solid var(--border-hover);
+        border-radius: var(--radius);
+        box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+        overflow: hidden;
+        animation: slideDownSearch 200ms ease;
+    }
+
+    @keyframes slideDownSearch {
+        from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .search-modal-input-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .search-modal-input-row svg { width: 18px; height: 18px; stroke: var(--text-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    .search-modal-input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .search-modal-input::placeholder { color: var(--text-dim); }
+
+    .search-modal-esc {
+        font-size: 11px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 3px 8px;
+        color: var(--text-dim);
+        font-family: monospace;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .search-results-list { padding: 8px; max-height: 320px; overflow-y: auto; }
+
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background var(--transition);
+        color: var(--text);
+        font-size: 13.5px;
+    }
+
+    .search-result-item:hover { background: rgba(255,102,0,0.08); }
+    .search-result-item svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    .search-no-results { padding: 32px; text-align: center; color: var(--text-dim); font-size: 13px; }
+
+    /* ═══════════════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════════════ */
+    .main-content {
+        padding-top: var(--topbar-h);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .page-content {
+        flex: 1;
+        padding: 28px 28px 20px;
+        animation: fadeInUp 300ms ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════ */
+    .site-footer {
+        padding: 16px 28px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .site-footer-text { font-size: 12px; color: var(--text-dim); }
+
+    /* ═══════════════════════════════════════════════════
+       BOOTSTRAP MODAL OVERRIDES (dark theme)
+    ═══════════════════════════════════════════════════ */
+    /* Modal backdrop — NO backdrop-filter here: it creates a new stacking
+       context that traps pointer events and makes modal content unclickable. */
+    .modal-backdrop { background: #000; }
+    .modal-backdrop.show { opacity: 0.6; }
+
+    /* Ensure modal + dialog sit above every layout layer */
+    .modal { z-index: 1055 !important; }
+    .modal-backdrop { z-index: 1050 !important; }
+    .modal-dialog { pointer-events: none; }
+    .modal-content {
+        pointer-events: auto;
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: 0 24px 60px rgba(0,0,0,.25) !important;
+        color: var(--text) !important;
+    }
+
+    .modal-header {
+        background: var(--card) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 20px 24px !important;
+        border-radius: var(--radius) var(--radius) 0 0 !important;
+    }
+
+    .modal-header .modal-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; color: var(--text) !important; }
+
+    .modal-header .close {
+        color: var(--text-muted) !important;
+        opacity: 1 !important;
+        font-size: 20px !important;
+        background: var(--surface-2) !important;
+        border-radius: 8px !important;
+        width: 32px !important; height: 32px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        padding: 0 !important;
+        transition: background var(--transition) !important;
+        cursor: pointer !important;
+    }
+
+    .modal-header .close:hover { background: var(--border) !important; color: var(--text) !important; }
+
+    .modal-body {
+        background: var(--card) !important;
+        padding: 24px !important;
+        color: var(--text) !important;
+    }
+
+    .modal-footer {
+        background: var(--card) !important;
+        border-top: 1px solid var(--border) !important;
+        padding: 16px 24px !important;
+        border-radius: 0 0 var(--radius) var(--radius) !important;
+    }
+
+    /* Bootstrap form overrides */
+    .form-control {
+        background: var(--input-bg, var(--surface)) !important;
+        border: 1px solid var(--input-border, var(--border)) !important;
+        border-radius: var(--radius-sm) !important;
+        color: var(--text) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px !important;
+        padding: 10px 14px !important;
+        transition: border-color var(--transition), box-shadow var(--transition), background var(--transition) !important;
+    }
+
+    .form-control:focus {
+        background: rgba(255,102,0,0.04) !important;
+        border-color: rgba(255,102,0,0.5) !important;
+        box-shadow: 0 0 0 3px rgba(255,102,0,0.12) !important;
+        color: var(--text) !important;
+        outline: none !important;
+    }
+
+    .form-control::placeholder { color: var(--text-dim) !important; }
+    .form-control option { background: #1a1a28; color: var(--text); }
+
+    select.form-control { background-image: none !important; }
+
+    .form-group label,
+    .field label {
+        font-size: 12.5px !important;
+        font-weight: 500 !important;
+        color: var(--text-muted) !important;
+        margin-bottom: 6px !important;
+        display: block;
+    }
+
+    /* Bootstrap button overrides */
+    .btn {
+        border-radius: var(--radius-sm) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 13.5px !important;
+        padding: 9px 18px !important;
+        transition: all var(--transition) !important;
+        border: none !important;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #e55a00) !important;
+        color: white !important;
+        box-shadow: 0 4px 14px rgba(255,102,0,0.3) !important;
+    }
+
+    .btn-primary:hover { transform: translateY(-1px) !important; box-shadow: 0 6px 20px rgba(255,102,0,0.4) !important; background: linear-gradient(135deg, #ff7a20, #e55a00) !important; color: white !important; }
+    .btn-primary:focus { box-shadow: 0 0 0 3px rgba(255,102,0,0.25) !important; }
+
+    .btn-secondary {
+        background: var(--surface-2) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+    }
+
+    .btn-secondary:hover { background: var(--surface-3, var(--border)) !important; color: var(--text) !important; }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        color: white !important;
+        box-shadow: 0 4px 14px rgba(239,68,68,0.25) !important;
+    }
+
+    .btn-danger:hover { transform: translateY(-1px) !important; box-shadow: 0 6px 20px rgba(239,68,68,0.35) !important; color: white !important; }
+
+    .btn-success {
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        color: white !important;
+    }
+
+    .btn-success:hover { transform: translateY(-1px) !important; color: white !important; }
+
+    .btn-info {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        color: white !important;
+    }
+
+    .btn-info:hover { transform: translateY(-1px) !important; color: white !important; }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        color: white !important;
+    }
+
+    .btn-sm { padding: 6px 12px !important; font-size: 12px !important; }
+    .btn-lg { padding: 12px 24px !important; font-size: 15px !important; }
+
+    /* Bootstrap card overrides */
+    .card {
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: var(--shadow) !important;
+        color: var(--text) !important;
+    }
+
+    .card-header {
+        background: var(--surface) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 16px 20px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+        border-radius: var(--radius) var(--radius) 0 0 !important;
+    }
+
+    .card-body { padding: 20px !important; color: var(--text) !important; }
+    .card-footer { background: var(--surface) !important; border-top: 1px solid var(--border) !important; }
+
+    /* Bootstrap table overrides */
+    .table { color: var(--text) !important; border-color: var(--border) !important; }
+    .table thead th { background: var(--surface) !important; border-bottom: 1px solid var(--border) !important; color: var(--text-muted) !important; font-size: 12px !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; padding: 12px 16px !important; }
+    .table td { padding: 12px 16px !important; border-top: 1px solid var(--border) !important; vertical-align: middle !important; }
+    .table-hover tbody tr:hover { background: var(--table-hover, var(--surface)) !important; }
+    .table-striped tbody tr:nth-of-type(odd) { background: var(--table-stripe, var(--surface)) !important; }
+    .table-bordered { border: 1px solid var(--border) !important; }
+    .table-bordered td, .table-bordered th { border: 1px solid var(--border) !important; }
+
+    /* Bootstrap alert overrides */
+    .alert { border-radius: var(--radius-sm) !important; font-size: 13.5px !important; border-width: 1px !important; }
+    .alert-success { background: rgba(34,197,94,0.10) !important; border-color: rgba(34,197,94,0.30) !important; color: #15803d !important; }
+    .alert-danger  { background: rgba(239,68,68,0.10) !important;  border-color: rgba(239,68,68,0.30) !important;  color: #dc2626 !important; }
+    .alert-warning { background: rgba(245,158,11,0.12) !important; border-color: rgba(245,158,11,0.35) !important; color: #b45309 !important; }
+    .alert-info    { background: rgba(59,130,246,0.10) !important;  border-color: rgba(59,130,246,0.30) !important;  color: #1d4ed8 !important; }
+    [data-theme="dark"] .alert-success { color: #4ade80 !important; }
+    [data-theme="dark"] .alert-danger  { color: #f87171 !important; }
+    [data-theme="dark"] .alert-warning { color: #fbbf24 !important; }
+    [data-theme="dark"] .alert-info    { color: #93c5fd !important; }
+
+    /* Bootstrap badge overrides */
+    .badge { border-radius: 6px !important; font-weight: 600 !important; font-size: 11px !important; padding: 3px 8px !important; }
+    .badge-primary  { background: linear-gradient(135deg, var(--accent), var(--accent-dim)) !important; }
+    .badge-success  { background: linear-gradient(135deg, #22c55e, #16a34a) !important; }
+    .badge-danger   { background: linear-gradient(135deg, #ef4444, #dc2626) !important; }
+    .badge-warning  { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: #111 !important; }
+    .badge-info     { background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; }
+    .badge-secondary{ background: var(--badge-bg, var(--surface-2)) !important; color: var(--text-muted) !important; }
+
+    /* Bootstrap pagination overrides */
+    .pagination .page-link {
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-muted) !important;
+        border-radius: 8px !important;
+        margin: 0 2px !important;
+    }
+
+    .pagination .page-link:hover { background: var(--surface-2) !important; color: var(--text) !important; }
+    .pagination .page-item.active .page-link { background: var(--accent) !important; border-color: var(--accent) !important; color: white !important; }
+    .pagination .page-item.disabled .page-link { opacity: 0.35 !important; }
+
+    /* Input group */
+    .input-group-text { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text-muted) !important; border-radius: var(--radius-sm) !important; }
+
+    /* Misc Bootstrap utilities that need dark overrides */
+    .text-muted { color: var(--text-muted) !important; }
+    .bg-white, .bg-light { background: var(--card) !important; }
+    .border, .border-top, .border-bottom, .border-left, .border-right { border-color: var(--border) !important; }
+
+    /* Override Bootstrap's body font / base so our custom styles win */
+    body { font-size: 14px !important; line-height: 1.55 !important; background: var(--bg) !important; color: var(--text) !important; }
+    h1, h2, h3, h4, h5, h6 { color: var(--text); }
+    /* Bootstrap container-fluid padding reset inside page-content */
+    .page-content .container-fluid { padding-left: 0 !important; padding-right: 0 !important; }
+
+    /* welcome-card — used by many sub-templates as a page header section */
+    .welcome-card {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+        border-radius: var(--radius);
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome-card::before {
+        content: '';
+        position: absolute; top: -50px; right: -30px;
+        width: 200px; height: 200px; border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+        pointer-events: none;
+    }
+    .welcome-card h1, .welcome-card h2, .welcome-card h3 {
+        color: #fff !important; margin: 0 0 6px; font-weight: 700; font-size: 20px;
+    }
+    .welcome-card p { color: rgba(255,255,255,0.88) !important; margin: 0; font-size: 13.5px; }
+
+    /* text-danger / text-success for form errors */
+    .text-danger { color: var(--danger) !important; }
+    .text-success { color: var(--success) !important; }
+    .text-warning { color: var(--warning) !important; }
+    .text-info    { color: var(--info) !important; }
+
+    /* Dropdown */
+    .dropdown-menu {
+        background: var(--card-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: var(--shadow-lg) !important;
+        padding: 6px !important;
+    }
+
+    .dropdown-item {
+        color: var(--text-muted) !important;
+        border-radius: 8px !important;
+        font-size: 13.5px !important;
+        padding: 9px 14px !important;
+        transition: background var(--transition), color var(--transition) !important;
+    }
+
+    .dropdown-item:hover { background: var(--surface-2) !important; color: var(--text) !important; }
+    .dropdown-divider { border-color: var(--border) !important; }
+
+    /* ═══════════════════════════════════════════════════
+       LOGOUT MODAL (dark override)
+    ═══════════════════════════════════════════════════ */
+    #logoutModal .modal-header {
+        background: linear-gradient(135deg, rgba(255,102,0,0.12), rgba(255,102,0,0.06)) !important;
+        border-bottom: 1px solid rgba(255,102,0,0.15) !important;
+    }
+
+    #logoutModal .modal-title { color: var(--accent) !important; }
+
+    .logout-icon-box {
+        width: 72px; height: 72px;
+        margin: 0 auto 16px;
+        background: rgba(255,102,0,0.10);
+        border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px solid rgba(255,102,0,0.2);
+    }
+
+    .logout-icon-box svg { width: 34px; height: 34px; stroke: var(--accent); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    .logout-user-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .logout-user-avatar {
+        width: 44px; height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; font-weight: 700; color: white;
+        flex-shrink: 0;
+    }
+
+    .logout-user-name { font-weight: 700; color: var(--text); font-size: 14px; }
+    .logout-user-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ═══════════════════════════════════════════════════
+       MOBILE BOTTOM NAV
+    ═══════════════════════════════════════════════════ */
+    .mobile-bottom-nav {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 64px;
+        background: var(--sidebar-bg);
+        border-top: 1px solid var(--border);
+        z-index: 800;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 8px;
+    }
+
+    .mob-nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-width: 52px;
+        height: 100%;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: color var(--transition);
+        padding: 8px 4px;
+        border-radius: 8px;
+    }
+
+    .mob-nav-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .mob-nav-btn.active { color: var(--accent); }
+    .mob-nav-btn.active svg { stroke: var(--accent); }
+
+    /* Mobile more sheet */
+    .mob-more-sheet {
+        position: fixed;
+        bottom: 64px; left: 0; right: 0;
+        background: var(--card-elevated);
+        border-top: 1px solid var(--border);
+        border-radius: 20px 20px 0 0;
+        z-index: 801;
+        padding: 16px;
+        max-height: 70vh;
+        overflow-y: auto;
+        display: none;
+        animation: slideUpSheet 250ms ease;
+    }
+
+    .mob-more-sheet.open { display: block; }
+
+    @keyframes slideUpSheet {
+        from { transform: translateY(40px); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
+
+    .mob-sheet-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .mob-sheet-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 8px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        text-decoration: none;
+        transition: background var(--transition), color var(--transition);
+        cursor: pointer;
+    }
+
+    .mob-sheet-item:hover, .mob-sheet-item.active { background: var(--accent-glow); color: var(--accent); border-color: rgba(255,102,0,0.2); }
+    .mob-sheet-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .mob-sheet-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 800;
+    }
+
+    .mob-sheet-overlay.open { display: block; }
+
+    /* ═══════════════════════════════════════════════════
+       COMMON UTILITY CLASSES
+    ═══════════════════════════════════════════════════ */
+    .dark-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .elevated-card {
+        background: var(--card-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+            z-index: 1001;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay.open {
+            display: block;
+        }
+
+        .main-wrapper {
+            margin-left: 0;
+        }
+
+        .topbar {
+            left: 0;
+        }
+
+        .topbar-hamburger {
+            display: flex;
+        }
+
+        .topbar-school { display: none; }
+    }
+
+    @media (max-width: 768px) {
+        .page-content { padding: 16px 16px 84px; }
+
+        .mobile-bottom-nav { display: flex; }
+
+        .search-btn .kbd-hint { display: none; }
+        .search-btn span:not(.kbd-hint) { display: none; }
+
+        .topbar-user-name { display: none; }
+
+        .notif-dropdown { right: -60px; width: 320px; }
+
+        .site-footer { display: none; }
+
+        .topbar-hamburger { display: none; }
+    }
+
+    @media (max-width: 480px) {
+        .notif-dropdown { right: -80px; width: 290px; }
+        .profile-dropdown { right: -10px; width: 200px; }
+        .search-modal-box { margin: 0 12px; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       ANIMATIONS FOR CONTENT CARDS
+    ═══════════════════════════════════════════════════ */
+    @keyframes cardFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-card { animation: cardFadeIn 300ms ease both; }
+    .anim-card:nth-child(1) { animation-delay: 0ms; }
+    .anim-card:nth-child(2) { animation-delay: 60ms; }
+    .anim-card:nth-child(3) { animation-delay: 120ms; }
+    .anim-card:nth-child(4) { animation-delay: 180ms; }
+    .anim-card:nth-child(5) { animation-delay: 240ms; }
+    .anim-card:nth-child(6) { animation-delay: 300ms; }
+
+    @keyframes pulseRing {
+        0%   { box-shadow: 0 0 0 0 rgba(255,102,0,0.4); }
+        70%  { box-shadow: 0 0 0 8px rgba(255,102,0,0); }
+        100% { box-shadow: 0 0 0 0 rgba(255,102,0,0); }
+    }
+
+    .pulse-orange { animation: pulseRing 2s infinite; }
+
+    /* ══════════════════════════════════════════════════════════════
+       DARK (opt-in) — slate-based professional dark, not cyberpunk.
+       Only activated by [data-theme="dark"]; default is light.
+    ══════════════════════════════════════════════════════════════ */
+    [data-theme="dark"] {
+        --bg:            #0b1120;
+        --surface:       #0f172a;
+        --surface-2:     #111827;
+        --sidebar-bg:    #0f172a;
+        --topbar-bg:     rgba(11,17,32,0.88);
+        --topbar-border: #1f2937;
+        --card:          #111827;
+        --card-elevated: #0f172a;
+        --border:        #1f2937;
+        --border-hover:  #334155;
+        --border-focus:  rgba(129,140,248,0.55);
+
+        --accent:        #818cf8;      /* indigo-400 — readable on dark */
+        --accent-dim:    #6366f1;
+        --accent-glow:   rgba(129,140,248,0.18);
+        --accent-glow2:  rgba(129,140,248,0.08);
+        --link:          #a5b4fc;
+
+        --text:          #f1f5f9;
+        --text-muted:    #cbd5e1;
+        --text-dim:      #64748b;
+
+        --input-bg:      #0f172a;
+        --input-border:  #1f2937;
+        --table-stripe:  rgba(255,255,255,0.025);
+        --table-hover:   rgba(129,140,248,0.08);
+        --badge-bg:      rgba(255,255,255,0.06);
+
+        --shadow:        0 4px 24px rgba(0,0,0,.45);
+        --shadow-lg:     0 8px 40px rgba(0,0,0,.55);
+        color-scheme:    dark;
+
+        /* Primary aliases — dark */
+        --primary:      #818cf8;
+        --primary-hover:#a5b4fc;
+        --primary-soft: rgba(129,140,248,0.14);
+
+        /* Gray scale aliases — dark inverted */
+        --gray-50:  #1f2937;
+        --gray-100: #111827;
+        --gray-200: #1f2937;
+        --gray-300: #374151;
+        --gray-400: #6b7280;
+        --gray-500: #9ca3af;
+        --gray-600: #d1d5db;
+        --gray-700: #e5e7eb;
+        --gray-800: #f3f4f6;
+        --gray-900: #f9fafb;
+    }
+
+    /* Minimal targeted overrides where Bootstrap defaults leak through.
+       Everything else inherits from CSS variables — no !important cascades needed. */
+    [data-theme="dark"] body                      { background: var(--bg); color: var(--text); }
+    [data-theme="dark"] .modal-content            { background: var(--card); color: var(--text); border-color: var(--border); }
+    [data-theme="dark"] .modal-header             { background: var(--surface); border-bottom-color: var(--border); }
+    [data-theme="dark"] .modal-footer             { background: var(--surface); border-top-color: var(--border); }
+    [data-theme="dark"] .modal-header .close      { color: var(--text-muted); background: transparent; }
+    [data-theme="dark"] .form-control             { background: var(--input-bg); border-color: var(--input-border); color: var(--text); }
+    [data-theme="dark"] .form-control::placeholder{ color: var(--text-dim); }
+    [data-theme="dark"] .dropdown-menu            { background: var(--card); border-color: var(--border); }
+    [data-theme="dark"] .dropdown-item            { color: var(--text-muted); }
+    [data-theme="dark"] .dropdown-item:hover      { background: var(--surface-2); color: var(--text); }
+    [data-theme="dark"] .table                    { color: var(--text); border-color: var(--border); }
+    [data-theme="dark"] .table thead th           { background: var(--surface); color: var(--text-muted); border-bottom-color: var(--border); }
+    [data-theme="dark"] .table td                 { border-top-color: var(--border); }
+    [data-theme="dark"] .pagination .page-link    { background: var(--card); border-color: var(--border); color: var(--text-muted); }
+    [data-theme="dark"] .pagination .page-link:hover { background: var(--surface-2); color: var(--text); }
+    </style>
+    {% block extra_css %}{% endblock %}
+    <!-- jQuery in <head> so inline scripts in templates can use $ immediately -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>window.jQuery && (window.$ = window.jQuery);</script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+{% if user.is_authenticated %}
+<!-- ════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+
+    <!-- Logo -->
+    <div class="sb-logo">
+        <div class="sb-logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17"/><path d="M5 11.18V16.5c2 2 5 3 7 3s5-1 7-3v-5.32"/></svg>
+        </div>
+        <div class="sb-logo-text">Edu<span>Manage</span></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav" id="sbNav">
+        <ul>
+
+            {# ─────────────── DASHBOARD (everyone) ─────────────── #}
+            <li>
+                <a href="{% url 'home' %}" id="nav-home">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+                    Dashboard
+                </a>
+            </li>
+
+            {# ─────────────── PEOPLE ─────────────── #}
+            {% if user.is_superadmin or user.is_headteacher %}
+            <li class="dropdown-parent" id="dp-people">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-people')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+                    People
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-people">
+                    <li><a href="{% url 'student_list' %}">Students</a></li>
+                    <li><a href="{% url 'staff_list' %}">Teachers &amp; Staff</a></li>
+                    <li><a href="{% url 'attendance_entry' %}">Attendance</a></li>
+                </ul>
+            </li>
+            {% elif user.is_teacher %}
+                {% if user.classes_taught.exists %}
+                <li><a href="{% url 'student_list' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>My Students</a></li>
+                {% elif user.subjects_taught.exists %}
+                <li><a href="{% url 'subject_teacher_students' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>My Students</a></li>
+                {% endif %}
+            {% endif %}
+
+            {# ─────────────── ACADEMICS ─────────────── #}
+            {% if user.is_superadmin or user.is_headteacher or user.is_director_of_studies %}
+            <li class="dropdown-parent" id="dp-academics">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-academics')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3L1 9l11 6 9-4.91V17"/><path d="M5 11.18V16.5c2 2 5 3 7 3s5-1 7-3v-5.32"/></svg></span>
+                    Academics
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-academics">
+                    <li><a href="{% url 'grade_list' %}">Classes &amp; Streams</a></li>
+                    <li><a href="{% url 'subject_list' %}">Subjects</a></li>
+                    <li><a href="{% url 'timetable_list' %}">Timetable</a></li>
+                    {% if user.is_superadmin or user.school.is_high_school %}
+                    <li><a href="{% url 'combination_manage' %}">A-Level Combinations</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+            {% elif user.is_teacher %}
+                {% if user.classes_taught.exists %}
+                <li class="dropdown-parent" id="dp-myclasses">
+                    <button class="nav-toggle" onclick="toggleSubMenu('dp-myclasses')">
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+                        My Classes
+                        <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <ul class="nav-submenu" id="sub-myclasses">
+                        <li><a href="{% url 'timetable_list' %}">My Timetable</a></li>
+                        {% for grade in user.classes_taught.all %}
+                        <li><a href="{% url 'manage_streams' grade.id %}">{{ grade.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% else %}
+                <li><a href="{% url 'timetable_list' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>My Timetable</a></li>
+                {% endif %}
+            {% elif user.is_student %}
+                <li><a href="{% url 'timetable_list' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Timetable</a></li>
+            {% endif %}
+
+            {# ─────────────── ASSESSMENT ─────────────── #}
+            {% if user.is_superadmin or user.is_headteacher or user.is_director_of_studies %}
+            <li class="dropdown-parent" id="dp-assess">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-assess')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+                    Assessment
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-assess">
+                    <li><a href="{% url 'exam_list' %}">Exams</a></li>
+                    <li><a href="{% url 'mark_entry_list' %}">Marks Entry</a></li>
+                    <li><a href="{% url 'marksheet' %}">Mark Sheet</a></li>
+                    <li><a href="{% url 'report_card_list' %}">Report Cards</a></li>
+                    {% if user.is_superadmin or user.is_headteacher %}
+                    <li><a href="{% url 'grading_settings' %}">Grading</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+            {% elif user.is_teacher %}
+            <li class="dropdown-parent" id="dp-assess">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-assess')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+                    Assessment
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-assess">
+                    {% if user.subjects_taught.exists %}
+                    <li><a href="{% url 'mark_entry_list' %}">Marks Entry</a></li>
+                    {% endif %}
+                    {% if user.classes_taught.exists %}
+                    <li><a href="{% url 'marksheet' %}">Mark Sheet</a></li>
+                    <li><a href="{% url 'report_card_list' %}">Report Cards</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+            {% endif %}
+
+            {# ─────────────── FINANCE ─────────────── #}
+            {% if user.is_superadmin or user.is_headteacher or user.is_bursar %}
+            <li class="dropdown-parent" id="dp-finance">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-finance')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+                    Finance
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-finance">
+                    <li><a href="{% url 'fee_list' %}">Fee Structures</a></li>
+                    <li><a href="{% url 'fee_balance_list' %}">Fee Balances</a></li>
+                    <li><a href="{% url 'fee_payment_list' %}">Payments</a></li>
+                    {% if user.is_bursar %}
+                    <li><a href="{% url 'fee_payment_create' %}">Record Payment</a></li>
+                    {% endif %}
+                </ul>
+            </li>
+            {% elif user.is_parent %}
+            <li><a href="{% url 'fee_balance_view' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>Fee Status</a></li>
+            {% endif %}
+
+            {# ─────────────── LEARNING ─────────────── #}
+            {% if user.is_student %}
+                <li><a href="{% url 'student_classes' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>E-Class</a></li>
+            {% elif user.is_teacher %}
+                <li><a href="{% url 'teacher_classes' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>My Courses</a></li>
+            {% elif user.is_parent %}
+                <li><a href="{% url 'parent_teachers' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Teachers</a></li>
+            {% elif user.is_superadmin or user.is_headteacher or user.is_director_of_studies %}
+                <li><a href="{% url 'elearning_home' %}"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>E-Learning</a></li>
+            {% endif %}
+
+            {# ─────────────── SYSTEM ─────────────── #}
+            {% if user.is_superadmin or user.is_headteacher %}
+            <li class="dropdown-parent" id="dp-system">
+                <button class="nav-toggle" onclick="toggleSubMenu('dp-system')">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+                    System
+                    <span class="nav-toggle-arrow"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <ul class="nav-submenu" id="sub-system">
+                    {% if user.is_superadmin %}
+                    <li><a href="{% url 'school_list' %}">Schools</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'school_settings' %}">Settings</a></li>
+                </ul>
+            </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+
+    <!-- Sidebar footer: user -->
+    <div class="sb-footer">
+        <div class="sb-user" title="{{ user.get_full_name|default:user.username }}">
+            <div class="sb-avatar">
+                {% if user.profile_picture %}
+                <img src="{{ user.get_profile_picture_url }}" alt="{{ user.get_full_name }}">
+                {% else %}
+                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                {% endif %}
+            </div>
+            <div class="sb-user-info">
+                <div class="sb-user-name">{{ user.get_full_name|default:user.username }}</div>
+                <div class="sb-user-role">{{ user.role|title|default:"User" }}</div>
+            </div>
+            <button class="sb-logout-btn" type="button" aria-label="Sign out" data-toggle="modal" data-target="#logoutModal">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </div>
+    </div>
+</aside>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ════════════════════════════════════════════════════
+     MAIN WRAPPER
+════════════════════════════════════════════════════ -->
+<div class="main-wrapper" id="mainWrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar" id="topbar">
+        <!-- Hamburger (tablet/mobile) -->
+        <button class="topbar-hamburger" id="hamburgerBtn" onclick="openSidebar()" aria-label="Open menu">
+            <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+
+        <!-- Page title -->
+        <div class="topbar-titles">
+            <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+            <div class="topbar-subtitle">{% block page_subtitle %}{% endblock %}</div>
+        </div>
+
+        <!-- Right side actions -->
+        <div class="topbar-actions">
+            <!-- School context (desktop only) — click to switch year/term -->
+            {% if school %}
+            <button type="button" class="topbar-school" data-toggle="modal" data-target="#academicContextModal" title="Switch academic year / term">
+                <span class="topbar-school-dot"></span>
+                <span>
+                    <span class="topbar-school-name">{{ school.name }}</span>
+                    <span class="topbar-school-ctx">
+                        {% if selected_academic_year %}{{ selected_academic_year.name }}{% if selected_term %} · {{ selected_term.name }}{% endif %}{% else %}No active year{% endif %}
+                    </span>
+                </span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            {% endif %}
+
+            <!-- Theme toggle -->
+            <button class="top-icon-btn theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Toggle theme">
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+
+            <!-- Search -->
+            <button class="search-btn" id="searchBtn" onclick="openSearchModal()" aria-label="Search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Search</span>
+                <span class="kbd-hint">⌘K</span>
+            </button>
+
+            <!-- Notifications -->
+            <div class="position-relative" style="position:relative;">
+                <button class="top-icon-btn" id="notifBtn" onclick="toggleNotifDropdown()" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-header">
+                        <div class="notif-header-title">Notifications</div>
+                        <button class="notif-mark-btn" onclick="markAllNotificationsRead()">Mark all read</button>
+                    </div>
+                    <div class="notif-list" id="notifList">
+                        <div class="notif-empty">Loading notifications...</div>
+                    </div>
+                    <div class="notif-footer">
+                        <a href="{% url 'notifications' %}">View all notifications</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="profile-wrap" id="profileWrap">
+                <div class="profile-trigger" onclick="toggleProfileDropdown()" role="button" tabindex="0" aria-label="Profile menu">
+                    <div class="topbar-avatar">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.get_profile_picture_url }}" alt="{{ user.get_full_name }}">
+                        {% else %}
+                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <span class="topbar-user-name">{{ user.first_name|default:user.username }}</span>
+                    <svg class="topbar-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="profile-dd-head">
+                        <div class="profile-dd-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="profile-dd-role">{{ user.role|title|default:"User" }}</div>
+                    </div>
+                    <a href="{% url 'profile' %}" class="profile-dd-item">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My Profile
+                    </a>
+                    <a href="{% url 'profile_settings' %}" class="profile-dd-item">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+                        Settings
+                    </a>
+                    <a href="{% url 'login_history' %}" class="profile-dd-item">
+                        <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                        Login History
+                    </a>
+                    <div class="profile-dd-divider"></div>
+                    <a href="#" class="profile-dd-item danger" data-toggle="modal" data-target="#logoutModal">
+                        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="site-footer">
+            <div class="site-footer-text">&copy; {% now "Y" %} EduManage &mdash; Built for Uganda</div>
+            {% if school %}
+            <div class="site-footer-text">{{ school.name }}</div>
+            {% endif %}
+        </footer>
+    </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     MOBILE BOTTOM NAV
+════════════════════════════════════════════════════ -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile navigation">
+    <a href="{% url 'home' %}" class="mob-nav-btn" id="mob-home">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+    </a>
+    <a href="{% url 'student_list' %}" class="mob-nav-btn" id="mob-students">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Students
+    </a>
+    <a href="{% url 'mark_entry_list' %}" class="mob-nav-btn" id="mob-marks">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Marks
+    </a>
+    <a href="{% url 'fee_balance_list' %}" class="mob-nav-btn" id="mob-fees">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Fees
+    </a>
+    <button class="mob-nav-btn" onclick="toggleMobMoreSheet()">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        More
+    </button>
+</nav>
+
+<!-- Mobile more sheet overlay -->
+<div class="mob-sheet-overlay" id="mobSheetOverlay" onclick="closeMobMoreSheet()"></div>
+
+<!-- Mobile more sheet -->
+<div class="mob-more-sheet" id="mobMoreSheet">
+    <div style="font-size:13px; font-weight:700; color:var(--text); font-family:'Poppins',sans-serif; padding-bottom:4px;">More</div>
+    <div class="mob-sheet-grid">
+        <a href="{% url 'report_card_list' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+            Reports
+        </a>
+        <a href="{% url 'timetable_list' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Timetable
+        </a>
+        <a href="{% url 'exam_list' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Exams
+        </a>
+        <a href="{% url 'elearning_home' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            E-Learning
+        </a>
+        <a href="{% url 'notifications' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Alerts
+        </a>
+        <a href="{% url 'profile' %}" class="mob-sheet-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SEARCH MODAL
+════════════════════════════════════════════════════ -->
+<div class="search-modal-overlay" id="searchModal" onclick="handleSearchOverlayClick(event)">
+    <div class="search-modal-box">
+        <div class="search-modal-input-row">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-modal-input" id="searchModalInput" type="text" placeholder="Search students, teachers, classes..." autocomplete="off" oninput="doSearch(this.value)">
+            <span class="search-modal-esc" onclick="closeSearchModal()">ESC</span>
+        </div>
+        <div id="searchResultsList" class="search-results-list">
+            <div class="search-no-results">Start typing to search...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     LOGOUT MODAL
+════════════════════════════════════════════════════ -->
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="align-items:center;">
+                <h5 class="modal-title" id="logoutModalLabel">Sign Out</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <div class="logout-icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </div>
+                <h6 style="font-family:'Poppins',sans-serif; font-weight:700; font-size:16px; color:var(--text); margin-bottom:6px;">Ready to sign out?</h6>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Make sure you've saved all your work before proceeding.</p>
+                <div class="logout-user-card">
+                    <div class="logout-user-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                    <div>
+                        <div class="logout-user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="logout-user-role">{{ user.role|title|default:"User" }}</div>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" style="flex:1;">Cancel</button>
+                        <button type="submit" class="btn btn-danger" style="flex:1;">Sign Out</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     ACADEMIC CONTEXT MODAL — switch year / term
+════════════════════════════════════════════════════ -->
+{% if school %}
+<div class="modal fade" id="academicContextModal" tabindex="-1" role="dialog" aria-labelledby="academicContextModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="align-items:center;">
+                <h5 class="modal-title" id="academicContextModalLabel">Academic Context</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <form method="post" action="{% url 'select_academic_context' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <div class="modal-body">
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+                        Choose which academic year and term you want to work in. All dashboards, marks and reports will be scoped to this context.
+                    </p>
+
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">School</label>
+                        <div style="padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); font-size:13.5px; font-weight:600; color:var(--text);">
+                            {{ school.name }}
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label for="academicYearSelect" style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">Academic Year</label>
+                        <select id="academicYearSelect" name="academic_year" class="form-control" style="height:42px;">
+                            <option value="">— Select year —</option>
+                            {% for y in academic_years %}
+                                <option value="{{ y.id }}" {% if selected_academic_year and selected_academic_year.id == y.id %}selected{% endif %}>{{ y.name }}{% if y.is_active %} (Active){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="termSelect" style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;">Term</label>
+                        <select id="termSelect" name="term" class="form-control" style="height:42px;">
+                            <option value="">— All terms —</option>
+                            {% for t in terms_for_selected_year %}
+                                <option value="{{ t.id }}" {% if selected_term and selected_term.id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- AJAX modal -->
+<div class="modal fade" id="ajaxModal" tabindex="-1" role="dialog" aria-labelledby="ajaxModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ajaxModalLabel">Loading...</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="ajaxModalBody">
+                <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite; display:inline-block;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Not authenticated: simple pass-through layout (login page is standalone so this path is unused) -->
+{% endif %}
+
+<!-- ════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ── Sidebar ── */
+    function openSidebar() {
+        var sb = document.getElementById('sidebar');
+        var ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.add('open');
+        if (ov) ov.classList.add('open');
+    }
+
+    function closeSidebar() {
+        var sb = document.getElementById('sidebar');
+        var ov = document.getElementById('sidebarOverlay');
+        if (sb) sb.classList.remove('open');
+        if (ov) ov.classList.remove('open');
+    }
+
+    window.openSidebar = openSidebar;
+    window.closeSidebar = closeSidebar;
+
+    /* ── Submenu toggles ── */
+    window.toggleSubMenu = function (parentId) {
+        var parent = document.getElementById(parentId);
+        if (!parent) return;
+        var isOpen = parent.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.dropdown-parent').forEach(function(el) {
+            el.classList.remove('open');
+            var sub = el.querySelector('.nav-submenu');
+            if (sub) sub.classList.remove('open');
+        });
+        if (!isOpen) {
+            parent.classList.add('open');
+            var sub = parent.querySelector('.nav-submenu');
+            if (sub) sub.classList.add('open');
+        }
+    };
+
+    /* ── Active nav link ── */
+    function setActiveNav() {
+        var nav = document.getElementById('sbNav');
+        if (!nav) return;
+        var links = Array.from(nav.querySelectorAll('a[href]')).filter(function(a) {
+            return a.getAttribute('href') && a.getAttribute('href') !== '#';
+        });
+        var path = window.location.pathname;
+        var best = null, bestLen = -1;
+        links.forEach(function(a) {
+            try {
+                var url = new URL(a.href, window.location.origin);
+                var hp = url.pathname;
+                if (path.startsWith(hp) && hp.length > bestLen) {
+                    best = a; bestLen = hp.length;
+                }
+            } catch(e) {}
+        });
+        links.forEach(function(a) { a.classList.remove('active'); });
+        if (best) {
+            best.classList.add('active');
+            var dp = best.closest('.dropdown-parent');
+            if (dp) {
+                dp.classList.add('open');
+                var sub = dp.querySelector('.nav-submenu');
+                if (sub) sub.classList.add('open');
+            }
+        }
+
+        // Mobile bottom nav active
+        var mobLinks = document.querySelectorAll('.mobile-bottom-nav a.mob-nav-btn');
+        mobLinks.forEach(function(a) {
+            a.classList.remove('active');
+            try {
+                var url = new URL(a.href, window.location.origin);
+                if (path === url.pathname) a.classList.add('active');
+            } catch(e) {}
+        });
+    }
+
+    setActiveNav();
+
+    /* ── Notification dropdown ── */
+    var notifOpen = false;
+    window.toggleNotifDropdown = function() {
+        notifOpen = !notifOpen;
+        var dd = document.getElementById('notifDropdown');
+        if (dd) {
+            if (notifOpen) {
+                dd.classList.add('open');
+                loadNotifications();
+            } else {
+                dd.classList.remove('open');
+            }
+        }
+        // Close profile
+        var pw = document.getElementById('profileWrap');
+        var pd = document.getElementById('profileDropdown');
+        if (pw) pw.classList.remove('open');
+        if (pd) pd.classList.remove('open');
+    };
+
+    function loadNotifications() {
+        var list = document.getElementById('notifList');
+        if (!list) return;
+        fetch('/notifications/api/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || !data.notifications || data.notifications.length === 0) {
+                    list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+                    return;
+                }
+                var badge = document.getElementById('notifBadge');
+                var count = data.unread_count || 0;
+                if (badge) {
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'flex' : 'none';
+                }
+                var html = '';
+                data.notifications.slice(0, 8).forEach(function(n) {
+                    html += '<div class="notif-item' + (n.unread ? ' unread' : '') + '">';
+                    html += '<div class="notif-item-title">' + (n.title || 'Notification') + '</div>';
+                    html += '<div class="notif-item-msg">' + (n.message || '') + '</div>';
+                    html += '<div class="notif-item-time">' + (n.time || '') + '</div>';
+                    html += '</div>';
+                });
+                list.innerHTML = html;
+            })
+            .catch(function() {
+                list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
+            });
+    }
+
+    window.markAllNotificationsRead = function() {
+        var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+        var token = csrf ? csrf.value : '';
+        fetch('/notifications/mark-all-read/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function() {
+            document.querySelectorAll('.notif-item.unread').forEach(function(el) { el.classList.remove('unread'); });
+            var badge = document.getElementById('notifBadge');
+            if (badge) badge.style.display = 'none';
+        }).catch(function() {});
+    };
+
+    /* ── Profile dropdown ── */
+    window.toggleProfileDropdown = function() {
+        var pw = document.getElementById('profileWrap');
+        var pd = document.getElementById('profileDropdown');
+        var isOpen = pw && pw.classList.contains('open');
+        if (isOpen) {
+            if (pw) pw.classList.remove('open');
+            if (pd) pd.classList.remove('open');
+        } else {
+            if (pw) pw.classList.add('open');
+            if (pd) pd.classList.add('open');
+        }
+        // Close notifications
+        var nd = document.getElementById('notifDropdown');
+        if (nd) nd.classList.remove('open');
+        notifOpen = false;
+    };
+
+    /* ── Close dropdowns on outside click ── */
+    document.addEventListener('click', function(e) {
+        // Notif dropdown
+        var notifBtn = document.getElementById('notifBtn');
+        var notifDropdown = document.getElementById('notifDropdown');
+        if (notifDropdown && notifDropdown.classList.contains('open')) {
+            if (!notifDropdown.contains(e.target) && notifBtn && !notifBtn.contains(e.target)) {
+                notifDropdown.classList.remove('open');
+                notifOpen = false;
+            }
+        }
+        // Profile dropdown
+        var profileWrap = document.getElementById('profileWrap');
+        if (profileWrap && profileWrap.classList.contains('open')) {
+            if (!profileWrap.contains(e.target)) {
+                profileWrap.classList.remove('open');
+                var pd = document.getElementById('profileDropdown');
+                if (pd) pd.classList.remove('open');
+            }
+        }
+    });
+
+    /* ── Search modal ── */
+    window.openSearchModal = function() {
+        var modal = document.getElementById('searchModal');
+        if (modal) modal.classList.add('open');
+        setTimeout(function() {
+            var inp = document.getElementById('searchModalInput');
+            if (inp) inp.focus();
+        }, 100);
+    };
+
+    window.closeSearchModal = function() {
+        var modal = document.getElementById('searchModal');
+        if (modal) modal.classList.remove('open');
+        var inp = document.getElementById('searchModalInput');
+        if (inp) inp.value = '';
+        var list = document.getElementById('searchResultsList');
+        if (list) list.innerHTML = '<div class="search-no-results">Start typing to search...</div>';
+    };
+
+    window.handleSearchOverlayClick = function(e) {
+        if (e.target === document.getElementById('searchModal')) closeSearchModal();
+    };
+
+    window.doSearch = function(query) {
+        var list = document.getElementById('searchResultsList');
+        if (!list) return;
+        if (!query || query.length < 2) {
+            list.innerHTML = '<div class="search-no-results">Start typing to search...</div>';
+            return;
+        }
+
+        var links = [
+            { label: 'Students', url: '/students/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
+            { label: 'Teachers', url: '/staff/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
+            { label: 'Classes', url: '/grades/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
+            { label: 'Subjects', url: '/subjects/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>' },
+            { label: 'Report Cards', url: '/report-cards/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>' },
+            { label: 'Fee Payments', url: '/fees/payments/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
+            { label: 'Timetable', url: '/timetable/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
+            { label: 'E-Learning', url: '/elearning/', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' },
+        ];
+
+        var q = query.toLowerCase();
+        var matched = links.filter(function(l) { return l.label.toLowerCase().includes(q); });
+
+        if (matched.length === 0) {
+            list.innerHTML = '<div class="search-no-results">No results for "' + query + '"</div>';
+            return;
+        }
+
+        var html = matched.map(function(item) {
+            return '<a href="' + item.url + '" class="search-result-item">' + item.icon + item.label + '</a>';
+        }).join('');
+        list.innerHTML = html;
+    };
+
+    /* ── Mobile more sheet ── */
+    window.toggleMobMoreSheet = function() {
+        var sheet = document.getElementById('mobMoreSheet');
+        var overlay = document.getElementById('mobSheetOverlay');
+        var isOpen = sheet && sheet.classList.contains('open');
+        if (isOpen) {
+            if (sheet) sheet.classList.remove('open');
+            if (overlay) overlay.classList.remove('open');
+        } else {
+            if (sheet) sheet.classList.add('open');
+            if (overlay) overlay.classList.add('open');
+        }
+    };
+
+    window.closeMobMoreSheet = function() {
+        var sheet = document.getElementById('mobMoreSheet');
+        var overlay = document.getElementById('mobSheetOverlay');
+        if (sheet) sheet.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+    };
+
+    /* ── AJAX modal helper ── */
+    window.openModal = function(url, title) {
+        function tryOpen() {
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.modal === 'undefined') {
+                setTimeout(tryOpen, 80);
+                return;
+            }
+            var $ = jQuery;
+            var modal = $('#ajaxModal');
+            var body  = $('#ajaxModalBody');
+            var label = $('#ajaxModalLabel');
+            label.text(title || 'Loading...');
+            body.html('<div style="text-align:center;padding:40px;color:var(--text-muted);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite;display:inline-block;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></div>');
+            modal.modal('show');
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.text(); })
+                .then(function(html) { body.html(html); })
+                .catch(function() { body.html('<div class="alert alert-danger">Failed to load content. Please try again.</div>'); });
+        }
+        tryOpen();
+    };
+
+    /* ── Keyboard shortcuts ── */
+    document.addEventListener('keydown', function(e) {
+        // Cmd/Ctrl + K = search
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            openSearchModal();
+        }
+        // ESC = close modals
+        if (e.key === 'Escape') {
+            closeSearchModal();
+            closeMobMoreSheet();
+            closeSidebar();
+        }
+    });
+
+    /* ── Bootstrap modal init + teleport to body ── */
+    document.addEventListener('DOMContentLoaded', function() {
+        /* Teleport all modals to <body> so position:fixed works correctly
+           regardless of CSS transforms on ancestor layout containers. */
+        document.querySelectorAll('.modal').forEach(function(m) {
+            if (m.parentElement !== document.body) {
+                document.body.appendChild(m);
+            }
+        });
+
+        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.modal !== 'undefined') {
+            var $ = jQuery;
+            /* Re-init Bootstrap modals after teleport */
+            $('.modal').each(function() {
+                $(this).modal({ show: false });
+            });
+        }
+    });
+
+})();
+</script>
+
+<script>
+// ── Theme toggle ──────────────────────────────────────────────
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('edumanage-theme', theme);
+    var moonIcon = document.querySelector('.icon-moon');
+    var sunIcon  = document.querySelector('.icon-sun');
+    if (theme === 'light') {
+        if (moonIcon) moonIcon.style.display = 'none';
+        if (sunIcon)  sunIcon.style.display  = '';
+    } else {
+        if (moonIcon) moonIcon.style.display = '';
+        if (sunIcon)  sunIcon.style.display  = 'none';
+    }
+}
+function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+// Apply saved theme immediately
+(function() {
+    var saved = localStorage.getItem('edumanage-theme') || 'dark';
+    applyTheme(saved);
+})();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

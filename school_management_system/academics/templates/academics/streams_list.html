@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Streams - {{ request.user.school.name if request.user.school else 'School' }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Streams</h3>
+  <div class="card p-3 mb-3">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn btn-primary" type="submit">Add Stream</button>
+    </form>
+  </div>
+  <div class="card p-3">
+    <h5>Existing Streams</h5>
+    <ul class="list-group">
+      {% for s in streams %}
+        <li class="list-group-item">{{ s.name }} {% if s.grade %} - {{ s.grade.name }}{% endif %}</li>
+      {% empty %}
+        <li class="list-group-item text-muted">No streams yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

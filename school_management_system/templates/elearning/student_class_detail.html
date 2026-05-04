@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: white; margin-bottom: 8px;">{{ course.title }}</h2>
+                <p style="color: rgba(255,255,255,0.9); margin: 0;">{{ grade.name }} - Study Materials, Quizzes & Exams</p>
+            </div>
+            <a href="{% url 'student_classes' %}" class="btn btn-light" style="border-radius: 12px; padding: 10px 20px; font-weight: 600;">
+                <i class="fas fa-arrow-left"></i> Back to Classes
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Study Materials Section -->
+            {% if materials %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-book"></i> Study Materials</h4>
+                    
+                    <div class="row">
+                        {% for material in materials %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card" style="border-radius: 12px; border: 1px solid var(--gray-200); transition: all 0.3s;">
+                                <div class="card-body" style="padding: 20px;">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                        {% if material.material_type == 'video' %}
+                                        <i class="fas fa-video" style="font-size: 24px; color: var(--danger);"></i>
+                                        {% elif material.material_type == 'pdf' %}
+                                        <i class="fas fa-file-pdf" style="font-size: 24px; color: var(--danger);"></i>
+                                        {% elif material.material_type == 'image' %}
+                                        <i class="fas fa-image" style="font-size: 24px; color: var(--info);"></i>
+                                        {% else %}
+                                        <i class="fas fa-file" style="font-size: 24px; color: var(--gray-600);"></i>
+                                        {% endif %}
+                                        <h6 style="font-weight: 600; margin: 0; flex: 1;">{{ material.title }}</h6>
+                                    </div>
+                                    <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 12px;">{{ material.get_material_type_display }}</p>
+                                    {% if material.description %}
+                                    <p style="font-size: 13px; color: var(--gray-700); margin-bottom: 12px;">{{ material.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <a href="{% url 'view_material' material.id %}" class="btn btn-sm btn-primary btn-block" style="border-radius: 8px; margin-top: 12px;">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Quizzes Section -->
+            {% if quizzes %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-question-circle"></i> Quizzes</h4>
+                    
+                    <div class="list-group">
+                        {% for quiz in quizzes %}
+                        <div class="list-group-item" style="border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--gray-200); padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h6 style="font-weight: 600; margin-bottom: 8px;">{{ quiz.title }}</h6>
+                                    <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 8px;">{{ quiz.description|truncatewords:20 }}</p>
+                                    <div style="display: flex; gap: 16px; font-size: 12px; color: var(--gray-500); margin-bottom: 12px;">
+                                        {% if quiz.due_date %}
+                                        <span><i class="fas fa-calendar"></i> Due: {{ quiz.due_date|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if quiz.start_time %}
+                                        <span><i class="fas fa-clock"></i> Start: {{ quiz.start_time|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if quiz.duration_minutes %}
+                                        <span><i class="fas fa-hourglass-half"></i> {{ quiz.duration_minutes }} min</span>
+                                        {% endif %}
+                                        <span><i class="fas fa-star"></i> {{ quiz.total_points }} points</span>
+                                    </div>
+                                    <a href="{% url 'assignment_detail' quiz.id %}" class="btn btn-sm btn-success" style="border-radius: 8px;">
+                                        <i class="fas fa-play"></i> Take Quiz
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Exams Section -->
+            {% if exams %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-clipboard-list"></i> Exams</h4>
+                    
+                    <div class="list-group">
+                        {% for exam in exams %}
+                        <div class="list-group-item" style="border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--gray-200); padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h6 style="font-weight: 600; margin-bottom: 8px;">{{ exam.title }}</h6>
+                                    <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 8px;">{{ exam.description|truncatewords:20 }}</p>
+                                    <div style="display: flex; gap: 16px; font-size: 12px; color: var(--gray-500); margin-bottom: 12px;">
+                                        {% if exam.due_date %}
+                                        <span><i class="fas fa-calendar"></i> Due: {{ exam.due_date|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if exam.start_time %}
+                                        <span><i class="fas fa-clock"></i> Start: {{ exam.start_time|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if exam.duration_minutes %}
+                                        <span><i class="fas fa-hourglass-half"></i> {{ exam.duration_minutes }} min</span>
+                                        {% endif %}
+                                        <span><i class="fas fa-star"></i> {{ exam.total_points }} points</span>
+                                    </div>
+                                    <a href="{% url 'assignment_detail' exam.id %}" class="btn btn-sm btn-warning" style="border-radius: 8px;">
+                                        <i class="fas fa-play"></i> Take Exam
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Regular Assignments -->
+            {% if assignments %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-tasks"></i> Assignments</h4>
+                    
+                    <div class="list-group">
+                        {% for assignment in assignments %}
+                        <div class="list-group-item" style="border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--gray-200); padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h6 style="font-weight: 600; margin-bottom: 8px;">{{ assignment.title }}</h6>
+                                    <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 8px;">{{ assignment.description|truncatewords:20 }}</p>
+                                    {% if assignment.due_date %}
+                                    <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 12px;">
+                                        <i class="fas fa-calendar"></i> Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+                                    </div>
+                                    {% endif %}
+                                    <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-sm btn-primary" style="border-radius: 8px;">
+                                        <i class="fas fa-paper-plane"></i> Submit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

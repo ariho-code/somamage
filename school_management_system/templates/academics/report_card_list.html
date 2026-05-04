@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Report Cards — EduManage{% endblock %}
+{% block page_title %}Report Cards{% endblock %}
+{% block page_subtitle %}Academic performance reports{% endblock %}
+
+{% block extra_css %}
+<style>
+:root { --rc-accent:#6d28d9; --rc-accent-bg:rgba(109,40,217,.08); }
+
+.rc-page { display:flex; flex-direction:column; gap:20px; }
+
+/* Hero */
+.rc-hero {
+  background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 50%,#6d28d9 100%);
+  border-radius:var(--radius); padding:26px 32px; color:#fff;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  position:relative; overflow:hidden;
+}
+.rc-hero::before { content:''; position:absolute; top:-50px; right:-50px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.06); pointer-events:none; }
+.rc-hero::after  { content:''; position:absolute; bottom:-40px; right:160px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.04); pointer-events:none; }
+.rc-hero-left { position:relative; z-index:1; }
+.rc-hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2); border-radius:20px; padding:3px 12px; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-bottom:10px; }
+.rc-hero-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+.rc-hero-sub   { font-size:13px; opacity:.82; }
+.rc-hero-icons { display:flex; gap:10px; position:relative; z-index:1; }
+.rc-hero-icon  { width:48px; height:48px; border-radius:12px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:20px; }
+
+/* Class selector (headteacher) */
+.rc-class-bar {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  box-shadow:var(--shadow);
+}
+.rc-class-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); white-space:nowrap; }
+.rc-class-pills { display:flex; flex-wrap:wrap; gap:8px; flex:1; }
+.rc-class-pill {
+  padding:7px 16px; border-radius:20px; font-size:13px; font-weight:600;
+  border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted);
+  cursor:pointer; transition:all 130ms; text-decoration:none; display:flex; align-items:center; gap:6px;
+}
+.rc-class-pill:hover { border-color:#6d28d9; color:#6d28d9; background:var(--rc-accent-bg); text-decoration:none; }
+.rc-class-pill.active { border-color:#6d28d9; background:#6d28d9; color:#fff; }
+.rc-class-pill-level { font-size:10px; font-weight:800; opacity:.75; }
+
+/* Term filter */
+.rc-filter-bar {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  box-shadow:var(--shadow);
+}
+.rc-filter-group { display:flex; align-items:center; gap:8px; }
+.rc-filter-group label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); white-space:nowrap; }
+.rc-filter-group select {
+  padding:8px 12px; border:1.5px solid var(--border); border-radius:9px;
+  background:var(--input-bg,var(--surface)); color:var(--text); font-size:13px;
+  outline:none; cursor:pointer; min-width:160px;
+}
+.rc-filter-group select:focus { border-color:#6d28d9; box-shadow:0 0 0 3px rgba(109,40,217,.1); }
+.rc-filter-btn {
+  padding:8px 18px; border-radius:9px; background:#6d28d9; color:#fff;
+  border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition:all 140ms;
+}
+.rc-filter-btn:hover { filter:brightness(1.1); }
+
+/* Stats strip */
+.rc-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.rc-stat {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; box-shadow:var(--shadow); display:flex; align-items:center; gap:14px;
+}
+.rc-stat-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.rc-stat.purple .rc-stat-icon { background:rgba(109,40,217,.1); color:#6d28d9; }
+.rc-stat.green  .rc-stat-icon { background:rgba(16,185,129,.1); color:#10b981; }
+.rc-stat.amber  .rc-stat-icon { background:rgba(245,158,11,.1); color:#d97706; }
+.rc-stat.blue   .rc-stat-icon { background:rgba(59,130,246,.1); color:#3b82f6; }
+.rc-stat-val { font-family:'Poppins',sans-serif; font-size:22px; font-weight:800; color:var(--text); line-height:1; }
+.rc-stat-lbl { font-size:12px; color:var(--text-muted); margin-top:2px; }
+
+/* Table */
+.rc-table-card {
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.rc-table-head {
+  padding:14px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.rc-table-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+.rc-search-wrap { position:relative; }
+.rc-search-wrap input {
+  padding:7px 12px 7px 34px; border:1.5px solid var(--border); border-radius:8px;
+  background:var(--input-bg,var(--surface)); color:var(--text); font-size:13px; outline:none; width:220px;
+}
+.rc-search-wrap input:focus { border-color:#6d28d9; box-shadow:0 0 0 3px rgba(109,40,217,.1); }
+.rc-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:12px; pointer-events:none; }
+
+.rc-table { width:100%; border-collapse:collapse; }
+.rc-table thead th {
+  background:var(--surface); padding:11px 14px; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted);
+  border-bottom:2px solid var(--border); text-align:left; white-space:nowrap;
+}
+.rc-table tbody tr { border-bottom:1px solid var(--border); transition:background 120ms; }
+.rc-table tbody tr:last-child { border-bottom:none; }
+.rc-table tbody tr:hover { background:var(--surface); }
+.rc-table td { padding:12px 14px; font-size:13px; color:var(--text); vertical-align:middle; }
+
+/* Student cell */
+.rc-student { display:flex; align-items:center; gap:10px; }
+.rc-avatar {
+  width:34px; height:34px; border-radius:9px;
+  background:var(--rc-accent-bg); color:#6d28d9;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Poppins',sans-serif; font-size:13px; font-weight:800; flex-shrink:0;
+}
+.rc-student-name { font-weight:600; }
+.rc-student-adm  { font-size:11.5px; color:var(--text-muted); }
+
+/* Score bar */
+.rc-score-bar { display:flex; align-items:center; gap:8px; }
+.rc-track { flex:1; max-width:80px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.rc-fill  { height:100%; border-radius:2px; }
+.fill-high { background:#10b981; }
+.fill-mid  { background:#3b82f6; }
+.fill-low  { background:#f59e0b; }
+.fill-fail { background:#ef4444; }
+
+/* Grade badge */
+.rc-grade {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:34px; height:26px; padding:0 8px; border-radius:7px;
+  font-family:'Poppins',sans-serif; font-size:12px; font-weight:800;
+}
+.rg-d1,.rg-a  { background:#d1fae5; color:#065f46; }
+.rg-d2,.rg-b  { background:#a7f3d0; color:#064e3b; }
+.rg-c3,.rg-c4,.rg-c { background:#dbeafe; color:#1e40af; }
+.rg-c5,.rg-c6 { background:#e0e7ff; color:#3730a3; }
+.rg-p7,.rg-p8,.rg-d,.rg-e { background:#fef3c7; color:#92400e; }
+.rg-f9,.rg-f  { background:#fee2e2; color:#991b1b; }
+.rg-na        { background:var(--border); color:var(--text-muted); }
+[data-theme="dark"] .rg-d1,.rg-a { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .rg-c3,.rg-c { background:#1e3a5f; color:#93c5fd; }
+[data-theme="dark"] .rg-f9,.rg-f { background:#450a0a; color:#fca5a5; }
+
+/* Position badge */
+.rc-pos { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:22px; padding:0 6px; border-radius:6px; font-size:12px; font-weight:800; font-family:'Poppins',sans-serif; }
+.pos-1 { background:#fef3c7; color:#92400e; }
+.pos-2 { background:#f3f4f6; color:#374151; }
+.pos-3 { background:#fce7f3; color:#9d174d; }
+.pos-n { background:var(--surface); color:var(--text-muted); }
+
+/* Status */
+.rc-status { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700; }
+.st-pub  { background:#d1fae5; color:#065f46; }
+.st-draft { background:#fef3c7; color:#92400e; }
+
+/* Generate button */
+.rc-gen-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 18px; border-radius:9px; background:#6d28d9; color:#fff;
+  font-size:13px; font-weight:600; border:none; cursor:pointer;
+  transition:all 140ms; text-decoration:none;
+}
+.rc-gen-btn:hover { filter:brightness(1.1); transform:translateY(-1px); color:#fff; text-decoration:none; }
+
+/* No access */
+.rc-no-access {
+  text-align:center; padding:80px 24px; background:var(--card);
+  border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.rc-no-access-icon { font-size:48px; color:var(--text-dim); margin-bottom:16px; }
+.rc-no-access-title { font-family:'Poppins',sans-serif; font-size:18px; font-weight:800; color:var(--text); margin-bottom:8px; }
+.rc-no-access-sub { font-size:13px; color:var(--text-muted); max-width:400px; margin:0 auto; }
+
+/* Empty */
+.rc-empty { text-align:center; padding:56px 24px; color:var(--text-muted); }
+.rc-empty-icon { font-size:40px; margin-bottom:12px; opacity:.35; }
+.rc-empty-title { font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin-bottom:6px; }
+
+@media (max-width:768px) {
+  .rc-stats { grid-template-columns:1fr 1fr; }
+  .rc-class-pills { gap:6px; }
+  .rc-table thead .hide-sm { display:none; }
+  .rc-table td.hide-sm { display:none; }
+}
+@media (max-width:520px) {
+  .rc-stats { grid-template-columns:1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rc-page">
+
+<!-- Hero -->
+<div class="rc-hero">
+  <div class="rc-hero-left">
+    <div class="rc-hero-badge"><i class="fas fa-file-alt"></i> Academic Records</div>
+    <div class="rc-hero-title">Report Cards</div>
+    <div class="rc-hero-sub">
+      {% if selected_grade %}
+        Showing reports for <strong>{{ selected_grade.name }}</strong>
+        {% if selected_term %} · {{ selected_term.name }} – {{ selected_term.academic_year.name }}{% endif %}
+      {% else %}
+        Select a class to view student report cards
+      {% endif %}
+    </div>
+  </div>
+  <div class="rc-hero-icons">
+    <div class="rc-hero-icon"><i class="fas fa-graduation-cap"></i></div>
+    <div class="rc-hero-icon"><i class="fas fa-chart-line"></i></div>
+  </div>
+</div>
+
+{% if no_access %}
+<!-- No Access -->
+<div class="rc-no-access">
+  <div class="rc-no-access-icon"><i class="fas fa-lock"></i></div>
+  <div class="rc-no-access-title">No Class Assigned</div>
+  <div class="rc-no-access-sub">You are not assigned as a class teacher for any class. Only class teachers and headteachers can view report cards. Contact your headteacher to get assigned.</div>
+</div>
+
+{% else %}
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+  {{ message }}<button type="button" class="close" data-dismiss="alert">&times;</button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Class selector (headteacher only shows many classes) -->
+{% if is_headteacher and accessible_grades %}
+<div class="rc-class-bar">
+  <div class="rc-class-label"><i class="fas fa-chalkboard-teacher"></i> Class</div>
+  <div class="rc-class-pills">
+    {% for grade in accessible_grades %}
+    <a href="?grade={{ grade.pk }}{% if selected_term_id %}&term={{ selected_term_id }}{% endif %}"
+       class="rc-class-pill {% if selected_grade and selected_grade.pk == grade.pk %}active{% endif %}">
+      {{ grade.name }}
+      <span class="rc-class-pill-level">
+        {% if grade.level == 'P' %}PLE{% elif grade.level == 'O' %}O-Level{% else %}A-Level{% endif %}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<!-- Class teacher sees their class name -->
+{% if accessible_grades %}
+<div class="rc-class-bar">
+  <div class="rc-class-label"><i class="fas fa-chalkboard-teacher"></i> Your Class</div>
+  <div class="rc-class-pills">
+    {% for grade in accessible_grades %}
+    <a href="?grade={{ grade.pk }}{% if selected_term_id %}&term={{ selected_term_id }}{% endif %}"
+       class="rc-class-pill {% if selected_grade and selected_grade.pk == grade.pk %}active{% endif %}">
+      {{ grade.name }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Term filter + actions -->
+<form method="get" class="rc-filter-bar">
+  {% if selected_grade_id %}<input type="hidden" name="grade" value="{{ selected_grade_id }}">{% endif %}
+  <div class="rc-filter-group">
+    <label><i class="fas fa-calendar-alt"></i> Term</label>
+    <select name="term" onchange="this.form.submit()">
+      <option value="">All Terms</option>
+      {% for term in terms %}
+      <option value="{{ term.pk }}" {% if selected_term and selected_term.pk == term.pk %}selected{% endif %}>
+        {{ term.name }} – {{ term.academic_year.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div style="flex:1;"></div>
+  {% if is_headteacher %}
+  <a href="{% url 'generate_report_cards' %}" class="rc-gen-btn">
+    <i class="fas fa-file-pdf"></i> Generate Reports
+  </a>
+  {% endif %}
+</form>
+
+<!-- Stats -->
+{% if selected_grade %}
+<div class="rc-stats">
+  <div class="rc-stat purple">
+    <div class="rc-stat-icon"><i class="fas fa-file-alt"></i></div>
+    <div><div class="rc-stat-val">{{ report_cards.count }}</div><div class="rc-stat-lbl">Total Reports</div></div>
+  </div>
+  <div class="rc-stat green">
+    <div class="rc-stat-icon"><i class="fas fa-check-circle"></i></div>
+    <div><div class="rc-stat-val">{{ published_count }}</div><div class="rc-stat-lbl">Published</div></div>
+  </div>
+  <div class="rc-stat amber">
+    <div class="rc-stat-icon"><i class="fas fa-edit"></i></div>
+    <div><div class="rc-stat-val">{{ draft_count }}</div><div class="rc-stat-lbl">Draft</div></div>
+  </div>
+  <div class="rc-stat blue">
+    <div class="rc-stat-icon"><i class="fas fa-chart-line"></i></div>
+    <div><div class="rc-stat-val">{% if class_avg %}{{ class_avg }}%{% else %}—{% endif %}</div><div class="rc-stat-lbl">Class Average</div></div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Table -->
+<div class="rc-table-card">
+  <div class="rc-table-head">
+    <div class="rc-table-title">
+      <i class="fas fa-list-alt" style="color:#6d28d9;"></i>
+      {% if selected_grade %}{{ selected_grade.name }} Report Cards{% else %}Select a class above{% endif %}
+      {% if report_cards %}<span style="font-size:11.5px;color:var(--text-muted);font-weight:600;margin-left:6px;">({{ report_cards.count }})</span>{% endif %}
+    </div>
+    {% if report_cards %}
+    <div class="rc-search-wrap">
+      <i class="fas fa-search rc-search-icon"></i>
+      <input type="text" id="rcSearch" placeholder="Search student…" oninput="filterTable(this.value)">
+    </div>
+    {% endif %}
+  </div>
+
+  {% if selected_grade and report_cards %}
+  <div style="overflow-x:auto;">
+    <table class="rc-table" id="rcTable">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Student</th>
+          <th class="hide-sm">Term</th>
+          <th>Average</th>
+          <th class="hide-sm">Points</th>
+          <th>Grade</th>
+          <th>Position</th>
+          <th>Status</th>
+          <th style="width:80px;text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for card in report_cards %}
+        <tr data-name="{{ card.enrollment.student.get_full_name|lower }}">
+          <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+          <td>
+            <div class="rc-student">
+              <div class="rc-avatar">{{ card.enrollment.student.first_name|first|upper }}</div>
+              <div>
+                <div class="rc-student-name">{{ card.enrollment.student.get_full_name }}</div>
+                <div class="rc-student-adm">{{ card.enrollment.student.admission_number }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="hide-sm">
+            <div style="font-weight:600;font-size:13px;">{{ card.term.name }}</div>
+            <div style="font-size:11.5px;color:var(--text-muted);">{{ card.term.academic_year.name }}</div>
+          </td>
+          <td>
+            {% if card.average_score %}
+            <div class="rc-score-bar">
+              <span style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:800;{% if card.average_score >= 70 %}color:#10b981{% elif card.average_score >= 50 %}color:#3b82f6{% elif card.average_score >= 40 %}color:#f59e0b{% else %}color:#ef4444{% endif %};">
+                {{ card.average_score|floatformat:1 }}%
+              </span>
+              <div class="rc-track">
+                <div class="rc-fill {% if card.average_score >= 70 %}fill-high{% elif card.average_score >= 50 %}fill-mid{% elif card.average_score >= 40 %}fill-low{% else %}fill-fail{% endif %}"
+                     style="width:{{ card.average_score|floatformat:0 }}%;"></div>
+              </div>
+            </div>
+            {% else %}<span style="color:var(--text-dim);">—</span>{% endif %}
+          </td>
+          <td class="hide-sm">
+            <span style="font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;">
+              {% if card.total_points %}{{ card.total_points|floatformat:0 }}{% else %}—{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if card.overall_grade %}
+            <span class="rc-grade rg-{{ card.overall_grade|lower }}">{{ card.overall_grade }}</span>
+            {% else %}<span class="rc-grade rg-na">—</span>{% endif %}
+          </td>
+          <td>
+            {% if card.position %}
+            <span class="rc-pos {% if card.position == 1 %}pos-1{% elif card.position == 2 %}pos-2{% elif card.position == 3 %}pos-3{% else %}pos-n{% endif %}">
+              {{ card.position }}{% if card.position == 1 %}st{% elif card.position == 2 %}nd{% elif card.position == 3 %}rd{% else %}th{% endif %}
+            </span>
+            {% else %}<span style="color:var(--text-dim);">—</span>{% endif %}
+          </td>
+          <td>
+            <span class="rc-status {% if card.is_published %}st-pub{% else %}st-draft{% endif %}">
+              <i class="fas {% if card.is_published %}fa-check-circle{% else %}fa-clock{% endif %}"></i>
+              {% if card.is_published %}Published{% else %}Draft{% endif %}
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <a href="{% url 'report_card_detail' card.pk %}"
+               style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:var(--rc-accent-bg);color:#6d28d9;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(109,40,217,.2);transition:all 130ms;"
+               onmouseover="this.style.background='#6d28d9';this.style.color='#fff';"
+               onmouseout="this.style.background='var(--rc-accent-bg)';this.style.color='#6d28d9';">
+              <i class="fas fa-eye"></i> View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif selected_grade %}
+  <div class="rc-empty">
+    <div class="rc-empty-icon"><i class="fas fa-file-alt"></i></div>
+    <div class="rc-empty-title">No report cards yet</div>
+    <p style="font-size:13px;">
+      {% if is_headteacher %}
+        <a href="{% url 'generate_report_cards' %}" style="color:#6d28d9;">Generate report cards</a> for {{ selected_grade.name }}
+        {% if selected_term %} for {{ selected_term.name }}{% endif %}.
+      {% else %}
+        No report cards have been generated for your class yet.
+      {% endif %}
+    </p>
+  </div>
+  {% else %}
+  <div class="rc-empty">
+    <div class="rc-empty-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+    <div class="rc-empty-title">Select a class above</div>
+    <p style="font-size:13px;">Choose a class from the panel above to view its report cards.</p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#rcTable tbody tr').forEach(row => {
+    const name = row.dataset.name || '';
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

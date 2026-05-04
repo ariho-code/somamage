@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="teachers-container">
+    <!-- Header Section -->
+    <div class="teachers-header">
+        <div class="header-content">
+            <h1><i class="fas fa-chalkboard-teacher"></i> Teachers</h1>
+            <p>Teachers who teach your children</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Teachers List -->
+    {% if teachers_list %}
+    <div class="teachers-grid">
+        {% for teacher_data in teachers_list %}
+        <div class="teacher-card">
+            <div class="teacher-card-header">
+                <div class="teacher-avatar">
+                    {% if teacher_data.teacher.profile_picture %}
+                        <img src="{{ teacher_data.teacher.profile_picture.url }}" alt="Teacher Photo" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="teacher-name">
+                    <h3>{{ teacher_data.teacher.get_full_name }}</h3>
+                    <p class="teacher-role">{{ teacher_data.teacher.get_role_display|default:"Teacher" }}</p>
+                </div>
+            </div>
+            
+            <div class="teacher-card-body">
+                <div class="teacher-info-item">
+                    <div class="info-label">
+                        <i class="fas fa-envelope"></i> Email
+                    </div>
+                    <div class="info-value">
+                        {% if teacher_data.teacher.email %}
+                            <a href="mailto:{{ teacher_data.teacher.email }}">{{ teacher_data.teacher.email }}</a>
+                        {% else %}
+                            <span class="text-muted">Not provided</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="teacher-info-item">
+                    <div class="info-label">
+                        <i class="fas fa-phone"></i> Phone
+                    </div>
+                    <div class="info-value">
+                        {% if teacher_data.teacher.phone_number %}
+                            <a href="tel:{{ teacher_data.teacher.phone_number }}">{{ teacher_data.teacher.phone_number }}</a>
+                        {% else %}
+                            <span class="text-muted">Not provided</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="teacher-info-item">
+                    <div class="info-label">
+                        <i class="fas fa-book"></i> Subjects Taught
+                    </div>
+                    <div class="info-value">
+                        <div class="subjects-list">
+                            {% for subject_info in teacher_data.subjects %}
+                            <span class="subject-badge">
+                                {{ subject_info.subject.name }}
+                                {% if subject_info.grade %}
+                                <small>({{ subject_info.grade.name }})</small>
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="teacher-info-item">
+                    <div class="info-label">
+                        <i class="fas fa-layer-group"></i> Grades
+                    </div>
+                    <div class="info-value">
+                        <div class="grades-list">
+                            {% for grade_name in teacher_data.grades %}
+                            <span class="grade-badge">{{ grade_name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-user-slash"></i>
+        </div>
+        <h3>No Teachers Found</h3>
+        <p>There are no teachers assigned to teach your children yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.teachers-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.teachers-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content h1 {
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.teachers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.teacher-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.teacher-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+}
+
+.teacher-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.teacher-avatar {
+    position: relative;
+}
+
+.avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.teacher-name h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.teacher-role {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+}
+
+.teacher-card-body {
+    padding: 25px;
+}
+
+.teacher-info-item {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.teacher-info-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.info-label {
+    color: #666;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-value {
+    color: #333;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.info-value a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.info-value a:hover {
+    text-decoration: underline;
+}
+
+.subjects-list,
+.grades-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.subject-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    color: #667eea;
+    border-radius: 15px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid #667eea30;
+}
+
+.subject-badge small {
+    color: #764ba2;
+    font-size: 0.75rem;
+}
+
+.grade-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #667eea;
+    color: white;
+    border-radius: 15px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    margin-top: 30px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #9ca3af;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #6b7280;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .teachers-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .teachers-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+

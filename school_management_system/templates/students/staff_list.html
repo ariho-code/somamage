@@ -1,0 +1,1410 @@
+{% extends "base.html" %}
+{% block page_title %}Teachers List{% endblock %}
+
+{% block content %}
+<div class="teachers-container">
+    <!-- Header Section -->
+    <div class="teachers-header">
+        <div class="header-content">
+            <h1><i class="fas fa-chalkboard-teacher"></i> Teachers Management</h1>
+            <p>View and manage all teachers in your school</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addTeacherModal">
+                <i class="fas fa-user-plus"></i>
+                Add New Teacher
+            </button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Quick Stats -->
+    <div class="teachers-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teachers|length }}</h3>
+                <p>Total Teachers</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teachers_with_subjects|default:0 }}</h3>
+                <p>With Subjects</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teachers_with_classes|default:0 }}</h3>
+                <p>Class Teachers</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers List -->
+    <div class="teachers-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+            <h3><i class="fas fa-list"></i> All Teachers</h3>
+            <!-- Search Bar -->
+            <div class="search-container" style="min-width: 300px; max-width: 400px;">
+                <form method="GET" action="{% url 'staff_list' %}" class="search-form">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search by name, username, or email..." value="{{ search_query }}" id="teacherSearchInput">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            {% if search_query %}
+                            <a href="{% url 'staff_list' %}" class="btn btn-secondary" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if search_query %}
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle"></i> Showing results for "<strong>{{ search_query }}</strong>"
+                <a href="{% url 'staff_list' %}" class="btn btn-sm btn-link">Clear search</a>
+            </div>
+            {% endif %}
+            
+            {% if teachers %}
+            <div class="table-responsive">
+                <table class="modern-table" id="teachersTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-at"></i> Username</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-school"></i> School</th>
+                            <th><i class="fas fa-tag"></i> Role</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for teacher in teachers %}
+                        <tr>
+                            <td>
+                                <div class="teacher-name">
+                                    <strong>{{ teacher.get_full_name|default:teacher.username }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ teacher.username }}</td>
+                            <td>{{ teacher.email|default:"-" }}</td>
+                            <td>{{ teacher.school.name|default:"-" }}</td>
+                            <td>
+                                <span class="role-badge">{{ teacher.get_role_display }}</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'teacher_detail' teacher.id %}" class="action-btn view-btn" title="View Profile">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="action-btn edit-btn" 
+                                            onclick="editTeacher({{ teacher.id }}, '{{ teacher.username|escapejs }}', '{{ teacher.email|escapejs }}', '{{ teacher.first_name|escapejs }}', '{{ teacher.last_name|escapejs }}', '{{ teacher.phone_number|escapejs }}', '{{ teacher.date_of_birth|date:"Y-m-d"|default:"" }}', '{{ teacher.qualifications|escapejs }}', '{{ teacher.bio|escapejs }}')"
+                                            title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <a href="{% url 'teacher_delete' teacher.id %}" class="action-btn delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this teacher?');">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <button type="button" class="action-btn assign-btn assign-subject-btn" 
+                                            title="Assign Subject" 
+                                            data-teacher-id="{{ teacher.id }}"
+                                            data-teacher-name="{{ teacher.get_full_name|default:teacher.username }}">
+                                        <i class="fas fa-book"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if teachers.has_other_pages %}
+            <nav aria-label="Teacher pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if teachers.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ teachers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            <i class="fas fa-angle-left"></i> Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-left"></i> Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ teachers.number }} of {{ teachers.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if teachers.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ teachers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            Next <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ teachers.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next <i class="fas fa-angle-right"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Showing {{ teachers.start_index }} to {{ teachers.end_index }} of {{ teachers.paginator.count }} teacher{{ teachers.paginator.count|pluralize }}
+                    </small>
+                </div>
+            </nav>
+            {% else %}
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Total: <strong>{{ teachers.paginator.count }}</strong> teacher{{ teachers.paginator.count|pluralize }}
+                </small>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3>No Teachers Found</h3>
+                <p>{% if search_query %}No teachers found matching "{{ search_query }}". <a href="{% url 'staff_list' %}">Clear search</a>{% else %}Get started by adding your first teacher to the system{% endif %}</p>
+                {% if not search_query %}
+                <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addTeacherModal">
+                    <i class="fas fa-user-plus"></i>
+                    Add First Teacher
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Teacher Modal -->
+<div class="modal fade" id="addTeacherModal" tabindex="-1" role="dialog" aria-labelledby="addTeacherModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTeacherModalLabel"><i class="fas fa-user-plus"></i> Add New Teacher</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'add_staff' %}" id="addTeacherForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <h6 class="mb-3"><i class="fas fa-info-circle"></i> Basic Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="username"><i class="fas fa-user"></i> Username *</label>
+                                <input type="text" class="form-control" name="username" id="username" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                                <input type="email" class="form-control" name="email" id="email">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="first_name"><i class="fas fa-user"></i> First Name *</label>
+                                <input type="text" class="form-control" name="first_name" id="first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="last_name"><i class="fas fa-user"></i> Last Name *</label>
+                                <input type="text" class="form-control" name="last_name" id="last_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="mb-3"><i class="fas fa-id-card"></i> Additional Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="phone_number"><i class="fas fa-phone"></i> Phone Number</label>
+                                <input type="text" class="form-control" name="phone_number" id="phone_number">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="date_of_birth"><i class="fas fa-birthday-cake"></i> Date of Birth</label>
+                                <input type="date" class="form-control" name="date_of_birth" id="date_of_birth">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="qualifications"><i class="fas fa-graduation-cap"></i> Qualifications</label>
+                                <textarea class="form-control" name="qualifications" id="qualifications" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="bio"><i class="fas fa-user-circle"></i> Biography</label>
+                                <textarea class="form-control" name="bio" id="bio" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="mb-3"><i class="fas fa-lock"></i> Password</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="password1"><i class="fas fa-key"></i> Password *</label>
+                                <input type="password" class="form-control" name="password1" id="password1" required>
+                                <small class="form-text text-muted">Min 8 characters with letters and numbers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="password2"><i class="fas fa-key"></i> Confirm Password *</label>
+                                <input type="password" class="form-control" name="password2" id="password2" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This user will be automatically assigned the "Teacher" role.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Add Teacher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.teachers-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.teachers-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    opacity: 0.9;
+    font-size: 16px;
+    margin: 0;
+}
+
+.graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.teachers-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--gray-100);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--gray-700);
+}
+
+.stat-content h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 4px 0;
+}
+
+.stat-content p {
+    color: var(--gray-600);
+    margin: 0;
+    font-size: 14px;
+}
+
+.teachers-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.card-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+}
+
+.modern-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: white;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.modern-table td {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+.role-badge {
+    padding: 6px 12px;
+    background: var(--info);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: var(--transition);
+    font-size: 12px;
+}
+
+.view-btn {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+}
+
+.view-btn:hover {
+    background: var(--info);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.edit-btn {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.edit-btn:hover {
+    background: var(--warning);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.delete-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.assign-btn {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+}
+
+.assign-btn:hover {
+    background: var(--success);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--gray-400);
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--gray-600);
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.primary-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.primary-action-btn:hover {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+/* Modal styling */
+.modal-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+}
+
+.modal-header .close {
+    color: white;
+    opacity: 0.8;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+}
+
+.modal-body h6 {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.form-control:focus {
+    border-color: var(--gray-800);
+    box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.25);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .teachers-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .teachers-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modern-table {
+        font-size: 12px;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .teachers-stats {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<!-- Edit Teacher Modal -->
+<div class="modal fade" id="editTeacherModal" tabindex="-1" role="dialog" aria-labelledby="editTeacherModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modern-modal-header">
+                <h5 class="modal-title" id="editTeacherModalLabel">
+                    <i class="fas fa-edit"></i> Edit Teacher
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="" id="editTeacherForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Update teacher information below.
+                    </div>
+                    
+                    <h6 class="mb-3"><i class="fas fa-info-circle"></i> Personal Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_username"><i class="fas fa-user"></i> Username *</label>
+                                <input type="text" class="form-control" name="username" id="edit_username" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_email"><i class="fas fa-envelope"></i> Email</label>
+                                <input type="email" class="form-control" name="email" id="edit_email">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_first_name"><i class="fas fa-user"></i> First Name *</label>
+                                <input type="text" class="form-control" name="first_name" id="edit_first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_last_name"><i class="fas fa-user"></i> Last Name *</label>
+                                <input type="text" class="form-control" name="last_name" id="edit_last_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="mb-3"><i class="fas fa-id-card"></i> Additional Information</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_phone_number"><i class="fas fa-phone"></i> Phone Number</label>
+                                <input type="tel" class="form-control" name="phone_number" id="edit_phone_number">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_date_of_birth"><i class="fas fa-birthday-cake"></i> Date of Birth</label>
+                                <input type="date" class="form-control" name="date_of_birth" id="edit_date_of_birth">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="edit_qualifications"><i class="fas fa-graduation-cap"></i> Qualifications</label>
+                                <textarea class="form-control" name="qualifications" id="edit_qualifications" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="edit_bio"><i class="fas fa-user-circle"></i> Biography</label>
+                                <textarea class="form-control" name="bio" id="edit_bio" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer modern-modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Subject Modal -->
+<div class="modal fade" id="assignSubjectModal" tabindex="-1" role="dialog" aria-labelledby="assignSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="assignSubjectModalLabel">
+                    <i class="fas fa-book"></i> Assign Subject to <span id="modalTeacherName"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="assignSubjectForm" method="POST" action="{% url 'assign_teacher_subject' %}">
+                {% csrf_token %}
+                <input type="hidden" name="teacher" id="modalTeacherId">
+                <input type="hidden" name="assignment_id" id="modalAssignmentId">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Assign a subject to this teacher. If the subject has papers, you can select specific papers or leave empty to assign all papers.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modalSubject"><i class="fas fa-book"></i> Subject *</label>
+                        <select name="subject" id="modalSubject" class="form-control" required>
+                            <option value="">-- Select Subject --</option>
+                        </select>
+                        <small class="form-text text-muted">All subjects with papers are available for assignment.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="modalGrade"><i class="fas fa-users-class"></i> Grade (Optional)</label>
+                        <select name="grade" id="modalGrade" class="form-control">
+                            <option value="">All Grades</option>
+                        </select>
+                        <small class="form-text text-muted">Leave blank to assign for all grades.</small>
+                    </div>
+                    
+                    <div class="form-group" id="modalPapersSection" style="display: none;">
+                        <label><i class="fas fa-file-alt"></i> Papers</label>
+                        <div class="border rounded p-3" id="modalPapersContainer" style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin"></i> Loading papers...
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> <span id="modalPapersHelpText">Select specific papers this teacher will teach. Leave all unchecked to assign all papers.</span>
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Assign Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wait for jQuery to load
+(function() {
+    function initStaffList() {
+        if (typeof jQuery === 'undefined') {
+            console.log('jQuery not loaded yet, retrying...');
+            setTimeout(initStaffList, 100);
+            return;
+        }
+        console.log('jQuery loaded, version: ' + jQuery.fn.jquery);
+        
+        var $ = jQuery;
+        
+        // Function to populate edit teacher modal
+        window.editTeacher = function(teacherId, username, email, firstName, lastName, phoneNumber, dateOfBirth, qualifications, bio) {
+            // Set form action
+            $('#editTeacherForm').attr('action', '/students/staff/' + teacherId + '/edit/');
+            
+            // Populate form fields
+            $('#edit_username').val(username);
+            $('#edit_email').val(email);
+            $('#edit_first_name').val(firstName);
+            $('#edit_last_name').val(lastName);
+            $('#edit_phone_number').val(phoneNumber || '');
+            $('#edit_date_of_birth').val(dateOfBirth || '');
+            $('#edit_qualifications').val(qualifications || '');
+            $('#edit_bio').val(bio || '');
+            
+            // Show modal
+            $('#editTeacherModal').modal('show');
+        };
+
+        // Handle edit teacher form submission
+        $('#editTeacherForm').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            const submitBtn = form.find('button[type="submit"]');
+            const originalText = submitBtn.html();
+            
+            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+            
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    if (data.success) {
+                        $('#editTeacherModal').modal('hide');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to update teacher'));
+                        submitBtn.html(originalText).prop('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errorMsg = 'Please fix the following errors:\n';
+                        for (let field in xhr.responseJSON.errors) {
+                            errorMsg += field + ': ' + xhr.responseJSON.errors[field].join(', ') + '\n';
+                        }
+                        alert(errorMsg);
+                    } else {
+                        alert('An error occurred while updating the teacher');
+                    }
+                    submitBtn.html(originalText).prop('disabled', false);
+                }
+            });
+        });
+
+        // Reset modals when closed
+        $('#addTeacherModal').on('hidden.bs.modal', function() {
+            document.getElementById('addTeacherForm').reset();
+        });
+
+        $('#editTeacherModal').on('hidden.bs.modal', function() {
+            $('#editTeacherForm')[0].reset();
+            $('#editTeacherForm').find('button[type="submit"]').html('<i class="fas fa-save"></i> Save Changes').prop('disabled', false);
+        });
+
+        // Assign Subject Modal Handler
+        console.log('Initializing assign subject modal handler...');
+        
+        // Handle assign subject button click
+        $(document).on('click', '.assign-subject-btn', function() {
+            var teacherId = $(this).data('teacher-id');
+            var teacherName = $(this).data('teacher-name');
+            
+            $('#modalTeacherId').val(teacherId);
+            $('#modalTeacherName').text(teacherName);
+            $('#modalAssignmentId').val('');
+            $('#assignSubjectForm')[0].reset();
+            $('#modalPapersSection').hide();
+            $('#modalSubject').val('');
+            $('#modalGrade').val('');
+            
+            // Load subjects and grades
+            loadSubjectsForModal();
+            loadGradesForModal();
+            
+            $('#assignSubjectModal').modal('show');
+        });
+        
+        function loadSubjectsForModal() {
+            $.ajax({
+                url: '/academics/get-subjects-for-teacher/',
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    var subjectSelect = $('#modalSubject');
+                    subjectSelect.html('<option value="">-- Select Subject --</option>');
+                    if (response.subjects) {
+                        response.subjects.forEach(function(subject) {
+                            var option = $('<option>').val(subject.id).text(subject.name + (subject.has_papers ? ' (Has Papers)' : ''));
+                            subjectSelect.append(option);
+                        });
+                    }
+                },
+                error: function() {
+                    console.error('Failed to load subjects');
+                    $('#modalSubject').html('<option value="">Error loading subjects</option>');
+                }
+            });
+        }
+        
+        function loadGradesForModal() {
+            $.ajax({
+                url: '/academics/get-grades-for-teacher/',
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    var gradeSelect = $('#modalGrade');
+                    gradeSelect.html('<option value="">All Grades</option>');
+                    if (response.grades) {
+                        response.grades.forEach(function(grade) {
+                            var option = $('<option>').val(grade.id).text(grade.name);
+                            gradeSelect.append(option);
+                        });
+                    }
+                },
+                error: function() {
+                    console.error('Failed to load grades');
+                }
+            });
+        }
+        
+        // Load papers when subject is selected
+        $('#modalSubject').on('change', function() {
+            var subjectId = $(this).val();
+            var papersSection = $('#modalPapersSection');
+            var papersContainer = $('#modalPapersContainer');
+            
+            if (!subjectId) {
+                papersSection.hide();
+                return;
+            }
+            
+            // Show loading
+            papersContainer.html('<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Loading papers...</div>');
+            papersSection.show();
+            
+            // Get CSRF token
+            var csrfToken = $('[name=csrfmiddlewaretoken]').val();
+            
+            $.ajax({
+                url: '/academics/subjects/' + subjectId + '/papers/',
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                success: function(response) {
+                    if (response.papers && response.papers.length > 0) {
+                        var html = '<div class="form-check mb-2">';
+                        html += '<input class="form-check-input" type="checkbox" id="modalAllPapers" checked>';
+                        html += '<label class="form-check-label font-weight-bold" for="modalAllPapers">';
+                        html += '<i class="fas fa-check-double"></i> Teach All Papers';
+                        html += '</label>';
+                        html += '</div><hr>';
+                        
+                        response.papers.forEach(function(paper) {
+                            html += '<div class="form-check mb-2">';
+                            html += '<input class="form-check-input modal-paper-checkbox" type="checkbox" name="papers" id="modal_paper_' + paper.id + '" value="' + paper.id + '" checked>';
+                            html += '<label class="form-check-label" for="modal_paper_' + paper.id + '">';
+                            html += '<strong>' + escapeHtml(paper.name) + '</strong>';
+                            if (paper.code) {
+                                html += ' <span class="badge badge-info">' + escapeHtml(paper.code) + '</span>';
+                            }
+                            html += '</label>';
+                            html += '</div>';
+                        });
+                        
+                        papersContainer.html(html);
+                        
+                        // Handle "Teach All Papers" checkbox
+                        $('#modalAllPapers').on('change', function() {
+                            var isChecked = $(this).prop('checked');
+                            $('.modal-paper-checkbox').prop('checked', isChecked);
+                        });
+                        
+                        // Handle individual paper checkboxes
+                        $(document).on('change', '.modal-paper-checkbox', function() {
+                            var allChecked = $('.modal-paper-checkbox:checked').length === $('.modal-paper-checkbox').length;
+                            $('#modalAllPapers').prop('checked', allChecked);
+                        });
+                    } else {
+                        papersContainer.html('<div class="alert alert-info"><i class="fas fa-info-circle"></i> This subject does not have multiple papers.</div>');
+                        papersSection.hide();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error loading papers:', xhr);
+                    papersContainer.html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load papers.</div>');
+                }
+            });
+        });
+        
+        // Handle form submission
+        $('#assignSubjectForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Assigning...');
+            
+            // Build form data manually to ensure all fields are included
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+            formData.append('teacher', $('#modalTeacherId').val());
+            formData.append('subject', $('#modalSubject').val());
+            
+            // Add grade if selected
+            var gradeId = $('#modalGrade').val();
+            if (gradeId) {
+                formData.append('grade', gradeId);
+            }
+            
+            // Add assignment_id if editing
+            var assignmentId = $('#modalAssignmentId').val();
+            if (assignmentId) {
+                formData.append('assignment_id', assignmentId);
+            }
+            
+            // Collect paper IDs from checked checkboxes
+            var paperIds = [];
+            $('.modal-paper-checkbox:checked').each(function() {
+                paperIds.push($(this).val());
+            });
+            
+            // Append each paper ID
+            paperIds.forEach(function(paperId) {
+                formData.append('papers', paperId);
+            });
+            
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert('Success: ' + (response.message || 'Subject assigned successfully'));
+                        $('#assignSubjectModal').modal('hide');
+                        location.reload(); // Reload to show updated assignments
+                    } else {
+                        alert('Error: ' + (response.error || 'Failed to assign subject'));
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Failed to assign subject';
+                    try {
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                            if (xhr.responseJSON.traceback && console) {
+                                console.error('Server error traceback:', xhr.responseJSON.traceback);
+                            }
+                        } else if (xhr.responseText) {
+                            // Try to parse HTML error response
+                            errorMsg = 'Server error occurred. Please check the console for details.';
+                            console.error('Server error response:', xhr.responseText);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing error response:', e);
+                    }
+                    alert('Error: ' + errorMsg);
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+        
+        function escapeHtml(text) {
+            var map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+        
+        // Reset modal when closed
+        $('#assignSubjectModal').on('hidden.bs.modal', function() {
+            $('#assignSubjectForm')[0].reset();
+            $('#modalPapersSection').hide();
+            $('#modalTeacherId').val('');
+            $('#modalAssignmentId').val('');
+        });
+        
+        // Autocomplete functionality for teacher search
+        function initTeacherSearchAutocomplete() {
+            var searchInput = $('#teacherSearchInput');
+            var searchContainer = searchInput.closest('.search-container');
+            var suggestionsDiv = $('<div class="autocomplete-suggestions"></div>');
+            searchContainer.append(suggestionsDiv);
+            
+            var currentFocus = -1;
+            var suggestions = [];
+            var debounceTimer;
+            
+            searchInput.on('input', function() {
+                var query = $(this).val().trim();
+                
+                // Clear previous suggestions
+                suggestionsDiv.hide().empty();
+                currentFocus = -1;
+                
+                if (query.length < 1) {
+                    return;
+                }
+                
+                // Debounce the AJAX request
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() {
+                    $.ajax({
+                        url: '{% url "teacher_search_suggestions" %}',
+                        method: 'GET',
+                        data: { q: query },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        success: function(response) {
+                            suggestions = response.suggestions || [];
+                            
+                            if (suggestions.length > 0) {
+                                suggestionsDiv.empty();
+                                suggestions.forEach(function(suggestion, index) {
+                                    var suggestionItem = $('<div class="autocomplete-suggestion" data-index="' + index + '"></div>');
+                                    suggestionItem.html(
+                                        '<i class="fas fa-chalkboard-teacher suggestion-icon"></i>' +
+                                        '<span class="suggestion-label">' + suggestion.label + '</span>' +
+                                        (suggestion.email ? '<span class="suggestion-meta">' + suggestion.email + '</span>' : '')
+                                    );
+                                    suggestionItem.on('click', function() {
+                                        searchInput.val(suggestion.value);
+                                        suggestionsDiv.hide();
+                                        searchInput.closest('form').submit();
+                                    });
+                                    suggestionsDiv.append(suggestionItem);
+                                });
+                                suggestionsDiv.show();
+                            }
+                        },
+                        error: function() {
+                            console.error('Error fetching search suggestions');
+                        }
+                    });
+                }, 300); // 300ms debounce
+            });
+            
+            // Handle keyboard navigation
+            searchInput.on('keydown', function(e) {
+                if (!suggestionsDiv.is(':visible')) return;
+                
+                var items = suggestionsDiv.find('.autocomplete-suggestion');
+                
+                if (e.keyCode === 40) { // Down arrow
+                    e.preventDefault();
+                    currentFocus++;
+                    if (currentFocus >= items.length) currentFocus = 0;
+                    items.removeClass('selected');
+                    items.eq(currentFocus).addClass('selected');
+                } else if (e.keyCode === 38) { // Up arrow
+                    e.preventDefault();
+                    currentFocus--;
+                    if (currentFocus < 0) currentFocus = items.length - 1;
+                    items.removeClass('selected');
+                    items.eq(currentFocus).addClass('selected');
+                } else if (e.keyCode === 13) { // Enter
+                    e.preventDefault();
+                    if (currentFocus >= 0 && currentFocus < items.length) {
+                        items.eq(currentFocus).click();
+                    } else {
+                        searchInput.closest('form').submit();
+                    }
+                } else if (e.keyCode === 27) { // Escape
+                    suggestionsDiv.hide();
+                    currentFocus = -1;
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            $(document).on('click', function(e) {
+                if (!searchContainer.is(e.target) && searchContainer.has(e.target).length === 0) {
+                    suggestionsDiv.hide();
+                }
+            });
+        }
+        
+        // Initialize autocomplete
+        initTeacherSearchAutocomplete();
+        
+        console.log('Staff list page JavaScript initialized');
+    }
+    
+    // Start initialization
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initStaffList);
+    } else {
+        initStaffList();
+    }
+})();
+</script>
+
+<style>
+/* Search Bar and Pagination Styling */
+.search-container {
+    margin-left: auto;
+}
+
+.search-form .input-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.search-form .form-control {
+    border: 2px solid #e0e0e0;
+    border-right: none;
+    transition: all 0.3s ease;
+}
+
+.search-form .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.search-form .input-group-append .btn {
+    border-left: none;
+    padding: 8px 20px;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.pagination .page-link {
+    color: #667eea;
+    border-color: #e0e0e0;
+    padding: 10px 15px;
+    margin: 0 2px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #ccc;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+}
+
+/* Autocomplete Styling */
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #667eea;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.autocomplete-suggestion {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.autocomplete-suggestion:hover,
+.autocomplete-suggestion.selected {
+    background-color: #f8f9ff;
+}
+
+.autocomplete-suggestion:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-suggestion .suggestion-icon {
+    margin-right: 10px;
+    color: #667eea;
+}
+
+.autocomplete-suggestion .suggestion-label {
+    flex: 1;
+    font-weight: 500;
+}
+
+.autocomplete-suggestion .suggestion-meta {
+    font-size: 0.85em;
+    color: #666;
+    margin-left: 10px;
+}
+
+.search-container {
+    position: relative;
+}
+
+.search-form .form-control {
+    position: relative;
+}
+</style>
+{% endblock %}

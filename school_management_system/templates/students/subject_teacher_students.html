@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="students-container">
+    <!-- Header Section -->
+    <div class="students-header">
+        <div class="header-content">
+            <h1><i class="fas fa-user-graduate"></i> {{ title }}</h1>
+            <p>Students you teach - View only (No medical or parent details)</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Subjects Taught Info -->
+    <div class="info-card">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Teaching Assignments:</strong> You teach 
+                {% for ts in teacher_subjects %}
+                    <strong>{{ ts.subject.name }}</strong>{% if ts.grade %} in <strong>{{ ts.grade.name }}</strong>{% endif %}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Students List by Grade -->
+    {% if students_by_grade %}
+    {% for grade_name, grade_students in students_by_grade.items %}
+    <div class="students-card">
+        <div class="card-header">
+            <h3><i class="fas fa-layer-group"></i> {{ grade_name }}</h3>
+            <span class="header-badge">{{ grade_students|length }} Student{{ grade_students|length|pluralize }}</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> #</th>
+                            <th><i class="fas fa-id-card"></i> Admission</th>
+                            <th><i class="fas fa-user"></i> Name</th>
+                            <th><i class="fas fa-venus-mars"></i> Gender</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in grade_students %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ student.admission_number|default:"N/A" }}</strong></td>
+                            <td>
+                                <div class="student-info">
+                                    {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" alt="Photo" class="student-photo">
+                                    {% else %}
+                                    <div class="student-avatar">{{ student.first_name.0 }}{{ student.last_name.0 }}</div>
+                                    {% endif %}
+                                    <span>{{ student.get_full_name }}</span>
+                                </div>
+                            </td>
+                            <td>{{ student.get_gender_display|default:"N/A" }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'student_detail' student.id %}" class="action-btn view-btn" title="View Profile">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-users-slash"></i>
+        </div>
+        <h3>No Students Found</h3>
+        <p>There are no students enrolled in the grades where you teach subjects.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Reuse styles from student_list.html - similar design */
+.students-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.students-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.students-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.students-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-left: 4px solid #667eea;
+}
+
+.info-content {
+    display: flex;
+    align-items: start;
+    gap: 15px;
+}
+
+.info-content i {
+    color: #667eea;
+    font-size: 1.5rem;
+    margin-top: 5px;
+}
+
+.students-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 25px 30px;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-badge {
+    background: #667eea;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.modern-table th {
+    padding: 15px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f0f2f5;
+    transition: background-color 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background-color: #fdfdfe;
+}
+
+.modern-table td {
+    padding: 15px 20px;
+    vertical-align: middle;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.student-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.view-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9ecef;
+    margin-top: 30px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #9ca3af;
+    margin-bottom: 20px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}
+

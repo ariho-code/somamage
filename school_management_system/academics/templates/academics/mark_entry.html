@@ -1,0 +1,1314 @@
+{% extends 'base.html' %}
+{% block title %}Marks Entry{% endblock %}
+{% block page_title %}Marks Entry{% endblock %}
+
+{% block content %}
+<div class="marks-entry-wrapper">
+    <!-- Header Section -->
+    <div class="marks-header-section">
+        <div class="marks-header-content">
+            <div class="marks-header-text">
+                <h1 class="marks-title">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Marks Entry</span>
+                </h1>
+                <p class="marks-subtitle">Enter and manage student marks for different exams and assessments</p>
+        </div>
+            <div class="marks-header-icon">
+                <div class="icon-circle">
+                <i class="fas fa-edit"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+        {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+    </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filter Form Card -->
+    <div class="marks-filter-card">
+        <div class="card-header-modern">
+            <h3 class="card-title-modern">
+                <i class="fas fa-filter"></i>
+                <span>Select Criteria</span>
+            </h3>
+        </div>
+        <div class="card-body-modern">
+            <form method="GET" id="filterForm" class="filter-form">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="term" class="filter-label">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Term <span class="required">*</span></span>
+                        </label>
+                        <select class="form-control-modern" id="term" name="term" required>
+                            <option value="">-- Select Term --</option>
+                            {% if terms %}
+                            {% for term in terms %}
+                            <option value="{{ term.id }}" {% if selected_term == term.id or selected_term == term.id|stringformat:"s" or current_term and current_term.id == term.id %}selected{% endif %}>
+                                {{ term.name }} ({{ term.academic_year.name }})
+                            </option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="" disabled>No terms available</option>
+                            {% endif %}
+                        </select>
+                        <small class="filter-hint">
+                            <i class="fas fa-info-circle"></i>
+                            {% if terms %}Terms configured by headteacher ({{ terms|length }} available){% else %}<span class="text-danger">No terms configured yet. Contact headteacher.</span>{% endif %}
+                        </small>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="grade" class="filter-label">
+                            <i class="fas fa-users-class"></i>
+                            <span>Class/Grade <span class="required">*</span></span>
+                        </label>
+                        <select class="form-control-modern" id="grade" name="grade" required>
+                            <option value="">-- Select Class --</option>
+                            {% if grades %}
+                            {% for grade in grades %}
+                            <option value="{{ grade.id }}" {% if selected_grade == grade.id %}selected{% endif %} data-level="{{ grade.level }}">
+                                {{ grade.name }} ({{ grade.get_level_display }})
+                            </option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="" disabled>No classes assigned to you</option>
+                            {% endif %}
+                        </select>
+                        <small class="filter-hint">
+                            {% if grades %}Classes where you teach ({{ grades|length }} available){% else %}<span class="text-danger">You need to be assigned to teach classes first</span>{% endif %}
+                        </small>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="subject" class="filter-label">
+                            <i class="fas fa-book"></i>
+                            <span>Subject <span class="required">*</span></span>
+                        </label>
+                        <select class="form-control-modern" id="subject" name="subject" required>
+                            <option value="">-- Select Subject --</option>
+                            {% if subjects %}
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if selected_subject == subject.id %}selected{% endif %}>
+                                {{ subject.display_name|default:subject.name }}
+                            </option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="" disabled>No subjects assigned to you</option>
+                            {% endif %}
+                        </select>
+                        <small class="filter-hint">
+                            {% if subjects %}Subjects you teach ({{ subjects|length }} available){% else %}<span class="text-danger">You need to be assigned to teach subjects first</span>{% endif %}
+                        </small>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="exam" class="filter-label">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Exam/Assessment <span class="required">*</span></span>
+                        </label>
+                        <select class="form-control-modern" id="exam" name="exam" required>
+                            <option value="">-- Select Exam --</option>
+                            {% if exam_count > 0 %}
+                            {% for exam in exams %}
+                            <option value="{{ exam.id }}" {% if selected_exam == exam.id %}selected{% endif %}>
+                                {{ exam.name }} ({{ exam.percentage_weight }}%)
+                            </option>
+                            {% endfor %}
+                            {% elif term_for_exams %}
+                            <option value="" disabled>No exams configured for {{ term_for_exams.name }}</option>
+                            {% elif selected_term or current_term %}
+                            <option value="" disabled>Loading exams... Please wait or refresh page</option>
+                            {% else %}
+                            <option value="" disabled>Select term first to see exams</option>
+                            {% endif %}
+                        </select>
+                        <small class="filter-hint">
+                            {% if term_for_exams %}
+                            {% if exam_count > 0 %}Exams for {{ term_for_exams.name }} ({{ exam_count }} available){% else %}<span class="text-danger">No exams configured for {{ term_for_exams.name }}. Contact headteacher to create exams.</span>{% endif %}
+                            {% elif selected_term or current_term %}
+                            <i class="fas fa-spinner fa-spin"></i> <span class="text-info">Term selected. Loading exams...</span>
+                            {% else %}
+                            <i class="fas fa-info-circle"></i> Select term first to see available exams
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-primary-modern">
+                        <i class="fas fa-search"></i>
+                        <span>Load Students</span>
+                    </button>
+                    <button type="reset" class="btn-secondary-modern" onclick="window.location.href='{% url 'mark_entry_list' %}'">
+                        <i class="fas fa-redo"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Students Marks Section -->
+    <div id="studentsMarksSection" style="display: none;">
+        <div class="marks-table-card">
+            <div class="card-header-modern d-flex justify-content-between align-items-center">
+                <h3 class="card-title-modern">
+                    <i class="fas fa-list"></i>
+                    <span>Students Marks</span>
+                </h3>
+                <button type="button" class="btn-primary-modern btn-sm" data-toggle="modal" data-target="#addMarksModal" id="addMarksBtn">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add/Edit Marks</span>
+            </button>
+        </div>
+            <div class="card-body-modern">
+                <div class="alert alert-info-modern" id="examInfoAlert">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Exam:</strong> <span id="examNameDisplay">--</span>
+            </div>
+                <div id="studentsTableContainer">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p>Loading students...</p>
+                                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <!-- No Students Section -->
+    <div id="noStudentsSection" style="display: none;" class="empty-state-modern">
+        <div class="empty-icon">
+            <i class="fas fa-users-slash"></i>
+        </div>
+        <h3>No Students Found</h3>
+        <p>No students match the selected criteria. Please try different filters.</p>
+    </div>
+    
+    <!-- Instructions Section -->
+    <div id="instructionsSection" class="info-card-modern">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Instructions:</strong> Select a term, class, subject, and exam to view and enter marks. 
+                Exams are configured by administrators in the Settings menu.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Marks Modal -->
+<div class="modal fade" id="addMarksModal" tabindex="-1" role="dialog" aria-labelledby="addMarksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content modal-modern">
+            <div class="modal-header modal-header-modern">
+                <h5 class="modal-title" id="addMarksModalLabel">
+                    <i class="fas fa-edit"></i>
+                    <span>Add/Edit Marks</span>
+                    <span id="modalExamName">--</span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" id="marksForm" action="{% url 'mark_entry_create' %}">
+                {% csrf_token %}
+                <input type="hidden" name="exam" id="hiddenExamId">
+                <input type="hidden" name="subject" id="hiddenSubjectId">
+                <input type="hidden" name="grade" id="hiddenGradeId">
+                <div class="modal-body">
+                    <div class="alert alert-info-modern">
+                        <i class="fas fa-info-circle"></i> Enter marks for each student. 
+                        <span id="paperSelectionInfo" style="display: none;"><strong>Please select a paper for each student.</strong></span>
+                        Grades and points will be calculated automatically.
+                    </div>
+                    <div id="marksFormContainer">
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Loading form...</p>
+                    </div>
+                </div>
+                </div>
+                <div class="modal-footer modal-footer-modern">
+                    <button type="button" class="btn-secondary-modern" data-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn-primary-modern" id="saveMarksBtn">
+                        <i class="fas fa-save"></i>
+                        <span>Save Marks</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Main Wrapper */
+.marks-entry-wrapper {
+    padding: 2rem 1.5rem 4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: calc(100vh - 200px);
+    animation: fadeInUp 0.6s ease-out;
+    position: relative;
+    padding-bottom: 5rem;
+}
+
+/* Header Section */
+.marks-header-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.marks-header-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.marks-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.marks-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.marks-title i {
+    font-size: 2.5rem;
+}
+
+.marks-subtitle {
+    margin: 0.75rem 0 0 0;
+    opacity: 0.95;
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.icon-circle {
+    width: 90px;
+    height: 90px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+    backdrop-filter: blur(10px);
+}
+
+/* Messages */
+.messages-container {
+    margin-bottom: 1.5rem;
+}
+
+.messages-container .alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.messages-container .alert i {
+    margin-right: 0.5rem;
+}
+
+/* Cards */
+.marks-filter-card,
+.marks-table-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.marks-filter-card:hover,
+.marks-table-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.card-header-modern {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8eaf6 100%);
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.card-title-modern {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-title-modern i {
+    color: #667eea;
+}
+
+.card-body-modern {
+    padding: 2rem;
+}
+
+/* Filter Form */
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-label i {
+    color: #667eea;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-control-modern {
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: white;
+    width: 100%;
+}
+
+.form-control-modern:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.filter-hint {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.filter-hint i {
+    color: #667eea;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn-primary-modern,
+.btn-secondary-modern {
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-primary-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary-modern:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    color: white;
+}
+
+.btn-secondary-modern {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-secondary-modern:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #374151;
+}
+
+.btn-primary-modern.btn-sm {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* Table */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modern-table thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8f9ff;
+}
+
+.modern-table tbody td {
+    padding: 1rem;
+    font-size: 0.95rem;
+}
+
+/* Badges */
+.score-badge,
+.grade-badge,
+.points-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.score-excellent { background: #10b981; color: white; }
+.score-good { background: #3b82f6; color: white; }
+.score-fair { background: #f59e0b; color: white; }
+.score-poor { background: #ef4444; color: white; }
+.score-fail { background: #6b7280; color: white; }
+
+.grade-badge {
+    background: #667eea;
+    color: white;
+}
+
+.points-badge {
+    background: #10b981;
+    color: white;
+}
+
+/* Empty State */
+.empty-state-modern {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin: 2rem 0;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state-modern h3 {
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.empty-state-modern p {
+    color: #94a3b8;
+}
+
+/* Info Card */
+.info-card-modern {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-left: 4px solid #667eea;
+}
+
+.info-card-modern .info-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.info-card-modern .info-content i {
+    color: #667eea;
+    font-size: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Modal */
+.modal-modern {
+    border-radius: 20px;
+    border: none;
+    overflow: hidden;
+}
+
+.modal-header-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem 2rem;
+}
+
+.modal-header-modern .close {
+    color: white;
+    opacity: 0.9;
+    font-size: 1.5rem;
+}
+
+.modal-header-modern .close:hover {
+    opacity: 1;
+}
+
+.modal-footer-modern {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 1.5rem 2rem;
+}
+
+.alert-info-modern {
+    background: #e0e7ff;
+    border: 1px solid #c7d2fe;
+    color: #4338ca;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-info-modern i {
+    margin-right: 0.5rem;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.loading-state i {
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .marks-entry-wrapper {
+        padding: 1rem;
+    }
+
+    .marks-header-section {
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+
+    .marks-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .marks-title {
+        font-size: 1.75rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .marks-title i {
+        font-size: 2rem;
+    }
+
+    .marks-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .card-header-modern,
+    .card-body-modern {
+        padding: 1.25rem;
+    }
+
+    .card-title-modern {
+        font-size: 1.25rem;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .btn-primary-modern,
+    .btn-secondary-modern {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modern-table {
+        font-size: 0.85rem;
+    }
+
+    .modern-table thead th,
+    .modern-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-header-modern,
+    .modal-footer-modern {
+        padding: 1rem 1.25rem;
+    }
+
+    .info-card-modern {
+        padding: 1rem;
+    }
+
+    .info-card-modern .info-content {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .marks-title {
+        font-size: 1.5rem;
+    }
+
+    .marks-subtitle {
+        font-size: 0.85rem;
+    }
+
+    .card-title-modern {
+        font-size: 1.1rem;
+    }
+
+    .form-control-modern {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-primary-modern,
+    .btn-secondary-modern {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .marks-filter-card,
+    .filter-actions,
+    .btn-primary-modern,
+    .btn-secondary-modern,
+    #addMarksBtn {
+        display: none;
+    }
+
+    .marks-entry-wrapper {
+        padding: 0;
+    }
+}
+</style>
+
+<script>
+(function() {
+    // Wait for jQuery to be available
+    function initMarkEntry() {
+        if (typeof jQuery === 'undefined') {
+            console.log('jQuery not loaded yet, retrying...');
+            setTimeout(initMarkEntry, 100);
+            return;
+        }
+        
+        var $ = jQuery;
+        
+        jQuery(document).ready(function($) {
+    var currentSubjectHasPapers = false;
+    var currentPapers = [];
+    var currentStudents = [];
+    
+    // Load exams when term is selected - reload page to get fresh exam list
+    $('#term').on('change', function() {
+        const termId = $(this).val();
+        
+        if (termId) {
+            // Reload page with term filter to get exams for that term
+        const url = new URL(window.location.href);
+        url.searchParams.set('term', termId);
+            const grade = $('#grade').val();
+            const subject = $('#subject').val();
+        if (grade) url.searchParams.set('grade', grade);
+        if (subject) url.searchParams.set('subject', subject);
+            url.searchParams.delete('exam'); // Clear exam selection when term changes
+        window.location.href = url.toString();
+    } else {
+        // Clear exam dropdown if no term selected
+            const examSelect = $('#exam');
+            examSelect.html('<option value="">-- Select Exam --</option><option value="" disabled>Select term first</option>');
+        }
+    });
+    
+    // Load students when all filters are selected
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        loadStudents();
+    });
+    
+    // Load students when modal opens
+    $('#addMarksModal').on('show.bs.modal', function() {
+        loadStudentsForModal();
+    });
+    
+    function loadStudents() {
+        const termId = $('#term').val();
+        const gradeId = $('#grade').val();
+        const subjectId = $('#subject').val();
+        const examId = $('#exam').val();
+        
+        if (!termId || !gradeId || !subjectId || !examId) {
+            $('#studentsMarksSection').hide();
+            $('#noStudentsSection').hide();
+            $('#instructionsSection').show();
+            return;
+        }
+        
+        $('#studentsMarksSection').show();
+        $('#instructionsSection').hide();
+        $('#studentsTableContainer').html('<div class="loading-state"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading students...</p></div>');
+        
+        // Get CSRF token
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        $.ajax({
+            url: '{% url "get_students_for_subject" %}',
+            method: 'GET',
+            data: {
+                'subject_id': subjectId,
+                'grade_id': gradeId,
+                'exam_id': examId
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            success: function(response) {
+                currentStudents = response.students;
+                currentPapers = response.papers;
+                currentSubjectHasPapers = response.subject_has_papers;
+                
+                // Update exam name display
+                const examSelect = $('#exam');
+                const selectedExam = examSelect.find('option:selected');
+                if (selectedExam.length) {
+                    $('#examNameDisplay').text(selectedExam.text());
+                }
+                
+                // Build students table
+                if (response.students.length > 0) {
+                    buildStudentsTable(response.students, response.subject_has_papers);
+                    $('#noStudentsSection').hide();
+                } else {
+                    $('#studentsTableContainer').html('');
+                    $('#noStudentsSection').show();
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading students:', xhr);
+                $('#studentsTableContainer').html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load students. Please try again.</div>');
+            }
+        });
+    }
+    
+    function buildStudentsTable(students, subjectHasPapers) {
+        let html = '<div class="table-responsive"><table class="modern-table"><thead><tr>';
+        html += '<th><i class="fas fa-hashtag"></i> #</th>';
+        html += '<th><i class="fas fa-user"></i> Student Name</th>';
+        html += '<th><i class="fas fa-id-card"></i> Admission No.</th>';
+        if (subjectHasPapers) {
+            html += '<th><i class="fas fa-file-alt"></i> Paper</th>';
+        }
+        html += '<th><i class="fas fa-percent"></i> Score</th>';
+        html += '<th><i class="fas fa-star"></i> Grade</th>';
+        html += '<th><i class="fas fa-chart-line"></i> Points</th>';
+        html += '<th><i class="fas fa-comment"></i> Comments</th>';
+        html += '<th><i class="fas fa-cog"></i> Actions</th>';
+        html += '</tr></thead><tbody>';
+        
+        students.forEach(function(student, index) {
+            html += '<tr>';
+            html += '<td>' + (index + 1) + '</td>';
+            html += '<td><strong>' + escapeHtml(student.name) + '</strong></td>';
+            html += '<td>' + (student.admission_number || 'N/A') + '</td>';
+            
+            if (subjectHasPapers) {
+                // Show paper info - get first paper with marks or first assigned paper
+                let paperInfo = '--';
+                if (student.marks && Object.keys(student.marks).length > 0) {
+                    const firstPaperId = Object.keys(student.marks)[0];
+                    const paper = currentPapers.find(p => p.id == firstPaperId);
+                    if (paper) {
+                        paperInfo = '<span class="badge badge-info">' + escapeHtml(paper.name) + '</span>';
+                    }
+                } else if (student.assigned_paper_ids && student.assigned_paper_ids.length > 0) {
+                    const paper = currentPapers.find(p => student.assigned_paper_ids.includes(p.id));
+                    if (paper) {
+                        paperInfo = '<span class="badge badge-secondary">' + escapeHtml(paper.name) + '</span>';
+                    }
+                }
+                html += '<td>' + paperInfo + '</td>';
+            }
+            
+            // Get marks (for subjects with papers, show first paper's marks)
+            let score = null, grade = null, points = null, comments = '';
+            if (student.marks && Object.keys(student.marks).length > 0) {
+                const firstMarkKey = Object.keys(student.marks)[0];
+                const mark = student.marks[firstMarkKey];
+                score = mark.score;
+                grade = mark.grade;
+                points = mark.points;
+                comments = mark.comments || '';
+            }
+            
+            html += '<td>';
+            if (score !== null) {
+                let scoreClass = 'score-fail';
+                if (score >= 80) scoreClass = 'score-excellent';
+                else if (score >= 70) scoreClass = 'score-good';
+                else if (score >= 60) scoreClass = 'score-fair';
+                else if (score >= 50) scoreClass = 'score-poor';
+                html += '<span class="score-badge ' + scoreClass + '">' + score + '%</span>';
+            } else {
+                html += '<span class="text-muted"><i class="fas fa-minus"></i> Not entered</span>';
+            }
+            html += '</td>';
+            
+            html += '<td>';
+            if (grade) {
+                html += '<span class="grade-badge">' + escapeHtml(grade) + '</span>';
+            } else {
+                html += '<span class="text-muted">--</span>';
+            }
+            html += '</td>';
+            
+            html += '<td>';
+            if (points !== null) {
+                html += '<span class="points-badge">' + points + '</span>';
+            } else {
+                html += '<span class="text-muted">--</span>';
+            }
+            html += '</td>';
+            
+            html += '<td><small class="text-muted">' + escapeHtml(comments.substring(0, 50)) + (comments.length > 50 ? '...' : '') + '</small></td>';
+            
+            html += '<td><button type="button" class="btn btn-sm btn-primary" onclick="editStudentMark(' + student.id + ')" title="Edit"><i class="fas fa-edit"></i></button></td>';
+            html += '</tr>';
+        });
+        
+        html += '</tbody></table></div>';
+        $('#studentsTableContainer').html(html);
+    }
+    
+    function loadStudentsForModal() {
+        const termId = $('#term').val();
+        const gradeId = $('#grade').val();
+        const subjectId = $('#subject').val();
+        const examId = $('#exam').val();
+        
+        if (!termId || !gradeId || !subjectId || !examId) {
+            $('#marksFormContainer').html('<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> Please select all filters first.</div>');
+            return;
+        }
+        
+        // Set hidden form fields
+        $('#hiddenExamId').val(examId);
+        $('#hiddenSubjectId').val(subjectId);
+        $('#hiddenGradeId').val(gradeId);
+        
+        // Update modal title
+        const examSelect = $('#exam');
+        const selectedExam = examSelect.find('option:selected');
+        if (selectedExam.length) {
+            $('#modalExamName').text(' - ' + selectedExam.text());
+        }
+        
+        // Show/hide paper selection info
+        if (currentSubjectHasPapers) {
+            $('#paperSelectionInfo').show();
+        } else {
+            $('#paperSelectionInfo').hide();
+        }
+        
+        // Build form
+        buildMarksForm(currentStudents, currentSubjectHasPapers, currentPapers);
+    }
+    
+    function buildMarksForm(students, subjectHasPapers, papers) {
+        let html = '<div class="table-responsive" style="max-height: 500px; overflow-y: auto;"><table class="table table-sm table-hover"><thead class="thead-light sticky-top"><tr>';
+        html += '<th>#</th><th>Student Name</th><th>Admission No.</th>';
+        if (subjectHasPapers) {
+            html += '<th>Paper *</th>';
+        }
+        html += '<th>Score (0-100) *</th><th>Grade</th><th>Points</th><th>Comments</th>';
+        html += '</tr></thead><tbody>';
+        
+        students.forEach(function(student, index) {
+            html += '<tr>';
+            html += '<td>' + (index + 1) + '</td>';
+            html += '<td><strong>' + escapeHtml(student.name) + '</strong></td>';
+            html += '<td>' + (student.admission_number || 'N/A') + '</td>';
+            
+            // Determine available papers and default selected paper
+            let availablePapers = papers;
+            let defaultSelectedPaper = null;
+            let score = '', grade = '--', points = '--', comments = '';
+            
+            if (subjectHasPapers) {
+                // Filter papers by student's assigned papers if they exist
+                if (student.assigned_paper_ids && student.assigned_paper_ids.length > 0) {
+                    availablePapers = papers.filter(p => student.assigned_paper_ids.includes(parseInt(p.id)));
+                }
+                
+                // Determine which paper to select by default
+                for (let i = 0; i < availablePapers.length; i++) {
+                    const paper = availablePapers[i];
+                    if (student.marks && student.marks[paper.id]) {
+                        defaultSelectedPaper = paper.id;
+                        const mark = student.marks[paper.id];
+                        score = mark.score !== null ? mark.score : '';
+                        grade = mark.grade || '--';
+                        points = mark.points !== null ? mark.points : '--';
+                        comments = mark.comments || '';
+                        break;
+                    }
+                }
+                
+                if (!defaultSelectedPaper && availablePapers.length > 0) {
+                    defaultSelectedPaper = availablePapers[0].id;
+                }
+                
+                // Paper selection dropdown
+                html += '<td><select class="form-control form-control-sm" name="paper_' + student.id + '" id="paper_' + student.id + '" required>';
+                html += '<option value="">-- Select Paper --</option>';
+                
+                if (availablePapers.length === 0) {
+                    html += '<option value="" disabled>No papers available for this student</option>';
+                } else {
+                    availablePapers.forEach(function(paper) {
+                        const selected = (paper.id == defaultSelectedPaper) ? 'selected' : '';
+                        html += '<option value="' + paper.id + '" ' + selected + '>' + escapeHtml(paper.name);
+                        if (paper.code) {
+                            html += ' (' + escapeHtml(paper.code) + ')';
+                        }
+                        html += '</option>';
+                    });
+                }
+                
+                html += '</select></td>';
+            } else {
+                // Subject doesn't have papers - get marks from default
+                if (student.marks && student.marks['default']) {
+                    const mark = student.marks['default'];
+                    score = mark.score !== null ? mark.score : '';
+                    grade = mark.grade || '--';
+                    points = mark.points !== null ? mark.points : '--';
+                    comments = mark.comments || '';
+                }
+            }
+            
+            html += '<td><input type="number" class="form-control form-control-sm score-input" name="score_' + student.id + '" value="' + score + '" min="0" max="100" step="0.01" onchange="calculateGradeAndPoints(this, ' + student.id + ')" required></td>';
+            html += '<td><span id="grade_' + student.id + '" class="grade-display">' + escapeHtml(grade) + '</span></td>';
+            html += '<td><span id="points_' + student.id + '" class="points-display">' + points + '</span></td>';
+            html += '<td><textarea class="form-control form-control-sm" name="comments_' + student.id + '" rows="1" placeholder="Optional">' + escapeHtml(comments) + '</textarea></td>';
+            html += '</tr>';
+        });
+        
+        html += '</tbody></table></div>';
+        $('#marksFormContainer').html(html);
+        
+        // Add change handler for paper selection to update score/grade/points
+        if (subjectHasPapers) {
+            students.forEach(function(student) {
+                $('#paper_' + student.id).on('change', function() {
+                    const paperId = $(this).val();
+                    if (student.marks && student.marks[paperId]) {
+                        const mark = student.marks[paperId];
+                        $('input[name="score_' + student.id + '"]').val(mark.score || '');
+                        $('#grade_' + student.id).text(mark.grade || '--');
+                        $('#points_' + student.id).text(mark.points !== null ? mark.points : '--');
+                        $('textarea[name="comments_' + student.id + '"]').val(mark.comments || '');
+                        if (mark.score !== null) {
+                            calculateGradeAndPoints($('input[name="score_' + student.id + '"]')[0], student.id);
+                        }
+                    } else {
+                        // Clear fields if no marks for this paper
+                        $('input[name="score_' + student.id + '"]').val('');
+                        $('#grade_' + student.id).text('--');
+                        $('#points_' + student.id).text('--');
+                        $('textarea[name="comments_' + student.id + '"]').val('');
+                    }
+                });
+            });
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // Auto-load students if filters are already selected on page load
+    const termId = $('#term').val();
+    const gradeId = $('#grade').val();
+    const subjectId = $('#subject').val();
+    const examId = $('#exam').val();
+    
+    if (termId && gradeId && subjectId && examId) {
+        loadStudents();
+    }
+
+// Calculate grade and points based on score
+    window.calculateGradeAndPoints = function(input, studentId) {
+    const score = parseFloat(input.value) || 0;
+    const gradeDisplay = document.getElementById('grade_' + studentId);
+    const pointsDisplay = document.getElementById('points_' + studentId);
+        
+        if (!gradeDisplay || !pointsDisplay) return;
+    
+    // Get level from grade selection
+    const gradeSelect = document.getElementById('grade');
+        const selectedGrade = gradeSelect ? gradeSelect.options[gradeSelect.selectedIndex] : null;
+    const level = selectedGrade ? (selectedGrade.dataset.level || 'O') : 'O';
+    
+    let grade = '--';
+    let points = '--';
+    
+    if (level === 'A') {
+        // A-Level grading
+        if (score >= 80) { grade = 'A'; points = 6; }
+        else if (score >= 70) { grade = 'B'; points = 5; }
+        else if (score >= 60) { grade = 'C'; points = 4; }
+        else if (score >= 50) { grade = 'D'; points = 3; }
+        else if (score >= 40) { grade = 'E'; points = 2; }
+        else if (score >= 30) { grade = 'O'; points = 1; }
+        else { grade = 'F'; points = 0; }
+    } else if (level === 'O') {
+        // O-Level grading
+        if (score >= 80) { grade = 'D1'; points = 1; }
+        else if (score >= 70) { grade = 'D2'; points = 2; }
+        else if (score >= 65) { grade = 'C3'; points = 3; }
+        else if (score >= 60) { grade = 'C4'; points = 4; }
+        else if (score >= 55) { grade = 'C5'; points = 5; }
+        else if (score >= 50) { grade = 'C6'; points = 6; }
+        else if (score >= 45) { grade = 'P7'; points = 7; }
+        else if (score >= 40) { grade = 'P8'; points = 8; }
+        else { grade = 'F9'; points = 9; }
+    } else {
+        // Primary level grading
+        if (score >= 80) { grade = 'D'; points = 1; }
+        else if (score >= 65) { grade = 'C'; points = 2; }
+        else if (score >= 50) { grade = 'P'; points = 3; }
+        else { grade = 'F'; points = 4; }
+    }
+    
+    gradeDisplay.textContent = grade;
+    pointsDisplay.textContent = points;
+    
+    // Update badge styling
+    gradeDisplay.className = 'grade-badge';
+    pointsDisplay.className = 'points-badge';
+    };
+
+// Form submission with AJAX
+    $('#marksForm').on('submit', function(e) {
+    e.preventDefault();
+        const form = $(this);
+        const formData = form.serialize();
+        const submitBtn = $('#saveMarksBtn');
+        const originalText = submitBtn.html();
+        
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>').prop('disabled', true);
+        
+        // Get CSRF token
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        $.ajax({
+            url: form.attr('action'),
+        method: 'POST',
+            data: formData,
+        headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            success: function(response) {
+                if (response.success) {
+            // Show success message
+                    const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' + 
+                        '<i class="fas fa-check-circle"></i> ' + response.message + ' <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+                    $('.marks-entry-wrapper').prepend(alert);
+                    
+                    // Close modal and reload students
+                    $('#addMarksModal').modal('hide');
+                    setTimeout(function() {
+                        loadStudents();
+                    }, 500);
+        } else {
+                    let errorMsg = response.error || 'Failed to save marks';
+                    if (response.errors && response.errors.length > 0) {
+                        errorMsg += '\n\n' + response.errors.join('\n');
+                    }
+                    alert('Error: ' + errorMsg);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                let errorMsg = 'An error occurred while saving marks';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert('Error: ' + errorMsg);
+            },
+            complete: function() {
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+    });
+});
+
+    window.editStudentMark = function(studentId) {
+    $('#addMarksModal').modal('show');
+        setTimeout(function() {
+            const input = $('input[name="score_' + studentId + '"]');
+            if (input.length) {
+        input.focus();
+                $('html, body').animate({
+                    scrollTop: input.offset().top - 200
+                }, 500);
+            }
+        }, 300);
+    };
+        });
+    }
+    
+    // Start initialization
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMarkEntry);
+    } else {
+        initMarkEntry();
+    }
+})();
+</script>
+{% endblock %}

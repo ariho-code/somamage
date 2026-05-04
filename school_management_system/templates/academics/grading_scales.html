@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ grading_system.level }} Grading Scales — EduManage{% endblock %}
+{% block page_title %}Grading Scales{% endblock %}
+{% block page_subtitle %}{{ grading_system.level }} — manage grade bands and points{% endblock %}
+
+{% block extra_css %}
+<style>
+.gsc-wrap { display:flex; flex-direction:column; gap:20px; }
+
+.gsc-hero {
+    background:linear-gradient(135deg,{% if grading_system.level == 'Primary' %}#059669 0%,#0891b2{% elif grading_system.level == 'O-Level' %}#4f46e5 0%,#7c3aed{% else %}#d97706 0%,#b45309{% endif %} 100%);
+    border-radius:var(--radius); padding:24px 28px; color:#fff;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    position:relative; overflow:hidden;
+}
+.gsc-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.07); pointer-events:none; }
+.gsc-hero-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+.gsc-hero-sub   { font-size:13px; opacity:.85; }
+.gsc-hero-actions { display:flex; gap:10px; flex-shrink:0; position:relative; z-index:1; }
+.gsc-hero-btn {
+    padding:9px 18px; border-radius:9px; font-size:13px; font-weight:600;
+    cursor:pointer; border:none; display:flex; align-items:center; gap:7px; transition:all 150ms;
+}
+.gsc-hero-btn-white { background:#fff; color:{% if grading_system.level == 'Primary' %}#059669{% elif grading_system.level == 'O-Level' %}#4f46e5{% else %}#d97706{% endif %}; }
+.gsc-hero-btn-white:hover { background:rgba(255,255,255,.9); transform:translateY(-1px); }
+.gsc-hero-btn-ghost { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.25); }
+.gsc-hero-btn-ghost:hover { background:rgba(255,255,255,.25); }
+
+/* Table card */
+.gsc-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden;
+}
+.gsc-card-head {
+    padding:14px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.gsc-card-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+
+/* Scales table */
+.gsc-table { width:100%; border-collapse:collapse; }
+.gsc-table thead tr { background:var(--surface); }
+.gsc-table th {
+    padding:11px 16px; text-align:left; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted);
+    border-bottom:1px solid var(--border);
+}
+.gsc-table tbody tr { border-bottom:1px solid var(--border); transition:background 120ms; }
+.gsc-table tbody tr:last-child { border-bottom:none; }
+.gsc-table tbody tr:hover { background:var(--surface); }
+.gsc-table td { padding:13px 16px; font-size:13.5px; vertical-align:middle; }
+
+/* Grade badge */
+.gsc-grade {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:38px; height:30px; border-radius:7px;
+    font-size:13px; font-weight:800; font-family:'Poppins',sans-serif;
+}
+.pts-high  { background:#d1fae5; color:#065f46; }
+.pts-mid   { background:#dbeafe; color:#1e40af; }
+.pts-low   { background:#fef3c7; color:#92400e; }
+.pts-fail  { background:#fee2e2; color:#991b1b; }
+[data-theme="dark"] .pts-high { background:#064e3b; color:#6ee7b7; }
+[data-theme="dark"] .pts-mid  { background:#1e3a5f; color:#93c5fd; }
+[data-theme="dark"] .pts-low  { background:#451a03; color:#fcd34d; }
+[data-theme="dark"] .pts-fail { background:#450a0a; color:#fca5a5; }
+
+/* Range bar */
+.gsc-bar-track { height:6px; background:var(--surface-2); border-radius:3px; overflow:hidden; min-width:80px; }
+.gsc-bar-fill  { height:100%; border-radius:3px; }
+
+/* Action btn */
+.gsc-del-btn {
+    width:28px; height:28px; border-radius:7px; border:none; cursor:pointer;
+    background:rgba(239,68,68,.08); color:#ef4444;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+    transition:all 150ms;
+}
+.gsc-del-btn:hover { background:#ef4444; color:#fff; }
+
+/* Add form */
+.gsc-add-form { display:none; }
+.gsc-add-form.open { display:block; }
+.gsc-add-body { padding:20px 20px 24px; border-top:1px solid var(--border); }
+.gsc-add-grid { display:grid; grid-template-columns:90px 1fr 1fr 1fr 2fr auto; gap:10px; align-items:end; }
+.gsc-add-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:5px; }
+.gsc-add-group input { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); font-size:13px; outline:none; }
+.gsc-add-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+.gsc-add-btn {
+    padding:9px 18px; border-radius:8px; background:var(--accent); color:#fff;
+    border:none; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+    display:flex; align-items:center; gap:6px; transition:all 150ms;
+}
+.gsc-add-btn:hover { background:var(--accent-hover); transform:translateY(-1px); }
+
+/* Empty state */
+.gsc-empty { padding:48px 24px; text-align:center; }
+.gsc-empty-icon  { font-size:44px; color:var(--text-dim); margin-bottom:14px; }
+.gsc-empty-title { font-family:'Poppins',sans-serif; font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.gsc-empty-sub   { font-size:13.5px; color:var(--text-muted); margin-bottom:20px; }
+
+@media (max-width: 768px) {
+    .gsc-add-grid { grid-template-columns:1fr 1fr; }
+    .gsc-hero { flex-direction:column; }
+    .gsc-hero-actions { width:100%; }
+}
+@media (max-width: 480px) {
+    .gsc-add-grid { grid-template-columns:1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gsc-wrap">
+
+<!-- Breadcrumb -->
+<div style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+    <a href="{% url 'grading_settings' %}" style="color:var(--text-muted);text-decoration:none;"><i class="fas fa-arrow-left"></i> Grading Settings</a>
+    <span>/</span>
+    <span style="color:var(--text);">{{ grading_system.level }} Scales</span>
+</div>
+
+<!-- Hero -->
+<div class="gsc-hero">
+    <div style="position:relative;z-index:1;">
+        <div class="gsc-hero-title">{{ grading_system.level }} — Grade Scales</div>
+        <div class="gsc-hero-sub">{{ scales.count }} scale{{ scales.count|pluralize }} configured — {{ grading_system.name }}</div>
+    </div>
+    <div class="gsc-hero-actions">
+        <button class="gsc-hero-btn gsc-hero-btn-white" onclick="toggleAddForm()">
+            <i class="fas fa-plus"></i> Add Scale
+        </button>
+        <button class="gsc-hero-btn gsc-hero-btn-ghost" onclick="confirmReset()">
+            <i class="fas fa-redo"></i> Reset Defaults
+        </button>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Scales table -->
+<div class="gsc-card">
+    <div class="gsc-card-head">
+        <span class="gsc-card-title"><i class="fas fa-list-ol" style="margin-right:7px;"></i>Grade Scales</span>
+        <span style="font-size:12px;color:var(--text-muted);">{{ scales.count }} grades defined</span>
+    </div>
+
+    {% if scales %}
+    <div style="overflow-x:auto;">
+        <table class="gsc-table">
+            <thead>
+                <tr>
+                    <th>Grade</th>
+                    <th>Score Range</th>
+                    <th>Visual</th>
+                    <th>Points</th>
+                    <th>Remark</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="scalesBody">
+                {% for scale in scales %}
+                <tr id="scale-row-{{ scale.pk }}">
+                    <td>
+                        <span class="gsc-grade {% if scale.points >= 5 %}pts-high{% elif scale.points >= 3 %}pts-mid{% elif scale.points >= 1 %}pts-low{% else %}pts-fail{% endif %}">
+                            {{ scale.grade }}
+                        </span>
+                    </td>
+                    <td style="font-weight:600;font-size:14px;">
+                        {{ scale.min_score }}% – {{ scale.max_score }}%
+                    </td>
+                    <td style="min-width:100px;">
+                        <div class="gsc-bar-track">
+                            <div class="gsc-bar-fill {% if scale.points >= 5 %}pts-high{% elif scale.points >= 3 %}pts-mid{% elif scale.points >= 1 %}pts-low{% else %}pts-fail{% endif %}"
+                                 style="width:{{ scale.max_score }}%;background:{% if scale.points >= 5 %}#10b981{% elif scale.points >= 3 %}#4f46e5{% elif scale.points >= 1 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight:700;font-size:14px;">{{ scale.points }}</span>
+                        <span style="font-size:11px;color:var(--text-muted);margin-left:2px;">pts</span>
+                    </td>
+                    <td style="color:var(--text-muted);">{{ scale.remark }}</td>
+                    <td>
+                        <form method="post" style="margin:0;" onsubmit="return confirm('Delete {{ scale.grade }} scale?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="scale_id" value="{{ scale.pk }}">
+                            <button type="submit" class="gsc-del-btn" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add scale form (inline toggle) -->
+    <div class="gsc-add-form" id="addForm">
+        <div class="gsc-add-body">
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">Add New Scale</div>
+            <form method="post" id="addScaleForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="gsc-add-grid">
+                    <div class="gsc-add-group">
+                        <label>Grade</label>
+                        <input type="text" name="grade" placeholder="e.g. A" required maxlength="10" id="newGrade">
+                    </div>
+                    <div class="gsc-add-group">
+                        <label>Min Score %</label>
+                        <input type="number" name="min_score" placeholder="0.00" step="0.01" min="0" max="100" required id="newMin">
+                    </div>
+                    <div class="gsc-add-group">
+                        <label>Max Score %</label>
+                        <input type="number" name="max_score" placeholder="100.00" step="0.01" min="0" max="100" required id="newMax">
+                    </div>
+                    <div class="gsc-add-group">
+                        <label>Points</label>
+                        <input type="number" name="points" placeholder="0.00" step="0.01" min="0" required id="newPoints">
+                    </div>
+                    <div class="gsc-add-group">
+                        <label>Remark</label>
+                        <input type="text" name="remark" placeholder="e.g. Distinction" id="newRemark">
+                    </div>
+                    <div class="gsc-add-group">
+                        <button type="submit" class="gsc-add-btn">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="gsc-empty">
+        <div class="gsc-empty-icon"><i class="fas fa-list-ol"></i></div>
+        <div class="gsc-empty-title">No Grade Scales Yet</div>
+        <div class="gsc-empty-sub">Add grade scales manually or reset to Uganda curriculum defaults.</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="gsc-add-btn" onclick="toggleAddForm()">
+                <i class="fas fa-plus"></i> Add Scale
+            </button>
+            <form method="post" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reset_defaults">
+                <button type="submit" class="gsc-hero-btn gsc-hero-btn-ghost" style="padding:9px 18px;">
+                    <i class="fas fa-magic"></i> Initialize Uganda Defaults
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Info panel -->
+<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);">
+    <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:flex-start;gap:10px;">
+        <i class="fas fa-info-circle" style="margin-top:2px;color:var(--accent);"></i>
+        <div>
+            <strong style="color:var(--text);">How grade scales work:</strong>
+            When a teacher enters a score, the system looks up the matching grade scale and assigns the grade letter and points automatically.
+            Make sure score ranges don't overlap and cover 0–100% completely.
+            {% if grading_system.level == 'O-Level' %}
+            For O-Level (UCE), grades are D1–F9 with points 1–9. Division is calculated from the sum of best 8 subjects.
+            {% elif grading_system.level == 'Primary' %}
+            For Primary (PLE), grades are 1–7 with the best possible aggregate being 4 (4 subjects × grade 1).
+            {% elif grading_system.level == 'A-Level' %}
+            For A-Level (UACE), grades are A–F with points 6–0. Combinations use principal subjects (3) and subsidiaries.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Reset defaults form (hidden) -->
+<form method="post" id="resetForm" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reset_defaults">
+</form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAddForm() {
+    var f = document.getElementById('addForm');
+    f.classList.toggle('open');
+    if (f.classList.contains('open')) {
+        document.getElementById('newGrade').focus();
+    }
+}
+
+function confirmReset() {
+    if (confirm('Reset ALL grade scales to Uganda curriculum defaults for {{ grading_system.level }}?\n\nThis will DELETE all current scales and replace them with the standard Uganda curriculum grades.')) {
+        document.getElementById('resetForm').submit();
+    }
+}
+</script>
+{% endblock %}

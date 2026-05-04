@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card">
+        <h2><i class="fas fa-laptop-code"></i> E-Learning Platform</h2>
+        <p>Explore our online courses and enhance your learning experience</p>
+    </div>
+    
+    <div class="row">
+        {% for course in courses %}
+        <div class="col-md-4 mb-4">
+            <div class="card course-card" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s;">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" class="card-img-top" alt="{{ course.title }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                {% endif %}
+                <div class="card-body" style="padding: 24px;">
+                    <h5 class="card-title" style="font-weight: 700; margin-bottom: 12px;">{{ course.title }}</h5>
+                    <p class="card-text" style="color: var(--gray-600); margin-bottom: 16px; font-size: 14px;">{{ course.description|truncatewords:20 }}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <span style="font-size: 12px; color: var(--gray-500);">
+                            <i class="fas fa-user"></i> {{ course.instructor.get_full_name|default:course.instructor.username }}
+                        </span>
+                        <span style="font-size: 12px; color: var(--gray-500);">
+                            <i class="fas fa-book"></i> {{ course.get_lesson_count }} lessons
+                        </span>
+                    </div>
+                    <a href="{% url 'course_detail' course.id %}" class="btn btn-primary" style="width: 100%; border-radius: 12px; padding: 12px; font-weight: 600;">
+                        {% if course.id in enrolled_course_ids %}
+                        <i class="fas fa-play"></i> Continue Learning
+                        {% else %}
+                        <i class="fas fa-plus"></i> Enroll Now
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info" style="border-radius: 16px; padding: 40px; text-align: center;">
+                <i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 20px; color: var(--info);"></i>
+                <h4>No courses available</h4>
+                <p>Check back later for new courses!</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}
+

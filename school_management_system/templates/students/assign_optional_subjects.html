@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Assign Optional Subjects - {{ student.get_full_name }}{% endblock %}
+{% block page_title %}Assign Optional Subjects{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-book"></i> Assign Optional Subjects: {{ student.get_full_name }}</h2>
+        <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Info Card -->
+    <div class="card mb-4" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="card-body">
+            <h5><i class="fas fa-info-circle"></i> Student Information</h5>
+            <p class="mb-1"><strong>Name:</strong> {{ student.get_full_name }}</p>
+            <p class="mb-0"><strong>Current Grade:</strong> {{ current_enrollment.grade.name }}</p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="card" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div class="card-header" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                <h5 class="mb-0"><i class="fas fa-check-square"></i> Select Optional Subjects</h5>
+            </div>
+            <div class="card-body">
+                {% if optional_subjects %}
+                <div class="row">
+                    {% for subject in optional_subjects %}
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="optional_subjects" value="{{ subject.id }}" id="subject_{{ subject.id }}"
+                                   {% if subject.id in assigned_subjects %}checked{% endif %}>
+                            <label class="form-check-label" for="subject_{{ subject.id }}">
+                                <strong>{{ subject.name }}</strong>
+                                {% if subject.code %}
+                                <span class="text-muted">({{ subject.code }})</span>
+                                {% endif %}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No optional subjects available for O-Level.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions mt-4 mb-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

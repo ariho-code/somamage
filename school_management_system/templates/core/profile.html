@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}My Profile — EduManage{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_subtitle %}View and manage your account{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+/* Card base */
+.pf-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+/* Hero card */
+.pf-hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 28px 28px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+}
+.pf-hero::before {
+    content: '';
+    position: absolute; top: -60px; right: -40px;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+}
+.pf-avatar {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    border: 3px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative; z-index: 1;
+}
+.pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pf-hero-info { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.pf-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px; font-weight: 800;
+    line-height: 1.15; margin-bottom: 4px;
+}
+.pf-role { font-size: 13.5px; opacity: 0.88; margin-bottom: 16px; }
+.pf-edit-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #fff; font-size: 13px; font-weight: 600;
+    transition: background 200ms ease;
+}
+.pf-edit-btn:hover { background: rgba(255,255,255,0.28); color: #fff; }
+.pf-edit-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Info grid */
+.pf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+.pf-field {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+}
+.pf-field:nth-child(even) { border-right: none; }
+.pf-field:nth-last-child(-n+2) { border-bottom: none; }
+.pf-field-label {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+.pf-field-value {
+    font-size: 14px; font-weight: 500;
+    color: var(--text);
+}
+.pf-field-empty { color: var(--text-dim); font-style: italic; }
+
+.pf-section-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+.pf-section-head svg { width: 15px; height: 15px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pf-section-title { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+
+.pf-full-field {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.pf-full-field:last-child { border-bottom: none; }
+
+@media (max-width: 640px) {
+    .pf-grid { grid-template-columns: 1fr; }
+    .pf-field { border-right: none; }
+    .pf-field:last-child { border-bottom: none; }
+    .pf-hero { flex-direction: column; text-align: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+
+    <!-- Hero -->
+    <div class="pf-hero">
+        <div class="pf-avatar">
+            {% if user.profile_picture %}
+            <img src="{{ user.get_profile_picture_url }}" alt="{{ user.get_full_name }}">
+            {% else %}
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            {% endif %}
+        </div>
+        <div class="pf-hero-info">
+            <div class="pf-name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="pf-role">{{ user.role|title|default:"User" }}{% if user.school %} · {{ user.school.name }}{% endif %}</div>
+            <a href="{% url 'profile_settings' %}" class="pf-edit-btn">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Profile details -->
+    <div class="pf-card">
+        <div class="pf-section-head">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <span class="pf-section-title">Personal Information</span>
+        </div>
+        <div class="pf-grid">
+            <div class="pf-field">
+                <div class="pf-field-label">Full Name</div>
+                <div class="pf-field-value">{{ user.get_full_name|default:"—" }}</div>
+            </div>
+            <div class="pf-field">
+                <div class="pf-field-label">Email</div>
+                <div class="pf-field-value">{{ user.email|default:"—" }}</div>
+            </div>
+            <div class="pf-field">
+                <div class="pf-field-label">Phone</div>
+                <div class="pf-field-value">{{ user.phone_number|default:"—" }}</div>
+            </div>
+            <div class="pf-field">
+                <div class="pf-field-label">Date of Birth</div>
+                <div class="pf-field-value">{{ user.date_of_birth|default:"—" }}</div>
+            </div>
+            {% if user.age %}
+            <div class="pf-field">
+                <div class="pf-field-label">Age</div>
+                <div class="pf-field-value">{{ user.age }} years</div>
+            </div>
+            {% endif %}
+            {% if user.school %}
+            <div class="pf-field">
+                <div class="pf-field-label">School</div>
+                <div class="pf-field-value">{{ user.school.name }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if user.qualifications or user.bio %}
+        <div class="pf-section-head" style="border-top: 1px solid var(--border);">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="pf-section-title">Additional Details</span>
+        </div>
+        {% if user.qualifications %}
+        <div class="pf-full-field">
+            <div class="pf-field-label">Qualifications</div>
+            <div class="pf-field-value" style="margin-top: 4px; line-height: 1.6;">{{ user.qualifications }}</div>
+        </div>
+        {% endif %}
+        {% if user.bio %}
+        <div class="pf-full-field">
+            <div class="pf-field-label">Bio</div>
+            <div class="pf-field-value" style="margin-top: 4px; line-height: 1.6;">{{ user.bio }}</div>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Delete Grade{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h4>
+        </div>
+        <div class="card-body">
+            <p>Are you sure you want to delete the class <strong>{{ grade.name }}</strong>?</p>
+            <p class="text-danger"><i class="fas fa-info-circle"></i> This action cannot be undone. All associated streams and enrollments will be affected.</p>
+            
+            {% if grade.streams.all %}
+            <div class="alert alert-warning">
+                <strong>Warning:</strong> This class has {{ grade.streams.count }} stream(s):
+                <ul class="mb-0 mt-2">
+                    {% for stream in grade.streams.all %}
+                        <li>{{ stream.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Yes, Delete Class
+                </button>
+                <a href="{% url 'grade_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

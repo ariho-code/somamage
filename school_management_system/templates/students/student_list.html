@@ -1,0 +1,2045 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Students — SomaMange{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block page_subtitle %}Manage enrollments, profiles, and records{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════
+   STUDENT LIST PAGE — PREMIUM STYLES
+═══════════════════════════════════════════════════ */
+
+/* ── Page header ── */
+.sl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.sl-header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.sl-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.sl-count-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,102,0,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(255,102,0,0.2);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sl-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+/* ── Quick stats bar ── */
+.sl-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-mini {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color var(--transition);
+}
+
+.stat-mini:hover { border-color: rgba(255,102,0,0.25); }
+
+.stat-mini-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+}
+
+.stat-mini-icon.orange { background: rgba(255,102,0,0.12); }
+.stat-mini-icon.green  { background: rgba(34,197,94,0.12); }
+.stat-mini-icon.blue   { background: rgba(59,130,246,0.12); }
+.stat-mini-icon svg { width: 18px; height: 18px; }
+.stat-mini-icon.orange svg { stroke: var(--accent); }
+.stat-mini-icon.green svg  { stroke: #22c55e; }
+.stat-mini-icon.blue svg   { stroke: #3b82f6; }
+
+.stat-mini-info { min-width: 0; }
+.stat-mini-val  { font-size: 20px; font-weight: 800; color: var(--text); font-family: 'Poppins', sans-serif; line-height: 1; }
+.stat-mini-lbl  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Filter bar ── */
+.sl-filter-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.sl-search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.sl-search-wrap svg {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 15px; height: 15px;
+    stroke: var(--text-muted);
+    fill: none;
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+.sl-search-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+    padding: 8px 12px 8px 36px;
+    outline: none;
+    transition: border-color var(--transition), background var(--transition);
+}
+
+.sl-search-input:focus {
+    border-color: rgba(255,102,0,0.5);
+    background: rgba(255,102,0,0.03);
+    box-shadow: 0 0 0 3px rgba(255,102,0,0.10);
+}
+
+.sl-search-input::placeholder { color: var(--text-dim); }
+
+.sl-filter-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    padding: 8px 12px;
+    outline: none;
+    cursor: pointer;
+    min-width: 130px;
+    transition: border-color var(--transition);
+}
+
+.sl-filter-select:focus { border-color: rgba(255,102,0,0.5); }
+.sl-filter-select option { background: #1a1a28; color: var(--text); }
+
+.sl-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.sl-filter-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); border-color: var(--border-hover); }
+.sl-filter-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.sl-filter-btn.active { background: rgba(255,102,0,0.10); color: var(--accent); border-color: rgba(255,102,0,0.25); }
+
+/* ── Main card ── */
+.sl-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.sl-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sl-card-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sl-card-title svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; }
+
+.sl-range-info {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ── Student table ── */
+.student-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+.student-table thead th {
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.student-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+}
+
+.student-table tbody tr:last-child { border-bottom: none; }
+.student-table tbody tr:hover { background: rgba(255,102,0,0.03); }
+
+.student-table td {
+    padding: 11px 14px;
+    vertical-align: middle;
+    color: var(--text);
+}
+
+/* ── Avatar ── */
+.stu-avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.stu-avatar {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--accent), #cc4400);
+}
+
+.stu-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.stu-avatar.color-0 { background: linear-gradient(135deg, #ff6600, #cc4400); }
+.stu-avatar.color-1 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stu-avatar.color-2 { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.stu-avatar.color-3 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.stu-avatar.color-4 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stu-avatar.color-5 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.stu-avatar.color-6 { background: linear-gradient(135deg, #06b6d4, #0284c7); }
+.stu-avatar.color-7 { background: linear-gradient(135deg, #ec4899, #be185d); }
+
+.stu-name { font-weight: 600; color: var(--text); line-height: 1.2; }
+.stu-adm  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Badges & pills ── */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pill-grade {
+    background: rgba(255,102,0,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(255,102,0,0.2);
+}
+
+.pill-male {
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.2);
+}
+
+.pill-female {
+    background: rgba(236,72,153,0.12);
+    color: #f472b6;
+    border: 1px solid rgba(236,72,153,0.2);
+}
+
+.pill-active {
+    background: rgba(34,197,94,0.12);
+    color: #4ade80;
+    border: 1px solid rgba(34,197,94,0.2);
+}
+
+.pill-inactive {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.pill-none {
+    background: rgba(255,255,255,0.04);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-style: italic;
+}
+
+/* ── Action buttons ── */
+.stu-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stu-btn {
+    width: 30px; height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.stu-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stu-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: var(--border-hover); }
+.stu-btn.view:hover { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.25); }
+.stu-btn.edit:hover { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+.stu-btn.del:hover  { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.25); }
+
+/* ── Empty state ── */
+.sl-empty {
+    padding: 72px 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.sl-empty-icon {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    background: rgba(255,102,0,0.08);
+    border: 1px solid rgba(255,102,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+}
+
+.sl-empty-icon svg { width: 36px; height: 36px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+.sl-empty h3 { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin: 0; }
+.sl-empty p  { font-size: 13.5px; color: var(--text-muted); max-width: 340px; margin: 0; line-height: 1.6; }
+
+/* ── Pagination ── */
+.sl-pagination {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sl-pag-info { font-size: 12px; color: var(--text-muted); }
+.sl-pag-info strong { color: var(--text); }
+
+.sl-pag-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sl-pag-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--transition);
+    padding: 0 8px;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+}
+
+.sl-pag-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.sl-pag-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 700; }
+.sl-pag-btn.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
+.sl-pag-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Mobile cards ── */
+.sl-mobile-list { display: none; }
+
+.stu-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    animation: cardFadeIn 300ms ease both;
+}
+
+.stu-card:hover { border-color: rgba(255,102,0,0.2); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+
+.stu-card-avatar {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: white;
+    overflow: hidden;
+}
+
+.stu-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.stu-card-body { flex: 1; min-width: 0; }
+.stu-card-name { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.stu-card-adm  { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+
+.stu-card-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+
+.stu-card-actions { display: flex; gap: 6px; margin-top: 4px; }
+
+.stu-card-actions .stu-btn { width: 34px; height: 34px; }
+
+/* ── Action btns ── */
+.btn-primary-sl {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    background: linear-gradient(135deg, var(--accent), #e55a00);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all var(--transition);
+    box-shadow: 0 4px 14px rgba(255,102,0,0.3);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-primary-sl:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,102,0,0.4); color: white; }
+.btn-primary-sl svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+.btn-secondary-sl {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-secondary-sl:hover { background: rgba(255,255,255,0.09); border-color: var(--border-hover); color: var(--text); }
+.btn-secondary-sl svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+/* ── Modal tab system ── */
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    background: rgba(255,255,255,0.02);
+    gap: 0;
+    overflow-x: auto;
+}
+
+.modal-tab-btn {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color var(--transition), border-color var(--transition);
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    top: 1px;
+}
+
+.modal-tab-btn:hover { color: var(--text); }
+.modal-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.modal-tab-panel { display: none; }
+.modal-tab-panel.active { display: block; }
+
+/* ── Step indicator ── */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 16px 24px 0;
+    overflow-x: auto;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.step-item.active { color: var(--accent); }
+.step-item.done   { color: var(--success); }
+
+.step-circle {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    transition: all var(--transition);
+}
+
+.step-item.active .step-circle { background: rgba(255,102,0,0.15); border-color: rgba(255,102,0,0.4); color: var(--accent); }
+.step-item.done   .step-circle { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: #22c55e; }
+
+.step-connector {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    min-width: 20px;
+    margin: 0 6px;
+}
+
+/* ── Import dropzone ── */
+.import-dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: rgba(255,255,255,0.02);
+    position: relative;
+}
+
+.import-dropzone:hover,
+.import-dropzone.drag-over {
+    border-color: rgba(255,102,0,0.5);
+    background: rgba(255,102,0,0.04);
+}
+
+.import-dropzone-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 12px;
+    background: rgba(255,102,0,0.08);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,102,0,0.15);
+}
+
+.import-dropzone-icon svg { width: 24px; height: 24px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+
+.import-dropzone h5 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; font-family: 'Poppins', sans-serif; }
+.import-dropzone p  { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+.import-dropzone a  { color: var(--accent); font-weight: 600; }
+
+.import-file-hidden { display: none; }
+
+.import-file-preview {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: var(--radius-sm);
+    margin-top: 12px;
+}
+
+.import-file-preview.visible { display: flex; }
+.import-file-preview svg { width: 18px; height: 18px; stroke: #22c55e; fill: none; stroke-width: 2; flex-shrink: 0; }
+.import-file-preview span { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-file-preview .remove-file { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; display: flex; align-items: center; }
+.import-file-preview .remove-file svg { stroke: currentColor; transition: color var(--transition); }
+.import-file-preview .remove-file:hover svg { stroke: #ef4444; }
+
+.import-instructions {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-top: 16px;
+}
+
+.import-instructions h6 { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.import-instructions ul {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+}
+
+.import-instructions ul li {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.import-instructions ul li::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.import-col-tag {
+    background: rgba(255,102,0,0.10);
+    color: var(--accent);
+    border: 1px solid rgba(255,102,0,0.15);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    font-family: monospace;
+}
+
+/* ── Delete confirm modal ── */
+.delete-warn-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.delete-warn-box svg { width: 18px; height: 18px; stroke: #ef4444; fill: none; stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+.delete-warn-box p { font-size: 13px; color: #f87171; margin: 0; line-height: 1.5; }
+
+.delete-student-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    padding: 12px 0;
+}
+
+.delete-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.delete-list li { padding: 3px 0; display: flex; align-items: center; gap: 7px; }
+.delete-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: #ef4444; opacity: 0.7; flex-shrink: 0; }
+
+/* ── Form field styles for modals ── */
+.form-field-group { margin-bottom: 16px; }
+
+.form-field-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.form-field-group .form-control {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--text) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+    padding: 10px 14px !important;
+    width: 100%;
+}
+
+.form-field-group .form-control:focus {
+    background: rgba(255,102,0,0.04) !important;
+    border-color: rgba(255,102,0,0.5) !important;
+    box-shadow: 0 0 0 3px rgba(255,102,0,0.12) !important;
+    outline: none !important;
+}
+
+.form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.form-section-title svg { width: 15px; height: 15px; stroke: var(--accent); fill: none; stroke-width: 2; }
+
+/* ── Light mode overrides for student list ── */
+[data-theme="light"] .sl-card { background: #ffffff; border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .sl-card-header { border-bottom-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .sl-card-title { color: #111118; }
+[data-theme="light"] .sl-range-info { color: #6b7280; }
+[data-theme="light"] .stat-mini { background: #ffffff; border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .stat-mini-val { color: #111118; }
+[data-theme="light"] .stat-mini-lbl { color: #6b7280; }
+[data-theme="light"] .sl-filter-bar { background: #ffffff; border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .sl-search-input { background: #f8f9fb; border-color: rgba(0,0,0,0.12); color: #111118; }
+[data-theme="light"] .sl-search-input::placeholder { color: #9ca3af; }
+[data-theme="light"] .sl-filter-select { background: #f8f9fb; border-color: rgba(0,0,0,0.12); color: #111118; }
+[data-theme="light"] .sl-filter-select option { background: #ffffff; color: #111118; }
+[data-theme="light"] .sl-filter-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.09); color: #6b7280; }
+[data-theme="light"] .sl-filter-btn:hover { background: rgba(0,0,0,0.07); color: #111118; }
+[data-theme="light"] .student-table thead th { background: #f8f9fb; color: #6b7280; border-bottom-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .student-table td { color: #374151; border-bottom-color: rgba(0,0,0,0.05); }
+[data-theme="light"] .student-table tbody tr:hover { background: rgba(255,102,0,0.03); }
+[data-theme="light"] .stu-name { color: #111118; }
+[data-theme="light"] .stu-adm  { color: #6b7280; }
+[data-theme="light"] .stu-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.09); color: #6b7280; }
+[data-theme="light"] .stu-btn:hover { background: rgba(0,0,0,0.06); color: #111118; }
+[data-theme="light"] .pill-inactive { background: rgba(0,0,0,0.05); color: #6b7280; border-color: rgba(0,0,0,0.09); }
+[data-theme="light"] .pill-none { background: rgba(0,0,0,0.04); color: #9ca3af; border-color: rgba(0,0,0,0.08); }
+[data-theme="light"] .sl-pagination { border-top-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .sl-pag-info { color: #6b7280; }
+[data-theme="light"] .sl-pag-btn { background: #ffffff; border-color: rgba(0,0,0,0.10); color: #6b7280; }
+[data-theme="light"] .sl-pag-btn:hover { background: rgba(0,0,0,0.04); color: #111118; }
+[data-theme="light"] .stu-card { background: #ffffff; border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .stu-card-name { color: #111118; }
+[data-theme="light"] .stu-card-adm  { color: #6b7280; }
+[data-theme="light"] .import-dropzone { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12); }
+[data-theme="light"] .import-dropzone:hover { border-color: rgba(255,102,0,0.5); background: rgba(255,102,0,0.03); }
+[data-theme="light"] .import-instructions { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .import-instructions h6 { color: #111118; }
+[data-theme="light"] .import-instructions ul li { color: #6b7280; }
+[data-theme="light"] .modal-tabs { background: rgba(0,0,0,0.02); border-bottom-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .modal-tab-btn { color: #6b7280; }
+[data-theme="light"] .modal-tab-btn:hover { color: #111118; }
+[data-theme="light"] .form-field-group .form-control { background: #f8f9fb !important; border-color: rgba(0,0,0,0.12) !important; color: #111118 !important; }
+[data-theme="light"] .form-field-group label { color: #6b7280; }
+[data-theme="light"] .form-section-title { color: #111118; border-bottom-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .step-circle { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); color: #6b7280; }
+[data-theme="light"] .step-item { color: #9ca3af; }
+[data-theme="light"] .sl-empty-icon { background: rgba(255,102,0,0.06); }
+[data-theme="light"] .sl-empty h3 { color: #111118; }
+[data-theme="light"] .sl-empty p  { color: #6b7280; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .sl-stats-bar { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .sl-stats-bar { grid-template-columns: 1fr 1fr; }
+    .sl-stats-bar .stat-mini:last-child { grid-column: 1 / -1; }
+    .sl-title { font-size: 18px; }
+    .sl-filter-bar { padding: 10px 12px; }
+    .student-table { display: none; }
+    .sl-mobile-list { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+    .sl-card-header { padding: 12px 16px; }
+    .sl-pagination { padding: 12px 16px; }
+}
+
+@media (max-width: 480px) {
+    .sl-stats-bar { grid-template-columns: 1fr; }
+    .sl-stats-bar .stat-mini:last-child { grid-column: auto; }
+    .sl-header-actions { width: 100%; }
+    .sl-header-actions .btn-primary-sl,
+    .sl-header-actions .btn-secondary-sl { flex: 1; justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+<div style="margin-bottom:16px;">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" style="margin-bottom:8px;">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Page Header ── -->
+<div class="sl-header">
+    <div class="sl-header-left">
+        <h1 class="sl-title">Students</h1>
+        <span class="sl-count-badge">{{ students.paginator.count }} total</span>
+    </div>
+    {% if user.is_superadmin or user.is_headteacher or user.role == 'teacher' %}
+    <div class="sl-header-actions">
+        {% if user.is_superadmin or user.is_headteacher %}
+        <button type="button" class="btn-secondary-sl" data-toggle="modal" data-target="#importStudentsModal">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import
+        </button>
+        {% endif %}
+        <button type="button" class="btn-primary-sl" data-toggle="modal" data-target="#addStudentModal">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Add Student
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Quick Stats Bar ── -->
+<div class="sl-stats-bar">
+    <div class="stat-mini">
+        <div class="stat-mini-icon orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="stat-mini-info">
+            <div class="stat-mini-val">{{ students.paginator.count }}</div>
+            <div class="stat-mini-lbl">Total Students</div>
+        </div>
+    </div>
+    <div class="stat-mini">
+        <div class="stat-mini-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-mini-info">
+            <div class="stat-mini-val">{{ students.paginator.count }}</div>
+            <div class="stat-mini-lbl">Active This Term</div>
+        </div>
+    </div>
+    <div class="stat-mini">
+        <div class="stat-mini-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        </div>
+        <div class="stat-mini-info">
+            <div class="stat-mini-val">
+                {% if students %}
+                    {{ students|length }}
+                {% else %}0{% endif %}
+            </div>
+            <div class="stat-mini-lbl">This Page</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Filter Bar ── -->
+<form method="GET" action="{% url 'student_list' %}" id="studentFilterForm">
+<div class="sl-filter-bar">
+    <div class="sl-search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+            type="text"
+            name="search"
+            class="sl-search-input"
+            placeholder="Search name, admission no, guardian..."
+            value="{{ search_query|default:'' }}"
+            id="studentSearchInput"
+            autocomplete="off"
+        >
+    </div>
+
+    <select name="gender" class="sl-filter-select" id="genderFilter">
+        <option value="">All Genders</option>
+        <option value="M" {% if request.GET.gender == 'M' %}selected{% endif %}>Male</option>
+        <option value="F" {% if request.GET.gender == 'F' %}selected{% endif %}>Female</option>
+    </select>
+
+    {% if search_query or request.GET.gender %}
+    <a href="{% url 'student_list' %}" class="sl-filter-btn">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear
+    </a>
+    {% endif %}
+
+    <button type="submit" class="sl-filter-btn active" style="margin-left:auto;">
+        <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filter
+    </button>
+</div>
+</form>
+
+{% if search_query %}
+<div style="margin-bottom:14px; font-size:13px; color:var(--text-muted);">
+    Showing results for &ldquo;<strong style="color:var(--text);">{{ search_query }}</strong>&rdquo; &mdash;
+    <a href="{% url 'student_list' %}" style="color:var(--accent); font-weight:600;">Clear search</a>
+</div>
+{% endif %}
+
+<!-- ── Main Card ── -->
+<div class="sl-card">
+    <div class="sl-card-header">
+        <div class="sl-card-title">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            {% if user.classes_taught.exists %}My Class Students{% else %}All Students{% endif %}
+        </div>
+        {% if students %}
+        <div class="sl-range-info">
+            Showing <strong>{{ students.start_index }}</strong>–<strong>{{ students.end_index }}</strong> of <strong>{{ students.paginator.count }}</strong>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if students %}
+
+    <!-- Desktop Table -->
+    <div class="table-responsive" style="overflow-x:auto;">
+        <table class="student-table">
+            <thead>
+                <tr>
+                    <th style="width:42px;">#</th>
+                    <th>Student</th>
+                    <th>Admission No</th>
+                    <th>Grade</th>
+                    <th>Gender</th>
+                    <th>Date of Birth</th>
+                    <th>Status</th>
+                    <th style="width:120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                {% with enrollment=student.enrollments.all|first %}
+                <tr>
+                    <td style="color:var(--text-muted); font-size:12px;">{{ students.start_index|add:forloop.counter0 }}</td>
+                    <td>
+                        <div class="stu-avatar-wrap">
+                            <div class="stu-avatar color-{{ forloop.counter0|divisibleby:8|yesno:'0,' }}{% cycle '0' '1' '2' '3' '4' '5' '6' '7' as avatar_cycle %}">
+                                {% if student.photo %}
+                                <img src="{{ student.photo.url }}" alt="{{ student.get_full_name }}">
+                                {% else %}
+                                {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="stu-name">{{ student.get_full_name }}</div>
+                                {% if student.index_number %}
+                                <div class="stu-adm">Index: {{ student.index_number }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size:12.5px; font-weight:600; color:var(--text); font-family:monospace; background:rgba(255,255,255,0.04); padding:3px 8px; border-radius:5px; border:1px solid var(--border);">
+                            {{ student.admission_number|default:"—" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if enrollment and enrollment.is_active %}
+                        <span class="pill pill-grade">{{ enrollment.grade.name }}</span>
+                        {% else %}
+                        <span class="pill pill-none">Not enrolled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if student.gender == 'M' %}
+                        <span class="pill pill-male">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="7"/><line x1="15.5" y1="4.5" x2="22" y2="11"/><line x1="17" y1="4" x2="22" y2="4"/><line x1="22" y1="4" x2="22" y2="9"/></svg>
+                            Male
+                        </span>
+                        {% elif student.gender == 'F' %}
+                        <span class="pill pill-female">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="7"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+                            Female
+                        </span>
+                        {% else %}
+                        <span class="pill pill-none">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:13px; color:var(--text-muted);">
+                        {{ student.date_of_birth|date:"M d, Y"|default:"—" }}
+                    </td>
+                    <td>
+                        {% if enrollment and enrollment.is_active %}
+                        <span class="pill pill-active">Active</span>
+                        {% else %}
+                        <span class="pill pill-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="stu-actions">
+                            <a href="{% url 'student_detail' student.id %}" class="stu-btn view" title="View Profile">
+                                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
+                            {% if user.is_superadmin or user.is_headteacher or user.role == 'teacher' %}
+                            <button type="button" class="stu-btn edit edit-student-btn" title="Edit Student"
+                                    data-student-id="{{ student.id }}"
+                                    data-toggle="modal" data-target="#editStudentModal">
+                                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            {% endif %}
+                            {% if user.is_superadmin or user.is_headteacher %}
+                            <button type="button" class="stu-btn del delete-student-btn" title="Delete Student"
+                                    data-student-id="{{ student.id }}"
+                                    data-student-name="{{ student.get_full_name|escapejs }}"
+                                    data-toggle="modal" data-target="#deleteStudentModal">
+                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card List -->
+    <div class="sl-mobile-list">
+        {% for student in students %}
+        {% with enrollment=student.enrollments.all|first %}
+        <div class="stu-card" style="animation-delay:{{ forloop.counter0|add:'0' }}0ms;">
+            <div class="stu-card-avatar {% cycle 'color-0' 'color-1' 'color-2' 'color-3' 'color-4' 'color-5' 'color-6' 'color-7' %}">
+                {% if student.photo %}
+                <img src="{{ student.photo.url }}" alt="{{ student.get_full_name }}">
+                {% else %}
+                {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
+                {% endif %}
+            </div>
+            <div class="stu-card-body">
+                <div class="stu-card-name">{{ student.get_full_name }}</div>
+                <div class="stu-card-adm">{{ student.admission_number|default:"No Admission No" }}</div>
+                <div class="stu-card-pills">
+                    {% if enrollment and enrollment.is_active %}
+                    <span class="pill pill-grade">{{ enrollment.grade.name }}</span>
+                    {% endif %}
+                    {% if student.gender == 'M' %}
+                    <span class="pill pill-male">Male</span>
+                    {% elif student.gender == 'F' %}
+                    <span class="pill pill-female">Female</span>
+                    {% endif %}
+                    {% if enrollment and enrollment.is_active %}
+                    <span class="pill pill-active">Active</span>
+                    {% else %}
+                    <span class="pill pill-inactive">Inactive</span>
+                    {% endif %}
+                </div>
+                <div class="stu-card-actions">
+                    <a href="{% url 'student_detail' student.id %}" class="stu-btn view" title="View">
+                        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </a>
+                    {% if user.is_superadmin or user.is_headteacher or user.role == 'teacher' %}
+                    <button type="button" class="stu-btn edit edit-student-btn" title="Edit"
+                            data-student-id="{{ student.id }}" data-toggle="modal" data-target="#editStudentModal">
+                        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    {% endif %}
+                    {% if user.is_superadmin or user.is_headteacher %}
+                    <button type="button" class="stu-btn del delete-student-btn" title="Delete"
+                            data-student-id="{{ student.id }}"
+                            data-student-name="{{ student.get_full_name|escapejs }}"
+                            data-toggle="modal" data-target="#deleteStudentModal">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if students.has_other_pages %}
+    <div class="sl-pagination">
+        <div class="sl-pag-info">
+            Showing <strong>{{ students.start_index }}</strong>–<strong>{{ students.end_index }}</strong> of <strong>{{ students.paginator.count }}</strong> student{{ students.paginator.count|pluralize }}
+        </div>
+        <div class="sl-pag-nav">
+            {% if students.has_previous %}
+            <a class="sl-pag-btn" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}" title="First">
+                <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+            </a>
+            <a class="sl-pag-btn" href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
+            {% else %}
+            <span class="sl-pag-btn disabled">
+                <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+            </span>
+            <span class="sl-pag-btn disabled">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </span>
+            {% endif %}
+
+            {% for num in students.paginator.page_range %}
+                {% if num == students.number %}
+                <span class="sl-pag-btn active">{{ num }}</span>
+                {% elif num >= students.number|add:'-2' and num <= students.number|add:'2' %}
+                <a class="sl-pag-btn" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if students.has_next %}
+            <a class="sl-pag-btn" href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+            <a class="sl-pag-btn" href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if request.GET.gender %}&gender={{ request.GET.gender }}{% endif %}" title="Last">
+                <svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            </a>
+            {% else %}
+            <span class="sl-pag-btn disabled">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+            <span class="sl-pag-btn disabled">
+                <svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="sl-pagination">
+        <div class="sl-pag-info">
+            Total: <strong>{{ students.paginator.count }}</strong> student{{ students.paginator.count|pluralize }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="sl-empty">
+        <div class="sl-empty-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>No Students Found</h3>
+        <p>
+            {% if search_query %}
+            No students match &ldquo;{{ search_query }}&rdquo;. Try a different search term or
+            <a href="{% url 'student_list' %}" style="color:var(--accent); font-weight:600;">clear the search</a>.
+            {% else %}
+            Get started by adding your first student. Click the button below to enroll a new student.
+            {% endif %}
+        </p>
+        {% if not search_query and user.is_superadmin or user.is_headteacher or user.role == 'teacher' %}
+        <button type="button" class="btn-primary-sl" data-toggle="modal" data-target="#addStudentModal">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Add First Student
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL 1: Add Student
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" role="dialog" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="padding-bottom:0 !important; border-bottom:none !important;">
+                <div style="width:100%;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding: 20px 24px 12px;">
+                        <h5 class="modal-title" id="addStudentModalLabel" style="font-family:'Poppins',sans-serif; font-size:17px; font-weight:800;">
+                            Add New Student
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="margin:0;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <!-- Step indicator -->
+                    <div class="step-indicator" id="addStudentStepIndicator">
+                        <div class="step-item active" id="step-ind-1">
+                            <div class="step-circle">1</div>
+                            Student Info
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-ind-2">
+                            <div class="step-circle">2</div>
+                            Guardian
+                        </div>
+                        <div class="step-connector"></div>
+                        <div class="step-item" id="step-ind-3">
+                            <div class="step-circle">3</div>
+                            Enrollment
+                        </div>
+                    </div>
+                    <!-- Tabs -->
+                    <div class="modal-tabs" style="margin-top:12px;">
+                        <button class="modal-tab-btn active" type="button" data-tab="tab-student" onclick="switchAddTab('tab-student', 1)">
+                            Student Info
+                        </button>
+                        <button class="modal-tab-btn" type="button" data-tab="tab-guardian" onclick="switchAddTab('tab-guardian', 2)">
+                            Guardian Info
+                        </button>
+                        <button class="modal-tab-btn" type="button" data-tab="tab-enrollment" onclick="switchAddTab('tab-enrollment', 3)">
+                            Enrollment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'add_student' %}" id="addStudentForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body modal-body--scroll" style="padding:20px 24px; max-height:65vh; overflow-y:auto;">
+
+                    <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius-sm); padding:10px 14px; font-size:12.5px; color:#93c5fd; margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Students do not have login accounts. Parents access records via the auto-generated admission number.
+                    </div>
+
+                    <!-- Tab 1: Student Info -->
+                    <div class="modal-tab-panel active" id="tab-student">
+                        <div class="form-section-title">
+                            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Student Information
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.first_name.label_tag }}
+                                    {{ student_form.first_name }}
+                                    {% if student_form.first_name.errors %}<div class="text-danger small mt-1">{{ student_form.first_name.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.last_name.label_tag }}
+                                    {{ student_form.last_name }}
+                                    {% if student_form.last_name.errors %}<div class="text-danger small mt-1">{{ student_form.last_name.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.date_of_birth.label_tag }}
+                                    {{ student_form.date_of_birth }}
+                                    {% if student_form.date_of_birth.errors %}<div class="text-danger small mt-1">{{ student_form.date_of_birth.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.gender.label_tag }}
+                                    {{ student_form.gender }}
+                                    {% if student_form.gender.errors %}<div class="text-danger small mt-1">{{ student_form.gender.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.index_number.label_tag }}
+                                    {{ student_form.index_number }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.blood_group.label_tag }}
+                                    {{ student_form.blood_group }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field-group">
+                            {{ student_form.photo.label_tag }}
+                            {{ student_form.photo }}
+                        </div>
+
+                        <div class="form-section-title" style="margin-top:8px;">
+                            <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Medical &amp; Emergency
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    <div class="form-check">
+                                        {{ student_form.has_disabilities }}
+                                        <label class="form-check-label" for="{{ student_form.has_disabilities.id_for_label }}" style="font-size:13.5px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500;">{{ student_form.has_disabilities.label }}</label>
+                                    </div>
+                                    <div id="disabilities-field-modal" style="display:none; margin-top:10px;">
+                                        {{ student_form.disabilities.label_tag }}
+                                        {{ student_form.disabilities }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    <div class="form-check">
+                                        {{ student_form.has_chronic_diseases }}
+                                        <label class="form-check-label" for="{{ student_form.has_chronic_diseases.id_for_label }}" style="font-size:13.5px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500;">{{ student_form.has_chronic_diseases.label }}</label>
+                                    </div>
+                                    <div id="chronic-diseases-field-modal" style="display:none; margin-top:10px;">
+                                        {{ student_form.chronic_diseases.label_tag }}
+                                        {{ student_form.chronic_diseases }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    <div class="form-check">
+                                        {{ student_form.has_special_care_needs }}
+                                        <label class="form-check-label" for="{{ student_form.has_special_care_needs.id_for_label }}" style="font-size:13.5px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500;">{{ student_form.has_special_care_needs.label }}</label>
+                                    </div>
+                                    <div id="special-care-field-modal" style="display:none; margin-top:10px;">
+                                        {{ student_form.special_care_needs.label_tag }}
+                                        {{ student_form.special_care_needs }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.allergies.label_tag }}
+                                    {{ student_form.allergies }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field-group">
+                            {{ student_form.medical_notes.label_tag }}
+                            {{ student_form.medical_notes }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.emergency_contact_name.label_tag }}
+                                    {{ student_form.emergency_contact_name }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ student_form.emergency_contact_phone.label_tag }}
+                                    {{ student_form.emergency_contact_phone }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                            <button type="button" class="btn-primary-sl" onclick="switchAddTab('tab-guardian', 2)">
+                                Next: Guardian Info
+                                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Guardian Info -->
+                    <div class="modal-tab-panel" id="tab-guardian">
+                        <div class="form-section-title">
+                            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                            Guardian / Parent Information
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ guardian_form.name.label_tag }}
+                                    {{ guardian_form.name }}
+                                    {% if guardian_form.name.errors %}<div class="text-danger small mt-1">{{ guardian_form.name.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ guardian_form.phone.label_tag }}
+                                    {{ guardian_form.phone }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ guardian_form.email.label_tag }}
+                                    {{ guardian_form.email }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ guardian_form.address.label_tag }}
+                                    {{ guardian_form.address }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if guardian_form.relationship %}
+                        <div class="form-field-group">
+                            {{ guardian_form.relationship.label_tag }}
+                            {{ guardian_form.relationship }}
+                        </div>
+                        {% endif %}
+                        <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                            <button type="button" class="btn-secondary-sl" onclick="switchAddTab('tab-student', 1)">
+                                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                                Back
+                            </button>
+                            <button type="button" class="btn-primary-sl" onclick="switchAddTab('tab-enrollment', 3)">
+                                Next: Enrollment
+                                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Enrollment -->
+                    <div class="modal-tab-panel" id="tab-enrollment">
+                        <div class="form-section-title">
+                            <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                            Enrollment Information
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ enrollment_form.grade.label_tag }}
+                                    {{ enrollment_form.grade }}
+                                    {% if enrollment_form.grade.errors %}<div class="text-danger small mt-1">{{ enrollment_form.grade.errors }}</div>{% endif %}
+                                    {% if enrollment_form.grade.help_text %}<small class="text-muted" style="font-size:11.5px;">{{ enrollment_form.grade.help_text }}</small>{% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group" id="combination-field-group" style="display:none;">
+                                    {{ enrollment_form.combination.label_tag }}
+                                    {{ enrollment_form.combination }}
+                                    {% if enrollment_form.combination.help_text %}<small class="text-muted" style="font-size:11.5px;">{{ enrollment_form.combination.help_text }}</small>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ enrollment_form.stream.label_tag }}
+                                    {{ enrollment_form.stream }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ enrollment_form.academic_year.label_tag }}
+                                    {{ enrollment_form.academic_year }}
+                                    {% if enrollment_form.academic_year.errors %}<div class="text-danger small mt-1">{{ enrollment_form.academic_year.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-field-group">
+                                    {{ enrollment_form.date_joined.label_tag }}
+                                    {{ enrollment_form.date_joined }}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                            <button type="button" class="btn-secondary-sl" onclick="switchAddTab('tab-guardian', 2)">
+                                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                                Back
+                            </button>
+                            <button type="submit" class="btn-primary-sl">
+                                <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                Save Student
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL 2: Import Students
+══════════════════════════════════════════════════════════ -->
+{% if user.is_superadmin or user.is_headteacher %}
+<div class="modal fade" id="importStudentsModal" tabindex="-1" role="dialog" aria-labelledby="importStudentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importStudentsModalLabel" style="display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import Students from Excel / CSV
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'bulk_upload_students' %}" enctype="multipart/form-data" id="importStudentsForm">
+                {% csrf_token %}
+                <div class="modal-body">
+
+                    <!-- Dropzone -->
+                    <div class="import-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
+                        <div class="import-dropzone-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <h5>Drop your file here</h5>
+                        <p>Accepts <strong>.csv</strong> and <strong>.xlsx</strong> files &mdash; <a href="#" onclick="event.stopPropagation();">click to browse</a></p>
+                        <input type="file" name="file" id="importFileInput" class="import-file-hidden" accept=".csv,.xlsx,.xls">
+                    </div>
+
+                    <!-- File preview -->
+                    <div class="import-file-preview" id="importFilePreview">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span id="importFileName">filename.csv</span>
+                        <button type="button" class="remove-file" onclick="clearImportFile(event)" title="Remove file">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="import-instructions">
+                        <h6>Required columns</h6>
+                        <ul>
+                            <li><span class="import-col-tag">first_name</span></li>
+                            <li><span class="import-col-tag">last_name</span></li>
+                            <li><span class="import-col-tag">gender</span> (M/F)</li>
+                            <li><span class="import-col-tag">grade</span></li>
+                            <li><span class="import-col-tag">date_of_birth</span></li>
+                            <li><span class="import-col-tag">guardian_name</span></li>
+                            <li><span class="import-col-tag">guardian_phone</span></li>
+                            <li><span class="import-col-tag">stream</span> (optional)</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                        <a href="/api/v1/students/students/bulk-upload/template/" class="sl-filter-btn" style="font-size:12px;">
+                            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download Template
+                        </a>
+                        <div style="font-size:12px; color:var(--text-muted);">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            Date format: YYYY-MM-DD or DD/MM/YYYY
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="importSubmitBtn" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:5px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload &amp; Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL 3: Edit Student (AJAX-loaded)
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" role="dialog" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStudentModalLabel" style="display:flex; align-items:center; gap:8px;">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit Student
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-body--scroll" id="editStudentModalBody" style="padding:24px; max-height:70vh; overflow-y:auto;">
+                <div style="text-align:center; padding:48px; color:var(--text-muted);">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite; display:inline-block;">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL 4: Delete Confirmation
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" role="dialog" aria-labelledby="deleteStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.06)) !important; border-bottom-color:rgba(239,68,68,0.2) !important;">
+                <h5 class="modal-title" id="deleteStudentModalLabel" style="color:#f87171 !important; display:flex; align-items:center; gap:7px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Delete Student
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" id="deleteStudentForm" action="">
+                {% csrf_token %}
+                <input type="hidden" id="deleteStudentId" name="student_id" value="">
+                <div class="modal-body">
+                    <div class="delete-warn-box">
+                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <p><strong>This action cannot be undone.</strong> All data associated with this student will be permanently deleted.</p>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:6px;">Deleting student:</p>
+                    <div class="delete-student-name" id="deleteStudentNameDisplay">—</div>
+                    <ul class="delete-list" style="margin-top:12px;">
+                        <li>Student profile and personal information</li>
+                        <li>All enrollment records</li>
+                        <li>All subject assignments</li>
+                        <li>All marks and report cards</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                        Delete Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Papers Modal (preserved from original) -->
+<div class="modal fade" id="assignPapersModal" tabindex="-1" role="dialog" aria-labelledby="assignPapersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignPapersModalLabel">
+                    Assign Papers — <span id="modalStudentName"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body modal-body--scroll">
+                <div id="papersAssignmentContainer">
+                    <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite; display:inline-block;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    // ── Tab switching for Add Student modal ──
+    window.switchAddTab = function(tabId, stepNum) {
+        // Hide all panels
+        document.querySelectorAll('#addStudentModal .modal-tab-panel').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        // Remove active from all tab btns
+        document.querySelectorAll('#addStudentModal .modal-tab-btn').forEach(function(b) {
+            b.classList.remove('active');
+        });
+        // Show selected panel
+        var panel = document.getElementById(tabId);
+        if (panel) panel.classList.add('active');
+        // Set active tab btn
+        var btn = document.querySelector('[data-tab="' + tabId + '"]');
+        if (btn) btn.classList.add('active');
+        // Update step indicator
+        for (var i = 1; i <= 3; i++) {
+            var ind = document.getElementById('step-ind-' + i);
+            if (!ind) continue;
+            ind.classList.remove('active', 'done');
+            if (i < stepNum) ind.classList.add('done');
+            else if (i === stepNum) ind.classList.add('active');
+        }
+        // Scroll modal body to top
+        var body = document.querySelector('#addStudentModal .modal-body');
+        if (body) body.scrollTop = 0;
+    };
+
+    // ── Medical fields toggle (Add Student modal) ──
+    function initMedicalToggles() {
+        function toggleField(checkboxId, fieldId) {
+            var cb  = document.getElementById(checkboxId);
+            var fld = document.getElementById(fieldId);
+            if (!cb || !fld) return;
+            fld.style.display = cb.checked ? 'block' : 'none';
+            cb.addEventListener('change', function() {
+                fld.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        toggleField('{{ student_form.has_disabilities.id_for_label }}',    'disabilities-field-modal');
+        toggleField('{{ student_form.has_chronic_diseases.id_for_label }}', 'chronic-diseases-field-modal');
+        toggleField('{{ student_form.has_special_care_needs.id_for_label }}','special-care-field-modal');
+    }
+    initMedicalToggles();
+
+    // ── Grade → combination/stream fetch (Add Student) ──
+    var gradeSelect = document.getElementById('{{ enrollment_form.grade.id_for_label }}');
+    var combinationGroup  = document.getElementById('combination-field-group');
+    var combinationSelect = document.getElementById('{{ enrollment_form.combination.id_for_label }}');
+
+    if (gradeSelect) {
+        gradeSelect.addEventListener('change', function() {
+            var gradeId = this.value;
+
+            // Combination fetch
+            if (gradeId && combinationGroup) {
+                fetch('/academics/combinations/get/?grade_id=' + gradeId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.combinations !== undefined) {
+                            combinationGroup.style.display = 'block';
+                            if (combinationSelect) {
+                                combinationSelect.innerHTML = '<option value="">-- Select Combination (Optional) --</option>';
+                                (data.combinations || []).forEach(function(combo) {
+                                    var opt = document.createElement('option');
+                                    opt.value = combo.id;
+                                    opt.textContent = combo.name;
+                                    combinationSelect.appendChild(opt);
+                                });
+                            }
+                        } else {
+                            if (combinationGroup) combinationGroup.style.display = 'none';
+                        }
+                    })
+                    .catch(function() {
+                        if (combinationGroup) combinationGroup.style.display = 'none';
+                    });
+            } else if (combinationGroup) {
+                combinationGroup.style.display = 'none';
+            }
+
+            // Stream fetch
+            var streamSelect = document.getElementById('{{ enrollment_form.stream.id_for_label }}');
+            if (gradeId && streamSelect) {
+                streamSelect.innerHTML = '<option value="">Loading streams...</option>';
+                streamSelect.disabled = true;
+                fetch('/students/streams/get/?grade_id=' + gradeId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        streamSelect.innerHTML = '<option value="">-- Select Stream (Optional) --</option>';
+                        (data.streams || []).forEach(function(s) {
+                            var opt = document.createElement('option');
+                            opt.value = s.name;
+                            opt.textContent = s.name;
+                            streamSelect.appendChild(opt);
+                        });
+                        streamSelect.disabled = false;
+                    })
+                    .catch(function() {
+                        streamSelect.innerHTML = '<option value="">-- Select Stream (Optional) --</option>';
+                        streamSelect.disabled = false;
+                    });
+            } else if (streamSelect) {
+                streamSelect.innerHTML = '<option value="">-- Select Grade First --</option>';
+                streamSelect.disabled = false;
+            }
+        });
+    }
+
+    // ── Reset Add Student modal on close ──
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof jQuery === 'undefined') return;
+        var $ = jQuery;
+
+        $('#addStudentModal').on('hidden.bs.modal', function() {
+            var form = document.getElementById('addStudentForm');
+            if (form) form.reset();
+            switchAddTab('tab-student', 1);
+            if (combinationGroup) combinationGroup.style.display = 'none';
+            ['disabilities-field-modal','chronic-diseases-field-modal','special-care-field-modal'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        });
+
+        // ── Delete modal ──
+        $(document).on('show.bs.modal', '#deleteStudentModal', function(event) {
+            var btn = $(event.relatedTarget);
+            var sid  = btn.data('student-id');
+            var name = btn.data('student-name');
+            $('#deleteStudentForm').attr('action', '/students/students/' + sid + '/delete/');
+            $('#deleteStudentNameDisplay').text(name || '—');
+            $('#deleteStudentId').val(sid);
+        });
+
+        $(document).on('submit', '#deleteStudentForm', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var csrftoken = $('[name=csrfmiddlewaretoken]', form).val() || $('[name=csrfmiddlewaretoken]').first().val();
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
+                headers: { 'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(resp) {
+                    $('#deleteStudentModal').modal('hide');
+                    if (resp && resp.success) { location.reload(); }
+                    else { alert('Error: ' + (resp.message || 'Failed to delete student')); }
+                },
+                error: function(xhr) {
+                    var msg = 'Error deleting student.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    else if (xhr.status === 403) msg = 'You do not have permission to delete this student.';
+                    else if (xhr.status === 404) msg = 'Student not found.';
+                    alert(msg);
+                }
+            });
+        });
+
+        // ── Edit modal (AJAX load) ──
+        $(document).on('show.bs.modal', '#editStudentModal', function(event) {
+            var btn = $(event.relatedTarget);
+            var sid = btn.data('student-id');
+            if (!sid) return;
+            var body = $('#editStudentModalBody');
+            body.html('<div style="text-align:center;padding:48px;color:var(--text-muted);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite;display:inline-block;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></div>');
+            $.ajax({
+                url: '/students/students/' + sid + '/edit/',
+                type: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(html) {
+                    body.html(html);
+                    // Re-init medical toggles in edit form
+                    setTimeout(function() {
+                        ['#id_has_disabilities','#id_has_chronic_diseases','#id_has_special_care_needs'].forEach(function(cbSel, idx) {
+                            var targets = ['#disabilities-field-modal-edit','#chronic-diseases-field-modal-edit','#special-care-field-modal-edit'];
+                            var cb  = $(cbSel);
+                            var fld = $(targets[idx]);
+                            if (cb.length && fld.length) {
+                                fld.css('display', cb.is(':checked') ? 'block' : 'none');
+                                cb.off('change').on('change', function() {
+                                    fld.css('display', $(this).is(':checked') ? 'block' : 'none');
+                                });
+                            }
+                        });
+                    }, 80);
+                },
+                error: function(xhr) {
+                    body.html('<div class="alert alert-danger">Failed to load edit form. Status: ' + xhr.status + '</div>');
+                }
+            });
+        });
+
+        $(document).on('submit', '#editStudentForm', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var fd = new FormData(form[0]);
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function(resp) {
+                    if (resp.success) { $('#editStudentModal').modal('hide'); location.reload(); }
+                    else { alert('Error: ' + (resp.message || 'Update failed')); }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        var errs = xhr.responseJSON.errors;
+                        var html = '<div class="alert alert-danger"><ul style="margin:0;padding-left:16px;">';
+                        Object.keys(errs).forEach(function(f) {
+                            (errs[f] || []).forEach(function(msg) { html += '<li>' + msg + '</li>'; });
+                        });
+                        html += '</ul></div>';
+                        form.prepend(html);
+                    } else {
+                        alert('Error updating student. Please try again.');
+                    }
+                }
+            });
+        });
+
+        // ── Assign papers modal ──
+        $(document).on('click', '.assign-papers-btn', function() {
+            var enrollmentId = $(this).data('enrollment-id');
+            var studentName  = $(this).data('student-name');
+            if (window.openAssignPapersModal) {
+                window.openAssignPapersModal(enrollmentId, studentName);
+            }
+        });
+    });
+
+    // ── Live search debounce ──
+    var searchInput = document.getElementById('studentSearchInput');
+    var searchTimer = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            var val = this.value;
+            searchTimer = setTimeout(function() {
+                document.getElementById('studentFilterForm').submit();
+            }, 400);
+        });
+    }
+
+    // ── Gender filter auto-submit ──
+    var genderFilter = document.getElementById('genderFilter');
+    if (genderFilter) {
+        genderFilter.addEventListener('change', function() {
+            document.getElementById('studentFilterForm').submit();
+        });
+    }
+
+    // ── Import dropzone ──
+    var dropzone  = document.getElementById('importDropzone');
+    var fileInput = document.getElementById('importFileInput');
+    var filePreview = document.getElementById('importFilePreview');
+    var fileNameSpan = document.getElementById('importFileName');
+    var submitBtn = document.getElementById('importSubmitBtn');
+
+    function showFilePreview(file) {
+        if (!file) return;
+        if (fileNameSpan) fileNameSpan.textContent = file.name;
+        if (filePreview) filePreview.classList.add('visible');
+        if (submitBtn) submitBtn.disabled = false;
+    }
+
+    window.clearImportFile = function(e) {
+        e.stopPropagation();
+        if (fileInput) fileInput.value = '';
+        if (filePreview) filePreview.classList.remove('visible');
+        if (submitBtn) submitBtn.disabled = true;
+    };
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) showFilePreview(this.files[0]);
+        });
+    }
+
+    if (dropzone) {
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('drag-over');
+        });
+        dropzone.addEventListener('dragleave', function() {
+            dropzone.classList.remove('drag-over');
+        });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('drag-over');
+            var files = e.dataTransfer.files;
+            if (files && files[0]) {
+                if (fileInput) {
+                    try {
+                        var dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        fileInput.files = dt.files;
+                    } catch(ex) {}
+                }
+                showFilePreview(files[0]);
+            }
+        });
+    }
+
+    // ── Assign papers globally ──
+    window.openAssignPapersModal = function(enrollmentId, studentName) {
+        if (typeof jQuery === 'undefined') return;
+        var $ = jQuery;
+        $('#modalStudentName').text(studentName || '');
+        $('#assignPapersModal').data('enrollment-id', enrollmentId);
+        var container = $('#papersAssignmentContainer');
+        container.html('<div style="text-align:center;padding:40px;color:var(--text-muted);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.8s linear infinite;display:inline-block;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg></div>');
+        $.ajax({
+            url: '/academics/students/' + enrollmentId + '/assign-papers/',
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(resp) {
+                if (typeof resp === 'object' && resp.success === false) {
+                    container.html('<div class="alert alert-danger">' + (resp.error || 'Error loading') + '</div>');
+                } else {
+                    container.html(resp);
+                }
+            },
+            error: function(xhr) {
+                container.html('<div class="alert alert-danger">Error loading papers assignment. Status: ' + xhr.status + '</div>');
+            }
+        });
+        $('#assignPapersModal').modal('show');
+    };
+
+})();
+</script>
+{% endblock %}

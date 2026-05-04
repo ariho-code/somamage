@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h2 style="color: white;">{{ course.title }}</h2>
+        <p style="color: rgba(255,255,255,0.9);">{{ course.description }}</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            {% if is_enrolled %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-book"></i> Course Lessons</h4>
+                    <div class="list-group">
+                        {% for lesson in lessons %}
+                        <a href="{% url 'lesson_detail' course.id lesson.id %}" class="list-group-item list-group-item-action" style="border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--gray-200); padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h5 style="font-weight: 600; margin-bottom: 8px;">{{ lesson.title }}</h5>
+                                    <p style="color: var(--gray-600); font-size: 14px; margin: 0;">{{ lesson.description|truncatewords:15 }}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: var(--gray-500); font-size: 12px;">
+                                        <i class="fas fa-clock"></i> {{ lesson.duration_minutes }} min
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div style="padding: 40px; text-align: center; color: var(--gray-500);">
+                            <i class="fas fa-book-open" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            No lessons available yet
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if assignments %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 24px;"><i class="fas fa-tasks"></i> Assignments</h4>
+                    {% for assignment in assignments %}
+                    <div class="card mb-3" style="border-radius: 12px; border: 1px solid var(--gray-200);">
+                        <div class="card-body">
+                            <h5 style="font-weight: 600;">{{ assignment.title }}</h5>
+                            <p style="color: var(--gray-600);">{{ assignment.description|truncatewords:20 }}</p>
+                            <a href="{% url 'assignment_detail' assignment.id %}" class="btn btn-sm btn-primary" style="border-radius: 8px;">
+                                View Assignment
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 60px; text-align: center;">
+                    <i class="fas fa-lock" style="font-size: 64px; color: var(--gray-400); margin-bottom: 24px;"></i>
+                    <h4>Enroll to Access Course Content</h4>
+                    <p style="color: var(--gray-600); margin-bottom: 32px;">You need to enroll in this course to view lessons and assignments.</p>
+                    <a href="{% url 'enroll_course' course.id %}" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 16px 32px; font-weight: 600;">
+                        <i class="fas fa-plus"></i> Enroll Now
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: sticky; top: 100px;">
+                <div class="card-body" style="padding: 32px;">
+                    <h5 style="font-weight: 700; margin-bottom: 24px;">Course Info</h5>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Instructor:</strong>
+                        <p style="color: var(--gray-900);">{{ course.instructor.get_full_name|default:course.instructor.username }}</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Level:</strong>
+                        <p style="color: var(--gray-900);">{{ course.get_level_display }}</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Lessons:</strong>
+                        <p style="color: var(--gray-900);">{{ course.get_lesson_count }}</p>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700);">Enrollments:</strong>
+                        <p style="color: var(--gray-900);">{{ course.get_enrollment_count }}</p>
+                    </div>
+                    
+                    {% if materials %}
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+                        <h6 style="font-weight: 700; margin-bottom: 16px;">Course Materials</h6>
+                        {% for material in materials %}
+                        <a href="{{ material.file.url|default:material.external_url }}" target="_blank" class="btn btn-sm btn-outline-primary mb-2" style="width: 100%; border-radius: 8px;">
+                            <i class="fas fa-file"></i> {{ material.title }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

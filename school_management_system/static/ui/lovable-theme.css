@@ -1,0 +1,732 @@
+:root{
+  /* Lovable-inspired tokens (HSL triplets) */
+  --background:45 40% 98%;
+  --foreground:0 0% 11%;
+  --card:45 40% 98%;
+  --card-foreground:0 0% 5%;
+  --popover:45 40% 98%;
+  --popover-foreground:0 0% 5%;
+  --primary:0 0% 11%;
+  --primary-foreground:45 40% 98%;
+  --secondary:42 38% 95%;
+  --secondary-foreground:0 0% 11%;
+  --muted:42 38% 95%;
+  --muted-foreground:60 1% 37%;
+  --muted-foreground-subtle:60 1% 55%;
+  --border:45 17% 91%;
+  --input:45 17% 91%;
+  --ring:0 0% 11%;
+
+  --accent:216 73% 91%;
+  --accent-foreground:214 75% 39%;
+  --accent-primary:225 88% 53%;
+  --accent-primary-foreground:208 100% 97%;
+
+  --success-primary:142 72% 29%;
+  --warning-primary:25 98% 44%;
+  --destructive-primary:0 95% 42%;
+
+  --sidebar-background:45 40% 98%;
+  --sidebar-foreground:60 1% 25%;
+  --sidebar-accent:42 38% 95%;
+  --sidebar-accent-foreground:0 0% 11%;
+  --sidebar-border:45 17% 91%;
+
+  --radius:0.5rem;
+
+  /* Shadows (subtle, Lovable-like) */
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 6px 18px rgba(0,0,0,.08);
+  --shadow-lg:0 18px 50px rgba(0,0,0,.12);
+
+  /* Compact layout like Lovable */
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.dark{
+  --background:0 0% 11%;
+  --foreground:45 40% 98%;
+  --card:0 0% 5%;
+  --card-foreground:45 40% 98%;
+  --popover:0 0% 11%;
+  --popover-foreground:45 40% 98%;
+  --primary:45 40% 98%;
+  --primary-foreground:0 0% 11%;
+  --secondary:60 3% 15%;
+  --secondary-foreground:45 40% 98%;
+  --muted:60 3% 15%;
+  --muted-foreground:40 9% 75%;
+  --muted-foreground-subtle:40 9% 55%;
+  --border:60 3% 15%;
+  --input:60 1% 25%;
+  --ring:47 10% 83%;
+
+  --accent:217 33% 22%;
+  --accent-foreground:217 100% 72%;
+  --accent-primary:217 75% 49%;
+  --accent-primary-foreground:208 100% 97%;
+
+  --success-primary:142 72% 29%;
+  --warning-primary:25 98% 44%;
+  --destructive-primary:0 95% 42%;
+
+  --sidebar-background:0 0% 11%;
+  --sidebar-foreground:42 38% 95%;
+  --sidebar-accent:60 3% 15%;
+  --sidebar-accent-foreground:42 38% 95%;
+  --sidebar-border:60 3% 15%;
+}
+
+html,body{
+  background:hsl(var(--background)) !important;
+  color:hsl(var(--foreground)) !important;
+}
+
+/* Kill heavy gradient/background effects from the existing theme */
+body{
+  background-image:none !important;
+  font-family: var(--font-camera-plain, Inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif !important;
+  letter-spacing: -0.01em;
+}
+body::before{
+  display:none !important;
+}
+.particles,
+.particle{
+  display:none !important;
+}
+
+/* Layout surfaces */
+.content{
+  background:transparent !important;
+}
+
+.header{
+  background:rgba(255,255,255,.65) !important;
+  border-bottom:1px solid hsl(var(--border)) !important;
+  backdrop-filter:blur(14px);
+  height: var(--header-height) !important;
+  padding: 0 18px !important;
+  box-shadow: none !important;
+}
+.dark .header{
+  background:rgba(10,10,10,.55) !important;
+}
+
+.header-left h1{
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.menu-toggle{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Content padding / container */
+.content{
+  padding: 18px !important;
+}
+
+/* Dashboard: compact + neutral (no heavy gradients) */
+.dashboard-container{
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcome-card{
+  padding: 16px 18px !important;
+  margin-bottom: 14px !important;
+  background: hsl(var(--card)) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.welcome-card::before{
+  display:none !important;
+}
+.welcome-card h2{
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+  margin-bottom: 8px !important;
+}
+.welcome-emoji{
+  display:none !important;
+}
+.welcome-subtitle{
+  margin-bottom: 10px !important;
+}
+.welcome-stats .stat-item{
+  background: hsl(var(--muted)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 999px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+.welcome-graphic{
+  display:none !important;
+}
+
+.context-selector-card{
+  padding: 14px 16px !important;
+  margin-bottom: 14px !important;
+}
+.context-selector-card .selector-header{
+  margin-bottom: 10px !important;
+}
+.context-selector-card .selector-header span{
+  font-weight: 800;
+  font-size: 13px;
+}
+.context-selector-card .form-grid{
+  gap: 12px !important;
+}
+
+.stats-grid{
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+.stat-card{
+  padding: 14px 14px !important;
+  min-height: unset !important;
+}
+.stat-card .stat-background,
+.stat-card .stat-wave{
+  display:none !important;
+}
+.stat-card .stat-icon{
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  box-shadow: none !important;
+}
+.stat-card .stat-icon i{
+  font-size: 18px !important;
+}
+.stat-card .stat-info h3{
+  font-size: 20px !important;
+  margin-bottom: 2px !important;
+}
+.stat-card .stat-info p{
+  font-size: 12px !important;
+  color: hsl(var(--muted-foreground)) !important;
+  margin-bottom: 8px !important;
+}
+.stat-card .stat-trend{
+  font-size: 12px !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Dashboard tables/charts: clean */
+.chart-card,
+.performance-card,
+.recent-activity-card{
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* =========================
+   Module pages (Students / Fees / Academics / E-learning)
+   Compact Lovable-style headers, cards, tables, buttons
+   ========================= */
+
+/* Page headers used across modules */
+.students-header,
+.fees-header,
+.grades-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.students-header .header-content h1,
+.fees-header .header-content h1,
+.grades-header .header-content h1{
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  margin:0 0 6px 0;
+}
+.students-header .header-content p,
+.fees-header .header-content p,
+.grades-header .header-content p{
+  margin:0;
+  font-size:13px;
+  color:hsl(var(--muted-foreground));
+}
+.students-header .header-graphic,
+.fees-header .header-graphic,
+.grades-header .header-graphic{
+  display:none !important;
+}
+.students-header .header-actions,
+.fees-header .header-actions,
+.grades-header .header-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* Custom primary action button used in templates */
+.primary-action-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:calc(var(--radius) + 6px);
+  border:1px solid hsl(var(--accent-primary)) !important;
+  background:hsl(var(--accent-primary)) !important;
+  color:hsl(var(--accent-primary-foreground)) !important;
+  font-weight:700;
+  font-size:13px;
+  box-shadow:var(--shadow-sm);
+  cursor:pointer;
+}
+.primary-action-btn:hover{
+  filter:brightness(.96);
+}
+
+/* Cards in module pages */
+.students-card,
+.fees-card,
+.grades-card{
+  overflow:hidden;
+}
+.card-header{
+  background:transparent !important;
+  border-bottom:1px solid hsl(var(--border)) !important;
+  padding:12px 14px !important;
+}
+.card-header h3{
+  margin:0;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:-0.01em;
+}
+.card-body{
+  padding:14px !important;
+}
+
+/* Tables */
+.modern-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border:1px solid hsl(var(--border));
+  border-radius:calc(var(--radius) + 8px);
+}
+.modern-table thead th{
+  background:hsl(var(--muted)) !important;
+  color:hsl(var(--foreground)) !important;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:-0.01em;
+  padding:10px 12px;
+  border-bottom:1px solid hsl(var(--border)) !important;
+  white-space:nowrap;
+}
+.modern-table tbody td{
+  padding:10px 12px;
+  border-top:1px solid hsl(var(--border));
+  vertical-align:middle;
+  font-size:13px;
+}
+.modern-table tbody tr:hover td{
+  background: hsl(var(--secondary)) !important;
+}
+
+/* Small icon buttons for actions */
+.action-buttons{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.action-btn{
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  border:1px solid hsl(var(--border));
+  background:hsl(var(--card));
+  color:hsl(var(--foreground));
+  box-shadow:var(--shadow-sm);
+  transition:var(--transition);
+}
+.action-btn:hover{
+  background:hsl(var(--muted));
+}
+.action-btn.view-btn{ color:hsl(var(--accent-foreground)); background:hsl(var(--accent)) !important; border-color:hsl(var(--accent)) !important; }
+.action-btn.edit-btn{ color:hsl(var(--accent-primary-foreground)); background:hsl(var(--accent-primary)) !important; border-color:hsl(var(--accent-primary)) !important; }
+.action-btn.delete-btn{ color:hsl(var(--destructive-primary-foreground)); background:hsl(var(--destructive-primary)) !important; border-color:hsl(var(--destructive-primary)) !important; }
+.action-btn.streams-btn{ color:hsl(var(--accent-primary-foreground)); background:hsl(var(--accent-primary)) !important; border-color:hsl(var(--accent-primary)) !important; }
+
+/* Student row chips/avatars */
+.student-photo{
+  width:28px !important;
+  height:28px !important;
+  border-radius:999px !important;
+  object-fit:cover !important;
+  border:1px solid hsl(var(--border)) !important;
+}
+.student-avatar{
+  width:28px !important;
+  height:28px !important;
+  border-radius:999px !important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:hsl(var(--muted)) !important;
+  border:1px solid hsl(var(--border)) !important;
+  font-weight:800;
+  font-size:12px;
+  color:hsl(var(--foreground));
+}
+.student-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* Badges across modules */
+.fee-badge,
+.level-badge,
+.stream-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px;
+  border-radius:999px;
+  border:1px solid hsl(var(--border));
+  background:hsl(var(--muted));
+  color:hsl(var(--foreground));
+  font-weight:700;
+  font-size:12px;
+}
+.fee-badge.balance-outstanding{
+  background:hsl(var(--destructive)) !important;
+  color:hsl(var(--destructive-foreground)) !important;
+  border-color:hsl(var(--destructive)) !important;
+}
+.fee-badge.balance-paid{
+  background:hsl(var(--success)) !important;
+  color:hsl(var(--success-foreground)) !important;
+  border-color:hsl(var(--success)) !important;
+}
+
+/* Fee progress */
+.progress-bar-wrapper{
+  width:160px;
+  background:hsl(var(--muted));
+  border:1px solid hsl(var(--border));
+  border-radius:999px;
+  overflow:hidden;
+  height:12px;
+}
+.progress-bar{
+  height:100%;
+  background:hsl(var(--accent-primary));
+}
+.progress-text{
+  display:none !important;
+}
+
+/* E-learning cards: strip heavy gradients/shadows */
+.course-card{
+  border-radius:calc(var(--radius) + 8px) !important;
+  border:1px solid hsl(var(--border)) !important;
+  box-shadow:var(--shadow-sm) !important;
+  transition:var(--transition) !important;
+}
+.course-card:hover{
+  transform:none !important;
+  box-shadow:var(--shadow-md) !important;
+}
+
+/* Sidebar -> Lovable-like light sidebar with subtle active state */
+.sidebar{
+  background:hsl(var(--sidebar-background)) !important;
+  color:hsl(var(--sidebar-foreground)) !important;
+  border-right:1px solid hsl(var(--sidebar-border)) !important;
+  box-shadow:none !important;
+}
+.sidebar .sidebar-header{
+  background:transparent !important;
+  border-bottom:1px solid hsl(var(--sidebar-border)) !important;
+  padding:18px 16px !important;
+  text-align:left !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  backdrop-filter:none !important;
+}
+.sidebar .sidebar-header > div{
+  margin:0 !important;
+  font-size:1.4rem !important;
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  background:hsl(var(--accent));
+  color:hsl(var(--accent-foreground));
+}
+.sidebar .sidebar-header h3{
+  color:hsl(var(--foreground)) !important;
+  letter-spacing:-.02em;
+  -webkit-text-fill-color:unset !important;
+  background:none !important;
+  margin:0 !important;
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+.sidebar-menu{
+  padding:12px !important;
+}
+.sidebar-menu li{
+  margin-bottom:4px !important;
+}
+.sidebar-menu a{
+  color:hsl(var(--sidebar-foreground)) !important;
+  border-radius:calc(var(--radius) + 6px) !important;
+  border:1px solid transparent !important;
+  padding:10px 12px !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  border-left:none !important;
+  transform:none !important;
+}
+.sidebar-menu a::before{
+  display:none !important;
+}
+.sidebar-menu a:hover{
+  background:hsl(var(--sidebar-accent)) !important;
+  color:hsl(var(--sidebar-accent-foreground)) !important;
+  transform:none !important;
+}
+.sidebar-menu a.active{
+  background:hsl(var(--sidebar-accent)) !important;
+  color:hsl(var(--sidebar-accent-foreground)) !important;
+  border-color:hsl(var(--border)) !important;
+  transform:none !important;
+}
+.sidebar-menu a.active i{
+  color:hsl(var(--accent-primary)) !important;
+}
+.sidebar-menu i{
+  margin-right:10px !important;
+  font-size:16px !important;
+  width:20px !important;
+}
+
+/* Dropdown submenu: Lovable-like nested list */
+.sidebar-menu .submenu{
+  background:transparent !important;
+  border-left:none !important;
+  padding:6px 0 6px 8px !important;
+}
+.sidebar-menu .submenu a{
+  padding:9px 12px 9px 34px !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+}
+.sidebar-menu .submenu a:hover{
+  background:hsl(var(--sidebar-accent)) !important;
+  transform:none !important;
+}
+.sidebar-menu .dropdown-toggle .fa-chevron-down{
+  right:16px !important;
+  color:hsl(var(--muted-foreground)) !important;
+}
+
+/* Scrollbar: light */
+.sidebar::-webkit-scrollbar-track{
+  background:transparent !important;
+}
+.sidebar::-webkit-scrollbar-thumb{
+  background:hsl(var(--border)) !important;
+}
+
+/* Cards */
+.card,
+.students-card,
+.welcome-card,
+.context-selector-card,
+.stat-card,
+.action-card,
+.modern-card{
+  background:hsl(var(--card)) !important;
+  color:hsl(var(--card-foreground)) !important;
+  border:1px solid hsl(var(--border)) !important;
+  border-radius:calc(var(--radius) + 8px) !important;
+  box-shadow:var(--shadow-sm) !important;
+}
+
+/* Form controls */
+.form-control,
+.form-select,
+select.form-control,
+textarea.form-control{
+  background:hsl(var(--card)) !important;
+  color:hsl(var(--foreground)) !important;
+  border:1px solid hsl(var(--border)) !important;
+  border-radius:calc(var(--radius) + 4px) !important;
+  box-shadow:none !important;
+}
+.form-control:focus,
+.form-select:focus{
+  border-color:hsl(var(--ring)) !important;
+  box-shadow:0 0 0 4px rgba(0,0,0,.06) !important;
+}
+.dark .form-control:focus,
+.dark .form-select:focus{
+  box-shadow:0 0 0 4px rgba(255,255,255,.10) !important;
+}
+
+/* Buttons */
+.btn{
+  border-radius:calc(var(--radius) + 4px) !important;
+  font-weight:600 !important;
+}
+.btn-primary{
+  background:hsl(var(--accent-primary)) !important;
+  border-color:hsl(var(--accent-primary)) !important;
+  color:hsl(var(--accent-primary-foreground)) !important;
+}
+.btn-primary:hover{
+  filter:brightness(.95);
+}
+.btn-secondary{
+  background:hsl(var(--muted)) !important;
+  border-color:hsl(var(--border)) !important;
+  color:hsl(var(--foreground)) !important;
+}
+.btn-danger{
+  background:hsl(var(--destructive-primary)) !important;
+  border-color:hsl(var(--destructive-primary)) !important;
+}
+
+/* Tables */
+table,
+.table,
+.modern-table{
+  color:hsl(var(--foreground)) !important;
+}
+.modern-table thead th,
+.table thead th{
+  background:hsl(var(--muted)) !important;
+  border-bottom:1px solid hsl(var(--border)) !important;
+  color:hsl(var(--foreground)) !important;
+}
+.modern-table td,
+.modern-table th,
+.table td,
+.table th{
+  border-top:1px solid hsl(var(--border)) !important;
+}
+
+/* Badges/pills */
+.badge,
+.role-badge,
+.grade-badge{
+  border-radius:999px !important;
+  border:1px solid hsl(var(--border)) !important;
+  background:hsl(var(--muted)) !important;
+  color:hsl(var(--foreground)) !important;
+  font-weight:600 !important;
+}
+
+/* Auth layout (used when not authenticated) */
+.auth-shell{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+}
+.auth-card{
+  width:100%;
+  max-width:520px;
+  background:hsl(var(--card));
+  border:1px solid hsl(var(--border));
+  border-radius:calc(var(--radius) + 12px);
+  box-shadow:var(--shadow-lg);
+  overflow:hidden;
+}
+.auth-card .auth-header{
+  padding:28px 28px 18px;
+  border-bottom:1px solid hsl(var(--border));
+}
+.auth-card .auth-body{
+  padding:24px 28px 28px;
+}
+.auth-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.auth-brand .auth-logo{
+  width:44px;height:44px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:hsl(var(--accent));
+  color:hsl(var(--accent-foreground));
+}
+.auth-tabs .nav-link{
+  border-radius:999px;
+  font-weight:700;
+  color:hsl(var(--muted-foreground));
+}
+.auth-tabs .nav-link.active{
+  background:hsl(var(--accent-primary));
+  color:hsl(var(--accent-primary-foreground));
+}
+
+/* Small icon button for header actions (theme toggle) */
+.ui-icon-btn{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid hsl(var(--border));
+  background:hsl(var(--card));
+  color:hsl(var(--foreground));
+  box-shadow:var(--shadow-sm);
+}
+.ui-icon-btn:hover{
+  background:hsl(var(--muted));
+}
+
+/* When not authenticated, hide the app chrome and center content */
+body.auth-only .sidebar,
+body.auth-only .header,
+body.auth-only .footer,
+body.auth-only #eduaiWidget,
+body.auth-only #eduaiChatWindow{
+  display:none !important;
+}
+body.auth-only .main-content{
+  margin-left:0 !important;
+}
+body.auth-only .content{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+}
+
+

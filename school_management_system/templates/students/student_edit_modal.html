@@ -1,0 +1,247 @@
+<form method="post" id="editStudentForm" action="{% url 'student_edit' student.id %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <!-- Student Information -->
+    <h6 class="mb-3"><i class="fas fa-user"></i> Personal Information</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.first_name.label_tag }}
+                {{ student_form.first_name }}
+                {% if student_form.first_name.errors %}
+                <div class="text-danger small">{{ student_form.first_name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.last_name.label_tag }}
+                {{ student_form.last_name }}
+                {% if student_form.last_name.errors %}
+                <div class="text-danger small">{{ student_form.last_name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.date_of_birth.label_tag }}
+                {{ student_form.date_of_birth }}
+                {% if student_form.date_of_birth.errors %}
+                <div class="text-danger small">{{ student_form.date_of_birth.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.gender.label_tag }}
+                {{ student_form.gender }}
+                {% if student_form.gender.errors %}
+                <div class="text-danger small">{{ student_form.gender.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.index_number.label_tag }}
+                {{ student_form.index_number }}
+                {% if student_form.index_number.errors %}
+                <div class="text-danger small">{{ student_form.index_number.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.blood_group.label_tag }}
+                {{ student_form.blood_group }}
+                {% if student_form.blood_group.errors %}
+                <div class="text-danger small">{{ student_form.blood_group.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        {{ student_form.photo.label_tag }}
+        {% if student.photo %}
+        <div class="mb-2">
+            <img src="{{ student.photo.url }}" alt="Current Photo" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+        </div>
+        {% endif %}
+        {{ student_form.photo }}
+        {% if student_form.photo.errors %}
+        <div class="text-danger small">{{ student_form.photo.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <hr>
+    
+    <!-- Guardian Information -->
+    <h6 class="mb-3"><i class="fas fa-users"></i> Guardian Information</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ guardian_form.name.label_tag }}
+                {{ guardian_form.name }}
+                {% if guardian_form.name.errors %}
+                <div class="text-danger small">{{ guardian_form.name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ guardian_form.phone.label_tag }}
+                {{ guardian_form.phone }}
+                {% if guardian_form.phone.errors %}
+                <div class="text-danger small">{{ guardian_form.phone.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ guardian_form.email.label_tag }}
+                {{ guardian_form.email }}
+                {% if guardian_form.email.errors %}
+                <div class="text-danger small">{{ guardian_form.email.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ guardian_form.address.label_tag }}
+                {{ guardian_form.address }}
+                {% if guardian_form.address.errors %}
+                <div class="text-danger small">{{ guardian_form.address.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <!-- Medical Information -->
+    <h6 class="mb-3"><i class="fas fa-heartbeat"></i> Medical Information</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="form-check">
+                    {{ student_form.has_disabilities }}
+                    <label class="form-check-label" for="{{ student_form.has_disabilities.id_for_label }}">
+                        {{ student_form.has_disabilities.label }}
+                    </label>
+                </div>
+                <div id="disabilities-field-modal-edit" style="display: none; margin-top: 10px;">
+                    {{ student_form.disabilities.label_tag }}
+                    {{ student_form.disabilities }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="form-check">
+                    {{ student_form.has_chronic_diseases }}
+                    <label class="form-check-label" for="{{ student_form.has_chronic_diseases.id_for_label }}">
+                        {{ student_form.has_chronic_diseases.label }}
+                    </label>
+                </div>
+                <div id="chronic-diseases-field-modal-edit" style="display: none; margin-top: 10px;">
+                    {{ student_form.chronic_diseases.label_tag }}
+                    {{ student_form.chronic_diseases }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="form-check">
+                    {{ student_form.has_special_care_needs }}
+                    <label class="form-check-label" for="{{ student_form.has_special_care_needs.id_for_label }}">
+                        {{ student_form.has_special_care_needs.label }}
+                    </label>
+                </div>
+                <div id="special-care-field-modal-edit" style="display: none; margin-top: 10px;">
+                    {{ student_form.special_care_needs.label_tag }}
+                    {{ student_form.special_care_needs }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.allergies.label_tag }}
+                {{ student_form.allergies }}
+                {% if student_form.allergies.errors %}
+                <div class="text-danger small">{{ student_form.allergies.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        {{ student_form.medical_notes.label_tag }}
+        {{ student_form.medical_notes }}
+        {% if student_form.medical_notes.errors %}
+        <div class="text-danger small">{{ student_form.medical_notes.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <hr>
+    
+    <!-- Emergency Contact -->
+    <h6 class="mb-3"><i class="fas fa-phone-alt"></i> Emergency Contact</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.emergency_contact_name.label_tag }}
+                {{ student_form.emergency_contact_name }}
+                {% if student_form.emergency_contact_name.errors %}
+                <div class="text-danger small">{{ student_form.emergency_contact_name.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                {{ student_form.emergency_contact_phone.label_tag }}
+                {{ student_form.emergency_contact_phone }}
+                {% if student_form.emergency_contact_phone.errors %}
+                <div class="text-danger small">{{ student_form.emergency_contact_phone.errors }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Changes
+        </button>
+    </div>
+</form>
+
+<script>
+// Initialize medical fields visibility on load
+$(document).ready(function() {
+    var hasDisabilities = $('#id_has_disabilities');
+    var disabilitiesField = $('#disabilities-field-modal-edit');
+    var hasChronicDiseases = $('#id_has_chronic_diseases');
+    var chronicDiseasesField = $('#chronic-diseases-field-modal-edit');
+    var hasSpecialCare = $('#id_has_special_care_needs');
+    var specialCareField = $('#special-care-field-modal-edit');
+    
+    if (hasDisabilities.length) {
+        disabilitiesField.css('display', hasDisabilities.is(':checked') ? 'block' : 'none');
+    }
+    if (hasChronicDiseases.length) {
+        chronicDiseasesField.css('display', hasChronicDiseases.is(':checked') ? 'block' : 'none');
+    }
+    if (hasSpecialCare.length) {
+        specialCareField.css('display', hasSpecialCare.is(':checked') ? 'block' : 'none');
+    }
+});
+</script>
+

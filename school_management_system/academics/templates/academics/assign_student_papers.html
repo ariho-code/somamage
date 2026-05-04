@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Assign Papers - {{ student.get_full_name }}{% endblock %}
+{% block page_title %}Assign Papers - {{ student.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-alt"></i> Assign Papers for {{ student.get_full_name }}</h3>
+            <p class="mb-0">Grade: {{ enrollment.grade.name }} | Level: {{ enrollment.grade.get_level_display }}</p>
+        </div>
+        <div class="card-body">
+            {% if subjects_data %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Select the papers this student will take for each subject. For A-Level subjects like History, students typically choose 2 papers.
+            </div>
+            
+            <form id="assignPapersForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="enrollment_id" value="{{ enrollment.id }}">
+                
+                {% for subject_data in subjects_data %}
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book"></i> {{ subject_data.subject.name }}
+                            {% if subject_data.assigned_paper_ids %}
+                            <span class="badge badge-success ml-2">{{ subject_data.assigned_paper_ids|length }} paper{{ subject_data.assigned_paper_ids|length|pluralize }} assigned</span>
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="subject" value="{{ subject_data.subject.id }}">
+                        <div class="row">
+                            {% for paper in subject_data.papers %}
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="papers" id="paper_{{ paper.id }}" value="{{ paper.id }}" {% if paper.id in subject_data.assigned_paper_ids %}checked{% endif %}>
+                                    <label class="form-check-label" for="paper_{{ paper.id }}">
+                                        <strong>{{ paper.name }}</strong>
+                                        {% if paper.code %}
+                                        <span class="badge badge-info ml-1">{{ paper.code }}</span>
+                                        {% endif %}
+                                        {% if paper.description %}
+                                        <br><small class="text-muted">{{ paper.description }}</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Save Paper Assignments
+                    </button>
+                    <a href="{% url 'student_list' %}" class="btn btn-secondary btn-lg ml-2">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No subjects with multiple papers found for {{ enrollment.grade.get_level_display }} level.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    // Handle form submission via AJAX
+    $('#assignPapersForm').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var formData = form.serialize();
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+        
+        // Get CSRF token
+        var csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                       $('input[name="csrfmiddlewaretoken"]').val() || 
+                       (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        // Group by subject and submit each separately
+        var subjects = [];
+        form.find('input[name="subject"]').each(function() {
+            var subjectId = $(this).val();
+            var paperIds = [];
+            $(this).closest('.card').find('input[name="papers"]:checked').each(function() {
+                paperIds.push($(this).val());
+            });
+            subjects.push({subject_id: subjectId, paper_ids: paperIds});
+        });
+        
+        // Submit each subject assignment
+        var promises = [];
+        subjects.forEach(function(subj) {
+            var data = {
+                'csrfmiddlewaretoken': csrfToken,
+                'subject': subj.subject_id,
+                'papers': subj.paper_ids
+            };
+            
+            promises.push($.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                data: $.param(data, true) + (subj.paper_ids.length > 0 ? '&' + subj.paper_ids.map(function(id) { return 'papers=' + id; }).join('&') : '')
+            }));
+        });
+        
+        Promise.all(promises).then(function(responses) {
+            submitBtn.html(originalText).prop('disabled', false);
+            alert('Paper assignments saved successfully!');
+            if (window.opener) {
+                window.opener.location.reload();
+                window.close();
+            } else {
+                window.location.href = '{% url "student_list" %}';
+            }
+        }).catch(function(error) {
+            console.error('Error saving assignments:', error);
+            submitBtn.html(originalText).prop('disabled', false);
+            alert('Error: Failed to save some assignments. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}
+

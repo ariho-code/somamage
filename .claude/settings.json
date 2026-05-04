@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"class.*ViewSet\\\\|class.*APIView\\\\|@api_view\" /c/Users/mujun/Downloads/school_management_system/school_management_system/*/views.py)",
+      "Bash(ls -la /c/Users/mujun/Downloads/school_management_system/school_management_system/*/migrations/)",
+      "Bash(\"/c/Users/mujun/AppData/Local/Programs/Python/Python312/python.exe\" --version)",
+      "Bash(python manage.py check)",
+      "Bash(python manage.py migrate --run-syncdb)",
+      "Bash(xargs grep:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"import openpyxl; print\\('openpyxl', openpyxl.__version__\\)\")",
+      "Bash(psql --version)",
+      "Bash(export PATH=\"/c/Program Files/PostgreSQL/18/bin:$PATH\")",
+      "Bash(PGPASSWORD=postgres psql -U postgres -c \"\\\\l\")",
+      "Bash(pkill -f \"manage.py runserver\")",
+      "Bash(python manage.py runserver)"
+    ]
+  }
+}

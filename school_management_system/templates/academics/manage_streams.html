@@ -1,0 +1,1283 @@
+{% extends "base.html" %}
+{% block page_title %}Manage Streams - {{ grade.name }}{% endblock %}
+{% block content %}
+<div class="streams-management-container">
+    <!-- Header Section -->
+    <div class="streams-header">
+        <div class="header-content">
+            <h1><i class="fas fa-code-branch"></i> Stream Management</h1>
+            <p>Manage academic streams for {{ grade.name }}</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-network-wired"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Overview -->
+    <div class="class-overview-card">
+        <div class="overview-header">
+            <div class="class-info">
+                <div class="class-icon">
+                    <i class="fas fa-users-class"></i>
+                </div>
+                <div class="class-details">
+                    <h3>{{ grade.name }}</h3>
+                    <span class="level-badge">{{ grade.get_level_display }}</span>
+                </div>
+            </div>
+            <div class="class-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ grade.streams.all|length }}</span>
+                    <span class="stat-label">Streams</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ total_students }}</span>
+                    <span class="stat-label">Students</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ class_teacher_name|default:"Not assigned" }}</span>
+                    <span class="stat-label">Class Teacher</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-panel">
+        <div class="actions-grid">
+            <button class="action-card primary" data-toggle="modal" data-target="#addStreamModal">
+                <div class="action-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Add New Stream</h4>
+                    <p>Create a new academic stream</p>
+                </div>
+            </button>
+            
+            <button class="action-card secondary" onclick="showBulkActions()">
+                <div class="action-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Assign Students</h4>
+                    <p>Manage student assignments</p>
+                </div>
+            </button>
+            
+            <button class="action-card accent" onclick="exportStreamData()">
+                <div class="action-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Export Data</h4>
+                    <p>Export stream information</p>
+                </div>
+            </button>
+            
+            <button class="action-card info" onclick="showStreamReports()">
+                <div class="action-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="action-content">
+                    <h4>View Reports</h4>
+                    <p>Stream performance analytics</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Streams Card -->
+    <div class="streams-management-card">
+        <div class="card-header">
+            <h3><i class="fas fa-stream"></i> Current Streams</h3>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="streamSearch" placeholder="Search streams...">
+                </div>
+                <button class="refresh-btn" onclick="refreshStreams()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if grade.streams.all %}
+            <div class="streams-grid">
+                {% for stream in grade.streams.all %}
+                <div class="stream-card" data-stream-name="{{ stream.name|lower }}">
+                    <div class="stream-header">
+                        <div class="stream-icon">
+                            <i class="fas fa-code-branch"></i>
+                        </div>
+                        <div class="stream-info">
+                            <h4>{{ stream.name }}</h4>
+                            <span class="stream-meta">Created {{ stream.created_at|timesince }} ago</span>
+                        </div>
+                        <div class="stream-actions">
+                            <div class="dropdown">
+                                <button class="action-menu-btn" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <button class="dropdown-item edit-stream" 
+                                            data-id="{{ stream.id }}" 
+                                            data-name="{{ stream.name }}">
+                                        <i class="fas fa-edit"></i> Edit Stream
+                                    </button>
+                                    <button class="dropdown-item" onclick="viewStreamDetails('{{ stream.id }}')">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="{% url 'delete_stream' stream.id %}" class="dropdown-item text-danger" 
+                                       onclick="return confirmDelete('{{ stream.name }}')">
+                                        <i class="fas fa-trash"></i> Delete Stream
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stream-body">
+                        <div class="stream-detail">
+                            <i class="fas fa-user-tie"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Created By</span>
+                                <span class="detail-value">{{ stream.created_by.get_full_name }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stream-detail">
+                            <i class="fas fa-calendar"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Created On</span>
+                                <span class="detail-value">{{ stream.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stream-detail">
+                            <i class="fas fa-user-graduate"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Students</span>
+                                <span class="detail-value">{{ stream.student_count }} enrolled</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stream-footer">
+                        <div class="action-buttons">
+                            <button class="action-btn edit" data-id="{{ stream.id }}" data-name="{{ stream.name }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="action-btn view" onclick="viewStreamDetails('{{ stream.id }}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn students" onclick="manageStreamStudents('{{ stream.id }}')">
+                                <i class="fas fa-user-graduate"></i>
+                            </button>
+                        </div>
+                        <span class="stream-status active">Active</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h4>No Streams Created</h4>
+                <p>Start by creating the first stream for {{ grade.name }}</p>
+                <div class="empty-actions">
+                    <button class="empty-action-btn primary" data-toggle="modal" data-target="#addStreamModal">
+                        <i class="fas fa-plus"></i>
+                        Create First Stream
+                    </button>
+                    <button class="empty-action-btn secondary" onclick="showQuickSetup()">
+                        <i class="fas fa-bolt"></i>
+                        Quick Setup
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card-footer">
+            <div class="footer-info">
+                <div class="info-item">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Streams help organize students into different academic tracks or sections</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Deleting a stream will not affect student records</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Stream Modal -->
+<div class="modal fade" id="addStreamModal" tabindex="-1" role="dialog" aria-labelledby="addStreamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> Create New Stream</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="POST" action="{% url 'add_stream' grade.id %}" id="addStreamForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            Stream Name
+                        </label>
+                        <input type="text" class="form-control" name="name" required 
+                               placeholder="e.g., Science, Arts, Commercial" maxlength="50">
+                        <div class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Choose a descriptive name for the academic stream
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            Description (Optional)
+                        </label>
+                        <textarea class="form-control" name="description" rows="3" 
+                                  placeholder="Brief description of this stream..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Create Stream
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Stream Modal -->
+<div class="modal fade" id="editStreamModal" tabindex="-1" role="dialog" aria-labelledby="editStreamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-edit"></i> Edit Stream</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="POST" id="editStreamForm" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            Stream Name
+                        </label>
+                        <input type="text" class="form-control" id="edit_stream_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            Description (Optional)
+                        </label>
+                        <textarea class="form-control" id="edit_stream_description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .streams-management-container {
+        padding: 0;
+        animation: fadeInUp 0.8s ease-out;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Header Styles */
+    .streams-header {
+        background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-xl);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .streams-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        animation: pulse 6s ease-in-out infinite;
+    }
+
+    .header-content h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .header-content p {
+        opacity: 0.9;
+        font-size: 16px;
+        margin: 0;
+    }
+
+    .graphic-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Class Overview */
+    .class-overview-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    .overview-header {
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .class-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .class-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gray-800);
+        color: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .class-details h3 {
+        margin: 0 0 5px 0;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .level-badge {
+        background: var(--gray-800);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .class-stats {
+        display: flex;
+        gap: 30px;
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--gray-600);
+        font-weight: 500;
+    }
+
+    /* Quick Actions */
+    .quick-actions-panel {
+        margin-bottom: 30px;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .action-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 16px;
+        padding: 25px;
+        transition: var(--transition);
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        border: none;
+    }
+
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .action-card.primary {
+        background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+        color: white;
+    }
+
+    .action-card.secondary {
+        background: white;
+        border: 2px solid var(--gray-300);
+    }
+
+    .action-card.accent {
+        background: white;
+        border: 2px solid var(--info);
+    }
+
+    .action-card.info {
+        background: white;
+        border: 2px solid var(--warning);
+    }
+
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    .action-card.secondary .action-icon {
+        background: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    .action-card.accent .action-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--info);
+    }
+
+    .action-card.info .action-icon {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .action-content h4 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .action-card.primary .action-content h4 {
+        color: white;
+    }
+
+    .action-content p {
+        font-size: 14px;
+        margin: 0;
+        opacity: 0.8;
+    }
+
+    .action-card.primary .action-content p {
+        color: rgba(255,255,255,0.9);
+    }
+
+    /* Streams Management Card */
+    .streams-management-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 25px 30px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .card-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        color: var(--gray-500);
+    }
+
+    .search-box input {
+        padding: 10px 12px 10px 35px;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 14px;
+        width: 250px;
+        transition: var(--transition);
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: var(--gray-600);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+
+    .refresh-btn {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        background: white;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .refresh-btn:hover {
+        background: var(--gray-50);
+        color: var(--gray-800);
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    /* Streams Grid */
+    .streams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .stream-card {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stream-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--gray-300);
+    }
+
+    .stream-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        position: relative;
+    }
+
+    .stream-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--gray-800);
+        color: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .stream-info h4 {
+        margin: 0 0 5px 0;
+        font-weight: 700;
+        color: var(--gray-900);
+    }
+
+    .stream-meta {
+        font-size: 12px;
+        color: var(--gray-600);
+    }
+
+    .stream-actions {
+        margin-left: auto;
+    }
+
+    .action-menu-btn {
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        background: white;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .action-menu-btn:hover {
+        background: var(--gray-50);
+        color: var(--gray-800);
+    }
+
+    .dropdown-menu {
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+    }
+
+    .dropdown-item:hover {
+        background: var(--gray-100);
+    }
+
+    .stream-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .stream-detail {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .stream-detail i {
+        width: 20px;
+        color: var(--gray-600);
+        margin-top: 2px;
+    }
+
+    .detail-label {
+        display: block;
+        font-size: 12px;
+        color: var(--gray-600);
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+
+    .detail-value {
+        display: block;
+        font-size: 14px;
+        color: var(--gray-900);
+        font-weight: 600;
+    }
+
+    .stream-footer {
+        padding: 15px 20px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--gray-50);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 12px;
+    }
+
+    .action-btn.edit {
+        background: var(--warning);
+        color: white;
+    }
+
+    .action-btn.view {
+        background: var(--info);
+        color: white;
+    }
+
+    .action-btn.students {
+        background: var(--success);
+        color: white;
+    }
+
+    .action-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .stream-status {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .stream-status.active {
+        background: var(--success);
+        color: white;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .modal-header {
+        padding: 25px 30px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .modal-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .modal-header .close {
+        border: none;
+        background: none;
+        font-size: 18px;
+        color: var(--gray-600);
+        opacity: 1;
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .modal-footer {
+        padding: 20px 30px;
+        border-top: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn-primary, .btn-secondary {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-primary {
+        background: var(--gray-900);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--gray-800);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .btn-secondary:hover {
+        background: var(--gray-300);
+        color: var(--gray-900);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--gray-600);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+
+    .help-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 6px;
+    }
+
+    /* Card Footer */
+    .card-footer {
+        padding: 20px 30px;
+        border-top: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .footer-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--gray-100);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: var(--gray-400);
+        margin: 0 auto 20px;
+    }
+
+    .empty-state h4 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: var(--gray-500);
+        margin-bottom: 25px;
+    }
+
+    .empty-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .empty-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+        border: none;
+        cursor: pointer;
+    }
+
+    .empty-action-btn.primary {
+        background: var(--gray-900);
+        color: white;
+    }
+
+    .empty-action-btn.secondary {
+        background: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .empty-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.6;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .streams-header {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .overview-header {
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .class-stats {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .header-actions {
+            flex-direction: column;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .search-box input {
+            width: 100%;
+        }
+
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .streams-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .graphic-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .streams-header {
+            padding: 20px;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .empty-actions {
+            flex-direction: column;
+        }
+
+        .stream-footer {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Edit stream functionality
+        const editButtons = document.querySelectorAll('.edit-stream');
+        const editForm = document.getElementById('editStreamForm');
+        
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const streamId = this.getAttribute('data-id');
+                const streamName = this.getAttribute('data-name');
+                
+                document.getElementById('edit_stream_name').value = streamName;
+                editForm.action = `/academics/streams/${streamId}/edit/`;
+                
+                // Show modal
+                $('#editStreamModal').modal('show');
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('streamSearch');
+        const streamCards = document.querySelectorAll('.stream-card');
+        
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            streamCards.forEach(card => {
+                const streamName = card.getAttribute('data-stream-name');
+                if (streamName.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Add animation to elements
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe animated elements
+        const animatedElements = document.querySelectorAll('.stream-card, .action-card');
+        animatedElements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Add hover effects
+        const interactiveElements = document.querySelectorAll('.stream-card, .action-card, .action-btn');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-3px)';
+            });
+            
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Initialize dropdowns
+        const dropdowns = document.querySelectorAll('.dropdown');
+        dropdowns.forEach(dropdown => {
+            const button = dropdown.querySelector('.action-menu-btn');
+            const menu = dropdown.querySelector('.dropdown-menu');
+
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Close other open dropdowns
+                document.querySelectorAll('.dropdown-menu').forEach(m => {
+                    if (m !== menu) m.style.display = 'none';
+                });
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        });
+
+        // Form validation
+        const addStreamForm = document.getElementById('addStreamForm');
+        addStreamForm.addEventListener('submit', function(e) {
+            const streamName = this.querySelector('input[name="name"]').value.trim();
+            if (!streamName) {
+                e.preventDefault();
+                alert('Please enter a stream name');
+            }
+        });
+    });
+
+    // Global functions
+    function confirmDelete(streamName) {
+        return confirm(`Are you sure you want to delete the stream "${streamName}"? This action cannot be undone.`);
+    }
+
+    function refreshStreams() {
+        location.reload();
+    }
+
+    function showBulkActions() {
+        alert('Bulk student assignment modal would open here');
+    }
+
+    function exportStreamData() {
+        alert('Stream data export functionality would be implemented here');
+    }
+
+    function showStreamReports() {
+        alert('Stream reports modal would open here');
+    }
+
+    function viewStreamDetails(streamId) {
+        alert(`View details for stream ${streamId}`);
+    }
+
+    function manageStreamStudents(streamId) {
+        alert(`Manage students for stream ${streamId}`);
+    }
+
+    function showQuickSetup() {
+        alert('Quick setup wizard would open here');
+    }
+</script>
+{% endblock %}

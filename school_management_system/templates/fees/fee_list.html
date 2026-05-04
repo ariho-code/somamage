@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title float-left">{{ title }}</h4>
+            <div class="float-right">
+                <a href="{% url 'fee_structure_create' %}" class="btn btn-primary">Add New Fee</a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if fees %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Term</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fees %}
+                        <tr>
+                            <td>{{ fee.grade.name }}</td>
+                            <td>{{ fee.term.name }}</td>
+                            <td>{{ fee.amount }}</td>
+                            <td>{{ fee.description|truncatewords:10 }}</td>
+                            <td>
+                                <a href="{% url 'fee_structure_edit' fee.id %}" class="btn btn-sm btn-info">Edit</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No fees have been set up yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,700 @@
+{% extends "base.html" %}
+{% block title %}School Settings — EduManage{% endblock %}
+{% block page_title %}School Settings{% endblock %}
+{% block page_subtitle %}Manage school info, academic years &amp; terms{% endblock %}
+
+{% block extra_css %}
+<style>
+.ss-wrap { display:flex; flex-direction:column; gap:20px; }
+
+/* Hero */
+.ss-hero {
+    background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%);
+    border-radius:var(--radius); padding:24px 28px; color:#fff;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    position:relative; overflow:hidden;
+}
+.ss-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.07); pointer-events:none; }
+.ss-hero-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+.ss-hero-sub   { font-size:13px; opacity:.85; }
+.ss-hero-icon  { width:60px; height:60px; background:rgba(255,255,255,.18); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; position:relative; z-index:1; }
+
+/* Tab nav */
+.ss-tabs {
+    display:flex; gap:4px;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:6px; box-shadow:var(--shadow);
+}
+.ss-tab {
+    flex:1; padding:10px 16px; border-radius:8px; font-size:13.5px; font-weight:600;
+    color:var(--text-muted); cursor:pointer; border:none; background:transparent;
+    display:flex; align-items:center; justify-content:center; gap:7px; transition:all 150ms;
+}
+.ss-tab:hover { background:var(--surface); color:var(--text); }
+.ss-tab.active { background:#0891b2; color:#fff; }
+.ss-tab-count {
+    background:rgba(255,255,255,.25); color:inherit;
+    border-radius:20px; font-size:11px; font-weight:700; padding:1px 7px;
+    min-width:20px; text-align:center;
+}
+.ss-tab:not(.active) .ss-tab-count { background:var(--surface-2); color:var(--text-muted); }
+
+/* Tab panels */
+.ss-panel { display:none; }
+.ss-panel.active { display:flex; flex-direction:column; gap:20px; }
+
+/* ── SCHOOL INFO TAB ─────────────────────────── */
+.ss-form-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden;
+}
+.ss-form-head {
+    padding:14px 24px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.ss-form-head-left { display:flex; align-items:center; gap:10px; }
+.ss-form-head-icon { width:32px; height:32px; background:rgba(8,145,178,.12); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#0891b2; }
+.ss-form-head-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+.ss-save-btn {
+    padding:9px 22px; background:#0891b2; color:#fff; border:none; border-radius:8px;
+    font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all 150ms;
+}
+.ss-save-btn:hover { background:#0e7490; transform:translateY(-1px); }
+
+.ss-form-body { padding:28px 24px; }
+.ss-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.ss-form-grid-full { grid-column:1/-1; }
+
+.ss-field { display:flex; flex-direction:column; gap:6px; }
+.ss-field label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+.ss-field input,
+.ss-field select,
+.ss-field textarea {
+    padding:10px 14px; border:1px solid var(--border); border-radius:8px;
+    background:var(--input-bg); color:var(--text); font-size:13.5px;
+    outline:none; transition:border-color 150ms; font-family:inherit;
+}
+.ss-field input:focus,
+.ss-field select:focus,
+.ss-field textarea:focus { border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,.1); }
+.ss-field textarea { resize:vertical; min-height:80px; }
+.ss-field .errorlist { list-style:none; color:var(--danger); font-size:12px; margin:0; padding:0; }
+
+/* Logo preview */
+.ss-logo-wrap { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.ss-logo-preview {
+    width:80px; height:80px; border-radius:12px; border:2px dashed var(--border);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    font-size:24px; color:var(--text-dim); background:var(--surface);
+    flex-shrink:0;
+}
+.ss-logo-preview img { width:100%; height:100%; object-fit:contain; }
+.ss-logo-input-wrap { flex:1; min-width:0; }
+.ss-logo-current { font-size:12px; color:var(--text-muted); margin-bottom:6px; }
+
+/* ── ACADEMIC YEARS TAB ──────────────────────── */
+.ss-section-bar {
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.ss-section-title { font-family:'Poppins',sans-serif; font-size:15px; font-weight:700; color:var(--text); }
+.ss-section-meta  { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.ss-add-btn {
+    padding:9px 18px; background:#0891b2; color:#fff; border:none; border-radius:8px;
+    font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all 150ms;
+}
+.ss-add-btn:hover { background:#0e7490; transform:translateY(-1px); }
+
+.ss-years-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+
+.ss-year-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:20px; position:relative; transition:all 150ms; box-shadow:var(--shadow);
+}
+.ss-year-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-2px); }
+.ss-year-card.active-year { border-color:#0891b2; }
+.ss-year-card.active-year::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:#0891b2; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+
+.ss-year-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; gap:8px; }
+.ss-year-name { font-family:'Poppins',sans-serif; font-size:16px; font-weight:800; color:var(--text); }
+.ss-active-badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; background:#0891b2; color:#fff; }
+.ss-inactive-badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; background:var(--surface-2); color:var(--text-muted); }
+
+.ss-year-dates { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.ss-year-date-row { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); }
+.ss-year-date-row strong { color:var(--text); }
+
+.ss-progress-bar-wrap { margin-bottom:12px; }
+.ss-progress-label { display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+.ss-progress-track { height:5px; background:var(--surface-2); border-radius:3px; overflow:hidden; }
+.ss-progress-fill  { height:100%; background:#0891b2; border-radius:3px; transition:width .6s ease; }
+
+.ss-year-edit-btn {
+    display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:7px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+    font-size:12px; font-weight:600; cursor:pointer; transition:all 150ms; width:100%; justify-content:center;
+}
+.ss-year-edit-btn:hover { border-color:#0891b2; color:#0891b2; background:rgba(8,145,178,.06); }
+
+/* ── TERMS TAB ───────────────────────────────── */
+.ss-year-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow); overflow:hidden; }
+.ss-year-section-head {
+    padding:14px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.ss-year-section-name { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+
+.ss-terms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; padding:16px; }
+.ss-term-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:16px; transition:all 150ms;
+}
+.ss-term-card:hover { border-color:#0891b2; box-shadow:0 4px 14px rgba(8,145,178,.1); }
+.ss-term-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.ss-term-name i { color:#0891b2; }
+.ss-term-dates { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+.ss-term-date  { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+.ss-term-date strong { color:var(--text); }
+.ss-term-edit-btn {
+    display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:7px;
+    border:1px solid var(--border); background:var(--card); color:var(--text-muted);
+    font-size:11.5px; font-weight:600; cursor:pointer; transition:all 150ms; width:100%; justify-content:center;
+}
+.ss-term-edit-btn:hover { border-color:#0891b2; color:#0891b2; }
+
+/* Empty state */
+.ss-empty { text-align:center; padding:48px 24px; }
+.ss-empty-icon { font-size:44px; color:var(--text-dim); margin-bottom:14px; }
+.ss-empty-title { font-family:'Poppins',sans-serif; font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.ss-empty-sub   { font-size:13.5px; color:var(--text-muted); margin-bottom:20px; }
+
+@media (max-width: 768px) {
+    .ss-form-grid { grid-template-columns:1fr; }
+    .ss-form-grid-full { grid-column:1; }
+    .ss-tabs { flex-wrap:wrap; }
+    .ss-tab { flex:1 1 40%; }
+}
+@media (max-width: 480px) {
+    .ss-hero { flex-direction:column; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ss-wrap">
+
+<!-- Hero -->
+<div class="ss-hero">
+    <div style="position:relative;z-index:1;">
+        <div class="ss-hero-title">School Settings</div>
+        <div class="ss-hero-sub">Configure your school profile, academic calendar &amp; terms</div>
+    </div>
+    <div class="ss-hero-icon"><i class="fas fa-cogs"></i></div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Tabs -->
+<div class="ss-tabs" role="tablist">
+    <button class="ss-tab active" onclick="showTab('info', this)" role="tab">
+        <i class="fas fa-school"></i> School Info
+    </button>
+    <button class="ss-tab" onclick="showTab('years', this)" role="tab">
+        <i class="fas fa-calendar-alt"></i> Academic Years
+        <span class="ss-tab-count">{{ academic_years|length }}</span>
+    </button>
+    <button class="ss-tab" onclick="showTab('terms', this)" role="tab">
+        <i class="fas fa-calendar-week"></i> Terms
+        <span class="ss-tab-count">{{ terms|length }}</span>
+    </button>
+    <a href="{% url 'grading_settings' %}" class="ss-tab" style="text-decoration:none;">
+        <i class="fas fa-star"></i> Grading
+    </a>
+</div>
+
+<!-- ── TAB 1: School Info ─────────────────────── -->
+<div class="ss-panel active" id="panel-info">
+    <div class="ss-form-card">
+        <div class="ss-form-head">
+            <div class="ss-form-head-left">
+                <div class="ss-form-head-icon"><i class="fas fa-school"></i></div>
+                <span class="ss-form-head-title">Basic Information</span>
+            </div>
+            <button type="submit" form="schoolSettingsForm" class="ss-save-btn">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+        <div class="ss-form-body">
+            <form method="post" enctype="multipart/form-data" id="schoolSettingsForm">
+                {% csrf_token %}
+                <div class="ss-form-grid">
+                    {% for field in form %}
+                    {% if field.name == 'logo' %}
+                    <div class="ss-field ss-form-grid-full">
+                        <label><i class="fas fa-image"></i> {{ field.label }}</label>
+                        <div class="ss-logo-wrap">
+                            <div class="ss-logo-preview" id="logoPreview">
+                                {% if school and school.logo %}
+                                <img src="{{ school.logo.url }}" alt="Logo" id="logoImg">
+                                {% else %}
+                                <i class="fas fa-school" id="logoPlaceholder"></i>
+                                {% endif %}
+                            </div>
+                            <div class="ss-logo-input-wrap">
+                                {% if school and school.logo %}
+                                <div class="ss-logo-current">Current: {{ school.logo.name|truncatechars:40 }}</div>
+                                {% endif %}
+                                {{ field }}
+                                {% if field.help_text %}<small style="color:var(--text-muted);font-size:11.5px;">{{ field.help_text }}</small>{% endif %}
+                            </div>
+                        </div>
+                        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    {% elif field.name == 'address' or field.name == 'motto' %}
+                    <div class="ss-field ss-form-grid-full">
+                        <label>
+                            <i class="fas fa-{% if field.name == 'address' %}map-marker-alt{% else %}quote-left{% endif %}"></i>
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="ss-field">
+                        <label>
+                            <i class="fas fa-{% if field.name == 'name' %}building{% elif field.name == 'phone' %}phone{% elif field.name == 'email' %}envelope{% elif field.name == 'website' %}globe{% elif field.name == 'school_type' %}tag{% else %}cog{% endif %}"></i>
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}<small style="color:var(--text-muted);font-size:11.5px;">{{ field.help_text }}</small>{% endif %}
+                        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── TAB 2: Academic Years ──────────────────── -->
+<div class="ss-panel" id="panel-years">
+    <div class="ss-section-bar">
+        <div>
+            <div class="ss-section-title">Academic Years</div>
+            <div class="ss-section-meta">{{ academic_years|length }} year{{ academic_years|length|pluralize }} configured</div>
+        </div>
+        <button class="ss-add-btn" data-toggle="modal" data-target="#addAcademicYearModal">
+            <i class="fas fa-plus"></i> Add Year
+        </button>
+    </div>
+
+    {% if academic_years %}
+    <div class="ss-years-grid">
+        {% for year in academic_years %}
+        <div class="ss-year-card {% if year.is_active %}active-year{% endif %}">
+            <div class="ss-year-top">
+                <div class="ss-year-name">{{ year.name }}</div>
+                {% if year.is_active %}
+                <span class="ss-active-badge"><i class="fas fa-check"></i> Active</span>
+                {% else %}
+                <span class="ss-inactive-badge">Inactive</span>
+                {% endif %}
+            </div>
+            <div class="ss-year-dates">
+                <div class="ss-year-date-row"><i class="fas fa-play-circle" style="color:#10b981;width:14px;"></i> Starts: <strong>{{ year.start_date|date:"M d, Y" }}</strong></div>
+                <div class="ss-year-date-row"><i class="fas fa-flag-checkered" style="color:#ef4444;width:14px;"></i> Ends: <strong>{{ year.end_date|date:"M d, Y" }}</strong></div>
+            </div>
+            <div class="ss-progress-bar-wrap">
+                <div class="ss-progress-label">
+                    <span>Progress</span>
+                    <span>{{ year.progress_percentage }}%</span>
+                </div>
+                <div class="ss-progress-track">
+                    <div class="ss-progress-fill" data-width="{{ year.progress_percentage }}"></div>
+                </div>
+            </div>
+            <button class="ss-year-edit-btn" onclick="editAcademicYear({{ year.id }}, '{{ year.name|escapejs }}', '{{ year.start_date|date:"Y-m-d" }}', '{{ year.end_date|date:"Y-m-d" }}', {{ year.is_active|lower }})">
+                <i class="fas fa-edit"></i> Edit Year
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="ss-form-card">
+        <div class="ss-empty">
+            <div class="ss-empty-icon"><i class="fas fa-calendar-times"></i></div>
+            <div class="ss-empty-title">No Academic Years</div>
+            <div class="ss-empty-sub">Add your first academic year to get started.</div>
+            <button class="ss-add-btn" data-toggle="modal" data-target="#addAcademicYearModal"><i class="fas fa-plus"></i> Add First Year</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── TAB 3: Terms ───────────────────────────── -->
+<div class="ss-panel" id="panel-terms">
+    <div class="ss-section-bar">
+        <div>
+            <div class="ss-section-title">Terms</div>
+            <div class="ss-section-meta">Organised by academic year</div>
+        </div>
+        <button class="ss-add-btn" data-toggle="modal" data-target="#addTermModal">
+            <i class="fas fa-plus"></i> Add Term
+        </button>
+    </div>
+
+    {% regroup terms by academic_year as terms_by_year %}
+    {% if terms_by_year %}
+    {% for year_group in terms_by_year %}
+    <div class="ss-year-section">
+        <div class="ss-year-section-head">
+            <div>
+                <span class="ss-year-section-name">{{ year_group.grouper.name }}</span>
+                {% if year_group.grouper.is_active %}
+                <span class="ss-active-badge" style="font-size:10px;margin-left:8px;">Active</span>
+                {% endif %}
+            </div>
+            <span style="font-size:12px;color:var(--text-muted);">{{ year_group.list|length }} term{{ year_group.list|length|pluralize }}</span>
+        </div>
+        <div class="ss-terms-grid">
+            {% for term in year_group.list %}
+            <div class="ss-term-card">
+                <div class="ss-term-name"><i class="fas fa-calendar-check"></i> {{ term.name }}</div>
+                <div class="ss-term-dates">
+                    <div class="ss-term-date"><i class="fas fa-play-circle" style="color:#10b981;"></i> Starts: <strong>{{ term.start_date|date:"M d, Y" }}</strong></div>
+                    <div class="ss-term-date"><i class="fas fa-flag-checkered" style="color:#ef4444;"></i> Ends: <strong>{{ term.end_date|date:"M d, Y" }}</strong></div>
+                </div>
+                <button class="ss-term-edit-btn" onclick="editTerm({{ term.id }}, '{{ term.name|escapejs }}', '{{ term.academic_year.id }}', '{{ term.start_date|date:"Y-m-d" }}', '{{ term.end_date|date:"Y-m-d" }}')">
+                    <i class="fas fa-edit"></i> Edit Term
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="ss-form-card">
+        <div class="ss-empty">
+            <div class="ss-empty-icon"><i class="fas fa-calendar-week"></i></div>
+            <div class="ss-empty-title">No Terms Yet</div>
+            <div class="ss-empty-sub">Add terms for your academic years to track progress.</div>
+            <button class="ss-add-btn" data-toggle="modal" data-target="#addTermModal"><i class="fas fa-plus"></i> Add First Term</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ─────────────── MODALS (preserved) ──────────── -->
+<!-- Add Term Modal -->
+<div class="modal fade" id="addTermModal" tabindex="-1" role="dialog" aria-labelledby="addTermModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTermModalLabel">Add New Term</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <form method="POST" action="{% url 'term_create' %}" id="addTermForm">
+                {% csrf_token %}
+                <div class="modal-body" style="padding:20px 24px;">
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Academic Year</label>
+                        <select class="form-control" name="academic_year" id="add_academic_year" required>
+                            <option value="">— Select academic year —</option>
+                            {% for year in academic_years %}
+                            <option value="{{ year.id }}">{{ year.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Term Name</label>
+                        <input type="text" class="form-control" name="name" id="add_term_name" required placeholder="e.g. Term 1, First Term">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        <div class="ss-field">
+                            <label>Start Date</label>
+                            <input type="date" class="form-control" name="start_date" id="add_start_date" required>
+                        </div>
+                        <div class="ss-field">
+                            <label>End Date</label>
+                            <input type="date" class="form-control" name="end_date" id="add_end_date" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Term</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Term Modal -->
+<div class="modal fade" id="editTermModal" tabindex="-1" role="dialog" aria-labelledby="editTermModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTermModalLabel">Edit Term</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <form method="POST" action="" id="editTermForm">
+                {% csrf_token %}
+                <div class="modal-body" style="padding:20px 24px;">
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Academic Year</label>
+                        <select class="form-control" name="academic_year" id="edit_academic_year" required>
+                            <option value="">— Select academic year —</option>
+                            {% for year in academic_years %}
+                            <option value="{{ year.id }}">{{ year.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Term Name</label>
+                        <input type="text" class="form-control" name="name" id="edit_term_name" required>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        <div class="ss-field">
+                            <label>Start Date</label>
+                            <input type="date" class="form-control" name="start_date" id="edit_start_date" required>
+                        </div>
+                        <div class="ss-field">
+                            <label>End Date</label>
+                            <input type="date" class="form-control" name="end_date" id="edit_end_date" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Term</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Academic Year Modal -->
+<div class="modal fade" id="addAcademicYearModal" tabindex="-1" role="dialog" aria-labelledby="addAcademicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAcademicYearModalLabel">Add Academic Year</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <form method="POST" action="{% url 'academic_year_create' %}" id="addAcademicYearForm">
+                {% csrf_token %}
+                <div class="modal-body" style="padding:20px 24px;">
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Year Name</label>
+                        <input type="text" class="form-control" name="name" id="add_year_name" required placeholder="e.g. 2024/2025">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+                        <div class="ss-field">
+                            <label>Start Date</label>
+                            <input type="date" class="form-control" name="start_date" required>
+                        </div>
+                        <div class="ss-field">
+                            <label>End Date</label>
+                            <input type="date" class="form-control" name="end_date" required>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_active" id="add_is_active" value="1">
+                        <label class="form-check-label" for="add_is_active">Set as active year</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Year</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Academic Year Modal -->
+<div class="modal fade" id="editAcademicYearModal" tabindex="-1" role="dialog" aria-labelledby="editAcademicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAcademicYearModalLabel">Edit Academic Year</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <form method="POST" action="" id="editAcademicYearForm">
+                {% csrf_token %}
+                <div class="modal-body" style="padding:20px 24px;">
+                    <div class="ss-field" style="margin-bottom:16px;">
+                        <label>Year Name</label>
+                        <input type="text" class="form-control" name="name" id="edit_year_name" required>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+                        <div class="ss-field">
+                            <label>Start Date</label>
+                            <input type="date" class="form-control" name="start_date" id="edit_start_date" required>
+                        </div>
+                        <div class="ss-field">
+                            <label>End Date</label>
+                            <input type="date" class="form-control" name="end_date" id="edit_end_date" required>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="is_active" id="edit_is_active" value="1">
+                        <label class="form-check-label" for="edit_is_active">Set as active year</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Year</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Tab switching ──────────────────────────────
+function showTab(name, btn) {
+    document.querySelectorAll('.ss-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ss-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    btn.classList.add('active');
+    sessionStorage.setItem('ss_tab', name);
+}
+(function() {
+    var saved = sessionStorage.getItem('ss_tab');
+    if (saved) {
+        var btn = document.querySelector('.ss-tab[onclick*="' + saved + '"]');
+        if (btn) showTab(saved, btn);
+    }
+})();
+
+// ── Animate progress bars ──────────────────────
+document.querySelectorAll('.ss-progress-fill').forEach(function(el) {
+    var w = el.dataset.width || '0';
+    el.style.width = '0';
+    setTimeout(function() { el.style.width = w + '%'; }, 200);
+});
+
+// ── Logo preview ────────────────────────────────
+var logoInput = document.querySelector('input[type="file"][name="logo"]');
+if (logoInput) {
+    logoInput.addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var preview = document.getElementById('logoPreview');
+            preview.innerHTML = '<img src="' + e.target.result + '" alt="Logo Preview" style="width:100%;height:100%;object-fit:contain;">';
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// ── Academic Year AJAX ──────────────────────────
+$('#addAcademicYearForm').on('submit', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var btn = form.find('[type=submit]');
+    btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    $.ajax({
+        url: form.attr('action'), method: 'POST', data: form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(d) {
+            if (d.success) { $('#addAcademicYearModal').modal('hide'); setTimeout(() => location.reload(), 600); }
+            else { alert(d.error || 'Failed'); btn.html('<i class="fas fa-save"></i> Create Year').prop('disabled', false); }
+        },
+        error: function() { btn.html('<i class="fas fa-save"></i> Create Year').prop('disabled', false); }
+    });
+});
+
+$('#editAcademicYearForm').on('submit', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var btn = form.find('[type=submit]');
+    btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    $.ajax({
+        url: form.attr('action'), method: 'POST', data: form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(d) {
+            if (d.success) { $('#editAcademicYearModal').modal('hide'); setTimeout(() => location.reload(), 600); }
+            else { alert(d.error || 'Failed'); btn.html('<i class="fas fa-save"></i> Update Year').prop('disabled', false); }
+        },
+        error: function() { btn.html('<i class="fas fa-save"></i> Update Year').prop('disabled', false); }
+    });
+});
+
+function editAcademicYear(yearId, yearName, startDate, endDate, isActive) {
+    $('#editAcademicYearForm').attr('action', '/academic-year/edit/' + yearId + '/');
+    $('#edit_year_name').val(yearName);
+    $('#edit_start_date').val(startDate);
+    $('#edit_end_date').val(endDate);
+    $('#edit_is_active').prop('checked', isActive);
+    $('#editAcademicYearModal').modal('show');
+}
+
+$('#addAcademicYearModal').on('hidden.bs.modal', function() { $('#addAcademicYearForm')[0].reset(); });
+$('#editAcademicYearModal').on('hidden.bs.modal', function() { $('#editAcademicYearForm')[0].reset(); });
+
+// ── Term AJAX ───────────────────────────────────
+$('#addTermForm').on('submit', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var btn = form.find('[type=submit]');
+    btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    $.ajax({
+        url: form.attr('action'), method: 'POST', data: form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(d) {
+            if (d.success) { $('#addTermModal').modal('hide'); setTimeout(() => location.reload(), 600); }
+            else { alert(d.error || 'Failed to create term'); btn.html('<i class="fas fa-save"></i> Create Term').prop('disabled', false); }
+        },
+        error: function(xhr) {
+            var msg = xhr.responseJSON && xhr.responseJSON.errors ? JSON.stringify(xhr.responseJSON.errors) : 'An error occurred';
+            alert(msg); btn.html('<i class="fas fa-save"></i> Create Term').prop('disabled', false);
+        }
+    });
+});
+
+$('#editTermForm').on('submit', function(e) {
+    e.preventDefault();
+    var form = $(this);
+    var btn = form.find('[type=submit]');
+    btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    $.ajax({
+        url: form.attr('action'), method: 'POST', data: form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        success: function(d) {
+            if (d.success) { $('#editTermModal').modal('hide'); setTimeout(() => location.reload(), 600); }
+            else { alert(d.error || 'Failed to update term'); btn.html('<i class="fas fa-save"></i> Update Term').prop('disabled', false); }
+        },
+        error: function(xhr) {
+            var msg = xhr.responseJSON && xhr.responseJSON.errors ? JSON.stringify(xhr.responseJSON.errors) : 'An error occurred';
+            alert(msg); btn.html('<i class="fas fa-save"></i> Update Term').prop('disabled', false);
+        }
+    });
+});
+
+function editTerm(termId, termName, academicYearId, startDate, endDate) {
+    $('#editTermForm').attr('action', '/term/edit/' + termId + '/');
+    $('#edit_academic_year').val(academicYearId);
+    $('#edit_term_name').val(termName);
+    $('#edit_start_date').val(startDate);
+    $('#edit_end_date').val(endDate);
+    $('#editTermModal').modal('show');
+}
+
+$('#addTermModal').on('hidden.bs.modal', function() { $('#addTermForm')[0].reset(); });
+$('#editTermModal').on('hidden.bs.modal', function() { $('#editTermForm')[0].reset(); });
+</script>
+{% endblock %}

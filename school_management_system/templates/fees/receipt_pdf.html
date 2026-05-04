@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fee Receipt - {{ payment.receipt_number }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #222; background: #fff; font-size: 13px; }
+        .receipt { max-width: 148mm; margin: 0 auto; padding: 20px; border: 2px solid #333; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
+        .school-name { font-size: 18px; font-weight: bold; text-transform: uppercase; }
+        .school-sub { font-size: 11px; color: #555; margin-top: 3px; }
+        .receipt-title { font-size: 15px; font-weight: bold; letter-spacing: 2px; margin-top: 8px; text-transform: uppercase; }
+        .receipt-number { font-size: 11px; color: #666; margin-top: 2px; }
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        .info-table td { padding: 5px 6px; vertical-align: top; font-size: 12px; }
+        .info-table td.label { font-weight: bold; color: #444; width: 38%; }
+        .amount-box { border: 2px solid #333; padding: 12px; text-align: center; margin: 14px 0; }
+        .amount-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; }
+        .amount-value { font-size: 22px; font-weight: bold; color: #111; margin-top: 4px; }
+        .divider { border-top: 1px dashed #aaa; margin: 12px 0; }
+        .footer { text-align: center; font-size: 10px; color: #777; margin-top: 14px; border-top: 1px solid #ddd; padding-top: 10px; }
+        .stamp-area { margin-top: 30px; }
+        .stamp-table { width: 100%; border-collapse: collapse; }
+        .stamp-table td { text-align: center; width: 50%; padding: 5px; }
+        .sig-line { border-top: 1px solid #333; margin-top: 35px; padding-top: 4px; font-size: 11px; font-weight: bold; }
+        @page { size: A5 portrait; margin: 1cm; }
+    </style>
+</head>
+<body>
+<div class="receipt">
+    <div class="header">
+        {% if payment.enrollment.grade.school.logo %}
+        <img src="{{ payment.enrollment.grade.school.logo.url }}" alt="Logo" style="max-height:50px; margin-bottom:6px;">
+        {% endif %}
+        <div class="school-name">{{ payment.enrollment.grade.school.name|default:"School" }}</div>
+        {% if payment.enrollment.grade.school.address %}
+        <div class="school-sub">{{ payment.enrollment.grade.school.address }}</div>
+        {% endif %}
+        {% if payment.enrollment.grade.school.phone %}
+        <div class="school-sub">Tel: {{ payment.enrollment.grade.school.phone }}</div>
+        {% endif %}
+        <div class="receipt-title">Official Fee Receipt</div>
+        <div class="receipt-number">Receipt No: <strong>{{ payment.receipt_number|default:"N/A" }}</strong></div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Student Name:</td>
+            <td>{% if payment.enrollment.student.user %}{{ payment.enrollment.student.user.get_full_name|default:payment.enrollment.student.user.username }}{% else %}{{ payment.enrollment.student.first_name }} {{ payment.enrollment.student.last_name }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="label">Admission No:</td>
+            <td>{{ payment.enrollment.student.admission_number|default:"--" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Grade / Class:</td>
+            <td>{{ payment.enrollment.grade.name }}</td>
+        </tr>
+        <tr>
+            <td class="label">Academic Term:</td>
+            <td>
+                {% if payment.fee_structure %}
+                    {{ payment.fee_structure.term.name }} — {{ payment.fee_structure.term.academic_year.name }}
+                {% else %}
+                    --
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="label">Payment Date:</td>
+            <td>{{ payment.payment_date|date:"d F Y" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Payment Method:</td>
+            <td>{{ payment.get_payment_method_display }}</td>
+        </tr>
+        {% if payment.notes %}
+        <tr>
+            <td class="label">Notes:</td>
+            <td>{{ payment.notes }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <div class="divider"></div>
+
+    <div class="amount-box">
+        <div class="amount-label">Amount Paid (UGX)</div>
+        <div class="amount-value">{{ payment.amount_paid|floatformat:0 }}</div>
+    </div>
+
+    {% if payment.fee_structure %}
+    <table class="info-table" style="margin-top:10px;">
+        <tr>
+            <td class="label">Total Term Fee:</td>
+            <td>UGX {{ payment.fee_structure.amount|floatformat:0 }}</td>
+        </tr>
+        {% if payment.enrollment %}
+        <tr>
+            <td class="label">Balance:</td>
+            <td>
+                {% with balance=payment.enrollment.fee_payments.all %}
+                    --
+                {% endwith %}
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+    {% endif %}
+
+    <div class="divider"></div>
+
+    <div class="stamp-area">
+        <table class="stamp-table">
+            <tr>
+                <td>
+                    <div class="sig-line">Received By</div>
+                </td>
+                <td>
+                    <div class="sig-line">Bursar / Cashier Stamp</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>This is an official receipt. Please keep it for your records.</p>
+        <p>Generated on {{ payment.payment_date|date:"d F Y" }} &nbsp;|&nbsp; {{ payment.enrollment.grade.school.name|default:"School" }}</p>
+    </div>
+</div>
+</body>
+</html>

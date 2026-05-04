@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: #ffffff; border: 1px solid #e8eaed; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: #202124; margin-bottom: 8px; font-weight: 400; font-size: 24px;">{{ assignment.title }}</h2>
+                <p style="color: #5f6368; margin: 0; font-size: 14px;">{{ assignment.course.title }}</p>
+            </div>
+            <a href="{% url 'student_class_detail' assignment.course.id %}" class="btn btn-secondary" style="border-radius: 4px; padding: 8px 24px;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+    
+    {% if submission %}
+    <!-- Already Submitted -->
+    <div class="card">
+        <div class="card-body" style="text-align: center; padding: 40px;">
+            <i class="fas fa-check-circle" style="font-size: 64px; color: #34a853; margin-bottom: 16px;"></i>
+            <h4 style="color: #202124; margin-bottom: 8px;">Exam Submitted</h4>
+            <p style="color: #5f6368; margin-bottom: 24px;">You submitted this exam on {{ submission.submitted_at|date:"M d, Y H:i" }}</p>
+            {% if submission.is_graded %}
+            <div style="font-size: 32px; color: #1a73e8; margin-bottom: 8px;">
+                Score: {{ submission.score|floatformat:0 }}/{{ submission.total_score|floatformat:0 }}
+            </div>
+            {% else %}
+            <p style="color: #5f6368;">Your exam is being graded.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Exam Taking Interface -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <h5 style="font-weight: 400; color: #202124;">Exam Paper</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    {% if assignment.exam_pdf %}
+                    <iframe src="{{ assignment.exam_pdf.url }}" 
+                            style="width: 100%; height: 600px; border: none;"></iframe>
+                    {% else %}
+                    <div style="padding: 40px; text-align: center; color: #5f6368;">
+                        <i class="fas fa-file-pdf" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <p>No exam paper uploaded</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 style="font-weight: 400; color: #202124;">Answer Sheet</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'submit_assignment' assignment.id %}" enctype="multipart/form-data" id="examForm">
+                        {% csrf_token %}
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: #5f6368; font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block;">
+                                Type your answers here (Copy/Paste disabled)
+                            </label>
+                            <textarea name="submission_text" 
+                                      id="examTextEditor"
+                                      class="form-control" 
+                                      rows="15" 
+                                      placeholder="Type your answers here..."
+                                      style="font-family: 'Courier New', monospace; font-size: 14px;"
+                                      required></textarea>
+                            <small style="color: #5f6368; font-size: 12px; margin-top: 4px; display: block;">
+                                Note: Copy and paste is disabled to ensure original work
+                            </small>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: #5f6368; font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block;">
+                                Or upload answer sheet (PDF/DOC)
+                            </label>
+                            <input type="file" name="submission_file" class="form-control" accept=".pdf,.doc,.docx">
+                        </div>
+                        
+                        {% if assignment.allow_attachments %}
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: #5f6368; font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block;">
+                                Additional Attachments (Optional)
+                            </label>
+                            <input type="file" name="attachments" class="form-control" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            <small style="color: #5f6368; font-size: 12px; margin-top: 4px; display: block;">
+                                You can attach multiple files
+                            </small>
+                        </div>
+                        {% endif %}
+                        
+                        <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e8eaed;">
+                            <button type="submit" class="btn btn-primary" style="border-radius: 4px; padding: 10px 32px; font-size: 14px;">
+                                <i class="fas fa-paper-plane"></i> Submit Exam
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Disable copy/paste in text editor
+        const textEditor = document.getElementById('examTextEditor');
+        
+        // Disable paste
+        textEditor.addEventListener('paste', function(e) {
+            e.preventDefault();
+            alert('Pasting is not allowed. Please type your answers.');
+        });
+        
+        // Disable copy
+        textEditor.addEventListener('copy', function(e) {
+            e.preventDefault();
+        });
+        
+        // Disable cut
+        textEditor.addEventListener('cut', function(e) {
+            e.preventDefault();
+        });
+        
+        // Disable right-click context menu
+        textEditor.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+        
+        // Disable keyboard shortcuts for copy/paste
+        textEditor.addEventListener('keydown', function(e) {
+            // Ctrl+C, Ctrl+V, Ctrl+X
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'x')) {
+                e.preventDefault();
+                alert('Copy/Paste is not allowed. Please type your answers.');
+            }
+        });
+    </script>
+    {% endif %}
+</div>
+{% endblock %}
+

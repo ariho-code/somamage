@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Fee Status{% endblock %}
+{% block page_title %}Fee Status{% endblock %}
+
+{% block content %}
+<div class="fees-container">
+    <!-- Header Section -->
+    <div class="fees-header">
+        <div class="header-content">
+            <h1><i class="fas fa-money-check"></i> Fee Status</h1>
+            <p>View fee balances and payment history for your children</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Balances List -->
+    {% if balances %}
+    <div class="fees-card">
+        <div class="card-header">
+            <h3><i class="fas fa-list"></i> Fee Balances</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> #</th>
+                            <th><i class="fas fa-user-graduate"></i> Student</th>
+                            <th><i class="fas fa-calendar"></i> Term</th>
+                            <th><i class="fas fa-money-bill"></i> Total Fee</th>
+                            <th><i class="fas fa-check-circle"></i> Paid</th>
+                            <th><i class="fas fa-chart-line"></i> Balance</th>
+                            <th><i class="fas fa-percent"></i> Progress</th>
+                            <th><i class="fas fa-info-circle"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for balance in balances %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ balance.enrollment.student.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ balance.enrollment.grade.name }}</small>
+                            </td>
+                            <td>{{ balance.term.name }}<br><small class="text-muted">{{ balance.term.academic_year.name }}</small></td>
+                            <td>
+                                <span class="fee-badge total-fee">
+                                    {{ balance.total_fee|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fee-badge paid-fee">
+                                    {{ balance.amount_paid|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fee-badge {% if balance.balance > 0 %}balance-outstanding{% else %}balance-paid{% endif %}">
+                                    {{ balance.balance|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar-wrapper">
+                                        <div class="progress-bar" style="width: {{ balance.payment_percentage }}%">
+                                            <span class="progress-text">{{ balance.payment_percentage|floatformat:0 }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if balance.is_paid %}
+                                <span class="status-badge paid">
+                                    <i class="fas fa-check-circle"></i> Paid
+                                </span>
+                                {% else %}
+                                <span class="status-badge outstanding">
+                                    <i class="fas fa-exclamation-circle"></i> Outstanding
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-money-check"></i>
+        </div>
+        <h3>No Fee Balances Found</h3>
+        <p>No fee balances have been set up for your children yet. Please contact the school administration.</p>
+    </div>
+    {% endif %}
+    
+    <!-- Receipts/Payments List -->
+    {% if payments %}
+    <div class="fees-card">
+        <div class="card-header">
+            <h3><i class="fas fa-receipt"></i> Payment Receipts</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> #</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-money-bill"></i> Amount Paid</th>
+                            <th><i class="fas fa-receipt"></i> Receipt Number</th>
+                            <th><i class="fas fa-credit-card"></i> Payment Method</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="fee-badge paid-fee">
+                                    {{ payment.amount_paid|floatformat:0|intcomma }} UGX
+                                </span>
+                            </td>
+                            <td>
+                                {% if payment.receipt_number %}
+                                <span class="receipt-badge">{{ payment.receipt_number }}</span>
+                                {% else %}
+                                <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="payment-method-badge">
+                                    <i class="fas fa-{% if payment.payment_method == 'cash' %}money-bill{% elif payment.payment_method == 'bank' %}university{% elif payment.payment_method == 'mobile' %}mobile-alt{% elif payment.payment_method == 'cheque' %}file-invoice{% else %}ellipsis-h{% endif %}"></i>
+                                    {{ payment.get_payment_method_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <button type="button" class="action-btn print-btn" 
+                                        onclick="window.open('{% url 'fee_payment_receipt_parent' payment.id %}', '_blank')"
+                                        title="Print Receipt">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.fees-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.fees-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+}
+
+.fees-header .header-content h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.fees-header .header-content p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+}
+
+.fees-header .graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+}
+
+.fees-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.fees-card .card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.fees-card .card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fees-card .card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.modern-table thead th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    border: none;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8f9ff;
+    transform: scale(1.01);
+}
+
+.modern-table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.fee-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.total-fee {
+    background: #3b82f6;
+    color: white;
+}
+
+.paid-fee {
+    background: #10b981;
+    color: white;
+}
+
+.balance-outstanding {
+    background: #ef4444;
+    color: white;
+}
+
+.balance-paid {
+    background: #10b981;
+    color: white;
+}
+
+.progress-container {
+    width: 100%;
+}
+
+.progress-bar-wrapper {
+    background: var(--gray-200);
+    border-radius: 20px;
+    height: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-text {
+    color: white;
+    font-weight: 600;
+    font-size: 0.75rem;
+    position: absolute;
+    z-index: 1;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.paid {
+    background: #10b981;
+    color: white;
+}
+
+.status-badge.outstanding {
+    background: #f59e0b;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #94a3b8;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.receipt-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--gray-200);
+    color: var(--gray-700);
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+.payment-method-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.print-btn {
+    color: #3b82f6;
+}
+
+.print-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}

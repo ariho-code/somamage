@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+{% block title %}UACE Grading System Configuration{% endblock %}
+{% block page_title %}UACE Grading System Configuration{% endblock %}
+
+{% block content %}
+<div class="uace-config-container">
+    <!-- Header Section -->
+    <div class="config-header">
+        <div class="header-content">
+            <h1><i class="fas fa-graduation-cap"></i> UACE Grading System</h1>
+            <p>Uganda Advanced Certificate of Education (UACE) Grading System Configuration</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Info Alert -->
+    <div class="info-alert" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+        <i class="fas fa-info-circle" style="color: #2196f3; font-size: 24px; margin-right: 15px;"></i>
+        <div>
+            <strong>UACE Grading System:</strong> This system follows the Uganda National Examinations Board (UNEB) standards for A-Level grading. 
+            You can customize the grading ranges and points system for your school below. All A-Level report cards use this system automatically.
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="config-card" style="background: white; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <div class="card-header" style="padding: 20px 25px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+            <h3><i class="fas fa-edit"></i> Edit Grading Configuration</h3>
+            <p class="card-subtitle">Customize numerical grade ranges and points system for your school</p>
+        </div>
+        <div class="card-body" style="padding: 25px;">
+            <form method="post" id="uaceConfigForm">
+                {% csrf_token %}
+                
+                <!-- Numerical Grade Ranges -->
+                <h4 style="margin-bottom: 20px; color: #1f2937;"><i class="fas fa-ruler"></i> Numerical Grade Ranges</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grade</th>
+                                <th>Label</th>
+                                <th>Min (%)</th>
+                                <th>Max (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>1</strong></td>
+                                <td>D1</td>
+                                <td>{{ form.grade_1_min }}</td>
+                                <td>{{ form.grade_1_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>2</strong></td>
+                                <td>D2</td>
+                                <td>{{ form.grade_2_min }}</td>
+                                <td>{{ form.grade_2_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3</strong></td>
+                                <td>C3</td>
+                                <td>{{ form.grade_3_min }}</td>
+                                <td>{{ form.grade_3_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>4</strong></td>
+                                <td>C4</td>
+                                <td>{{ form.grade_4_min }}</td>
+                                <td>{{ form.grade_4_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>5</strong></td>
+                                <td>C5</td>
+                                <td>{{ form.grade_5_min }}</td>
+                                <td>{{ form.grade_5_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>6</strong></td>
+                                <td>C6</td>
+                                <td>{{ form.grade_6_min }}</td>
+                                <td>{{ form.grade_6_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>7</strong></td>
+                                <td>P7</td>
+                                <td>{{ form.grade_7_min }}</td>
+                                <td>{{ form.grade_7_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>8</strong></td>
+                                <td>P8</td>
+                                <td>{{ form.grade_8_min }}</td>
+                                <td>{{ form.grade_8_max }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>9</strong></td>
+                                <td>F9</td>
+                                <td>{{ form.grade_9_min }}</td>
+                                <td>{{ form.grade_9_max }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <hr style="margin: 30px 0;">
+                
+                <!-- Points System -->
+                <h4 style="margin-bottom: 20px; color: #1f2937;"><i class="fas fa-star"></i> Points System</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Principal Subjects</h5>
+                        <div class="form-group">
+                            <label>Points for Grade A:</label>
+                            {{ form.points_a }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade B:</label>
+                            {{ form.points_b }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade C:</label>
+                            {{ form.points_c }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade D:</label>
+                            {{ form.points_d }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade E:</label>
+                            {{ form.points_e }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade O:</label>
+                            {{ form.points_o }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Grade F:</label>
+                            {{ form.points_f }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Subsidiary Subjects</h5>
+                        <div class="form-group">
+                            <label>Points for Pass:</label>
+                            {{ form.points_subsidiary_pass }}
+                        </div>
+                        <div class="form-group">
+                            <label>Points for Fail:</label>
+                            {{ form.points_subsidiary_fail }}
+                        </div>
+                        <div class="form-group">
+                            <label>Maximum Grade for Subsidiary Pass (1-9):</label>
+                            {{ form.subsidiary_pass_max_grade }}
+                            <small class="form-text text-muted">Grades 1 to this number = Pass, above = Fail</small>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Please correct the following errors:</strong>
+                    <ul>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div style="margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                    <a href="{% url 'home' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Numerical Grading Ranges -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-ruler"></i> Numerical Grade Ranges (Raw Marks to Numerical Grades)</h3>
+            <p class="card-subtitle">Fixed percentage ranges for converting raw marks (0-100%) to numerical grades (1-9)</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Raw Mark Range (%)</th>
+                            <th>Numerical Grade</th>
+                            <th>Grade Label</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for range in grading_ranges %}
+                        <tr>
+                            <td><strong>{{ range.range }}</strong></td>
+                            <td><span class="grade-badge grade-{{ range.grade }}">{{ range.grade }}</span></td>
+                            <td><span class="grade-label">{{ range.label }}</span></td>
+                            <td>
+                                <span class="category-badge category-{{ range.category|lower }}">
+                                    {{ range.category }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Principal Subject Letter Grades - 2 Papers -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-book-open"></i> Principal Subject Letter Grades (2-Paper Subjects)</h3>
+            <p class="card-subtitle">Letter grades for principal subjects with 2 papers (e.g., Arts, Humanities)</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Letter Grade</th>
+                            <th>Conditions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in principal_grades_2paper %}
+                        <tr>
+                            <td><span class="letter-grade-badge grade-{{ grade.letter|lower }}">{{ grade.letter }}</span></td>
+                            <td>{{ grade.condition }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Principal Subject Letter Grades - 3 Papers -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-flask"></i> Principal Subject Letter Grades (3-Paper Subjects)</h3>
+            <p class="card-subtitle">Letter grades for principal subjects with 3 papers (e.g., Sciences with practicals)</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Letter Grade</th>
+                            <th>Conditions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in principal_grades_3paper %}
+                        <tr>
+                            <td><span class="letter-grade-badge grade-{{ grade.letter|lower }}">{{ grade.letter }}</span></td>
+                            <td>{{ grade.condition }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subsidiary Subject Grading -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-alt"></i> Subsidiary Subject Grading</h3>
+            <p class="card-subtitle">Subsidiary subjects (General Paper, Sub-Math, Sub-ICT) use Pass/Fail system</p>
+        </div>
+        <div class="card-body">
+            <div class="info-box">
+                <div class="info-item">
+                    <strong><i class="fas fa-check-circle" style="color: #4caf50;"></i> Pass:</strong>
+                    Numerical grades 1-6 (Distinction or Credit) → 1 point
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-times-circle" style="color: #f44336;"></i> Fail:</strong>
+                    Numerical grades 7-9 (Pass or Fail) → 0 points
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-info-circle" style="color: #2196f3;"></i> Note:</strong>
+                    Subsidiary subjects do not receive A-E letter grades like principals. They use Pass/Fail only.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Points System -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-star"></i> UACE Points System</h3>
+            <p class="card-subtitle">Points assigned to letter grades for university admission simulation</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Points</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for point in points_system %}
+                        <tr>
+                            <td><span class="letter-grade-badge grade-{{ point.grade|lower }}">{{ point.grade }}</span></td>
+                            <td><strong>{{ point.points }}</strong></td>
+                            <td><span class="type-badge">{{ point.type }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="points-info mt-3">
+                <p><strong>Total Points Calculation:</strong> Sum of up to 3 best principal subjects + subsidiaries</p>
+                <p><strong>Example:</strong> Physics A (6) + Chemistry B (5) + Math C (4) + General Paper Pass (1) = <strong>16 points</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subsidiary Rules -->
+    <div class="config-card">
+        <div class="card-header">
+            <h3><i class="fas fa-cogs"></i> Subsidiary Assignment Rules</h3>
+            <p class="card-subtitle">Automatic assignment rules for subsidiary subjects based on combination</p>
+        </div>
+        <div class="card-body">
+            <div class="rules-list">
+                {% for rule in subsidiary_rules %}
+                <div class="rule-item">
+                    <div class="rule-icon">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="rule-content">
+                        <strong>{{ rule.rule }}</strong>
+                        <p>{{ rule.condition }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="config-actions">
+        <a href="{% url 'combination_manage' %}" class="btn btn-primary">
+            <i class="fas fa-puzzle-piece"></i> Manage Combinations
+        </a>
+        <a href="{% url 'report_card_list' %}" class="btn btn-secondary">
+            <i class="fas fa-file-alt"></i> View Report Cards
+        </a>
+    </div>
+</div>
+
+<style>
+.uace-config-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.config-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.config-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.config-header p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.graphic-icon {
+    font-size: 80px;
+    opacity: 0.2;
+}
+
+.config-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.config-card .card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 25px 30px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.config-card .card-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.config-card .card-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.config-card .card-body {
+    padding: 30px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: #f8fafc;
+}
+
+.modern-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.modern-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.grade-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.grade-1, .grade-2 {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.grade-3, .grade-4, .grade-5, .grade-6 {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.grade-7, .grade-8 {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.grade-9 {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.grade-label {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.category-distinction {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.category-credit {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.category-pass {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.category-fail {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.letter-grade-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 18px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.grade-a {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.grade-b {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.grade-c {
+    background: #bfdbfe;
+    color: #1e3a8a;
+}
+
+.grade-d {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.grade-e {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.grade-o {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.grade-f {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.grade-pass {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.grade-fail {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.points-info {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #3b82f6;
+}
+
+.points-info p {
+    margin: 8px 0;
+    color: #1e293b;
+}
+
+.info-box {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info-item {
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border-left: 4px solid #3b82f6;
+}
+
+.rule-icon {
+    color: #3b82f6;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.rule-content strong {
+    display: block;
+    font-size: 16px;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.rule-content p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.config-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.config-actions .btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.config-actions .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+    color: white;
+}
+
+.config-actions .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.config-actions .btn-secondary {
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 2px solid #e5e7eb;
+}
+
+.config-actions .btn-secondary:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .config-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .config-actions {
+        flex-direction: column;
+    }
+    
+    .config-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+

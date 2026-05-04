@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block page_title %}Cleanup Compulsory Subjects{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4><i class="fas fa-exclamation-triangle"></i> Cleanup Compulsory Subjects</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> What this does:</h5>
+                <p>This will remove subjects from student enrollments that are incorrectly marked as compulsory.</p>
+                <p>Only subjects that are actually marked as <strong>compulsory</strong> in the Subject settings will be kept as compulsory for students.</p>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5>Current Status</h5>
+                            <p><strong>Actual Compulsory Subjects:</strong> {{ actual_compulsory_count }}</p>
+                            <p><strong>Total Marked as Compulsory:</strong> {{ total_marked_compulsory }}</p>
+                            {% if incorrectly_marked_count > 0 %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                There are {{ incorrectly_marked_count }} subject(s) incorrectly marked as compulsory.
+                                These will be removed from student enrollments.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success mt-3">
+                                <i class="fas fa-check-circle"></i> 
+                                All compulsory subjects are correctly configured.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This action cannot be undone. Make sure you want to proceed.
+                </div>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Cleanup Compulsory Subjects
+                </button>
+                <a href="{% url 'subject_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

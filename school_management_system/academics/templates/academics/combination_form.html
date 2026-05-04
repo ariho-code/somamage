@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="combination-form-container">
+    <div class="form-card">
+        <div class="card-header">
+            <h3><i class="fas fa-puzzle-piece"></i> {{ title }}</h3>
+            <a href="{% url 'combination_manage' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Combinations
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="info-alert" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <i class="fas fa-info-circle" style="color: #2196f3;"></i>
+                    <strong>Note:</strong> A-Level combinations cut across all A-Level grades. Once a student chooses a combination in Senior 5, they continue with it to Senior 6. No need to specify a grade.
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_name"><i class="fas fa-puzzle-piece"></i> Combination Name *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="error-message">{{ form.name.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">e.g., PCM, BAM, HEG, Literature</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_code"><i class="fas fa-code"></i> Code (Optional)</label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                        <div class="error-message">{{ form.code.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Optional short code for the combination</small>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-book"></i> Subjects *</label>
+                    <div class="subjects-checkbox-list">
+                        {% for checkbox in form.subjects %}
+                        <div class="checkbox-item">
+                            {{ checkbox.tag }}
+                            <label for="{{ checkbox.id_for_label }}" class="checkbox-label">
+                                {{ checkbox.choice_label }}
+                            </label>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No A-Level subjects found. Please create subjects first.
+                            <a href="{% url 'subject_list' %}" class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-plus"></i> Add Subjects
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.subjects.errors %}
+                        <div class="error-message">{{ form.subjects.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Select 3 principal subjects for this combination</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_subsidiary_choice"><i class="fas fa-cogs"></i> Subsidiary Choice *</label>
+                    {{ form.subsidiary_choice }}
+                    {% if form.subsidiary_choice.errors %}
+                        <div class="error-message">{{ form.subsidiary_choice.errors }}</div>
+                    {% endif %}
+                    {% if form.subsidiary_choice.help_text %}
+                        <small class="form-text text-muted">{{ form.subsidiary_choice.help_text }}</small>
+                    {% endif %}
+                    <div class="alert alert-info mt-2" style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px; border-radius: 8px;">
+                        <strong><i class="fas fa-info-circle"></i> Rules:</strong>
+                        <ul style="margin: 8px 0 0 20px; padding: 0;">
+                            <li><strong>Auto:</strong> Math principal → Sub-ICT; Economics (no Math) → Sub-Math; Science (no Math) → Sub-Math</li>
+                            <li><strong>Sub-Math:</strong> Force Subsidiary Mathematics</li>
+                            <li><strong>Sub-ICT:</strong> Force Subsidiary ICT</li>
+                        </ul>
+                        <small style="display: block; margin-top: 8px;"><strong>Note:</strong> General Paper (GP) is always assigned automatically to all A-Level students.</small>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Combination
+                    </button>
+                    <a href="{% url 'combination_manage' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.combination-form-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-header .btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.card-header .btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+}
+
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--gray-200);
+    border-radius: 10px;
+    font-size: 15px;
+    transition: var(--transition);
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--gray-900);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+
+.subjects-checkbox-list {
+    background: var(--gray-50);
+    border: 2px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.checkbox-item:hover {
+    background: var(--gray-100);
+    transform: translateX(5px);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--gray-900);
+    user-select: none;
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 5px;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid var(--danger);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid var(--gray-200);
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-900);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-300);
+    transform: translateY(-2px);
+    color: var(--gray-900);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

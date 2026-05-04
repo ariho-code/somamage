@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Attendance Entry — EduManage{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+{% block page_subtitle %}Record and view student attendance{% endblock %}
+
+{% block extra_css %}
+<style>
+.att-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+.att-hero {
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+}
+.att-hero::before {
+    content: '';
+    position: absolute; top: -50px; right: -30px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    pointer-events: none;
+}
+.att-hero-title { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.att-hero-sub { font-size: 13px; opacity: 0.88; }
+.att-hero-icon {
+    width: 64px; height: 64px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    position: relative; z-index: 1;
+}
+
+.att-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.att-card-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; gap: 10px;
+}
+.att-card-head svg { width: 15px; height: 15px; stroke: var(--success); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.att-card-title { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); }
+.att-card-body { padding: 24px; }
+
+.att-coming-soon {
+    text-align: center;
+    padding: 60px 24px;
+}
+.att-cs-icon {
+    width: 80px; height: 80px;
+    margin: 0 auto 20px;
+    background: rgba(16,185,129,0.10);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    color: var(--success);
+}
+.att-cs-title { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.att-cs-sub { font-size: 13.5px; color: var(--text-muted); max-width: 440px; margin: 0 auto 24px; line-height: 1.6; }
+
+.att-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 32px;
+}
+.att-feature {
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+}
+.att-feature svg { width: 24px; height: 24px; stroke: var(--success); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 8px; }
+.att-feature-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+    .att-feature-grid { grid-template-columns: 1fr; }
+    .att-hero { flex-direction: column; text-align: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="att-wrap">
+
+    <!-- Hero -->
+    <div class="att-hero">
+        <div>
+            <div class="att-hero-title">Attendance Management</div>
+            <div class="att-hero-sub">Track daily student presence, absences, and late arrivals</div>
+        </div>
+        <div class="att-hero-icon">
+            <i class="fas fa-clipboard-check"></i>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Main card -->
+    <div class="att-card">
+        <div class="att-card-head">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <span class="att-card-title">Attendance Entry</span>
+        </div>
+        <div class="att-card-body">
+            <div class="att-coming-soon">
+                <div class="att-cs-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="att-cs-title">Attendance Module</div>
+                <div class="att-cs-sub">
+                    The attendance entry interface is being set up. Class teachers and administrators
+                    will be able to record daily attendance, generate reports, and track patterns here.
+                </div>
+
+                <div class="att-feature-grid">
+                    <div class="att-feature">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div class="att-feature-label">Daily Entry</div>
+                    </div>
+                    <div class="att-feature">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        <div class="att-feature-label">Class Roster</div>
+                    </div>
+                    <div class="att-feature">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        <div class="att-feature-label">Reports</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

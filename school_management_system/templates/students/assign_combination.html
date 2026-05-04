@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Assign Combination - {{ student.get_full_name }}{% endblock %}
+{% block page_title %}Assign Combination to A-Level Student{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-layer-group"></i> Assign Combination: {{ student.get_full_name }}</h2>
+            <p class="text-muted">Grade: <strong>{{ current_enrollment.grade.name }}</strong></p>
+        </div>
+        <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="card" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="fas fa-layer-group"></i> Select A-Level Combination</h5>
+            </div>
+            <div class="card-body">
+                {% if combinations %}
+                <div class="form-group">
+                    <label for="combination"><strong>Available Combinations:</strong></label>
+                    <select name="combination" id="combination" class="form-control" required>
+                        <option value="">-- Select Combination --</option>
+                        {% for combination in combinations %}
+                        <option value="{{ combination.id }}" {% if current_enrollment.combination and current_enrollment.combination.id == combination.id %}selected{% endif %}>
+                            {{ combination.name }}{% if combination.code %} ({{ combination.code }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Select the combination for this A-Level student. Subjects from the combination will be automatically assigned.</small>
+                </div>
+                
+                <!-- Show subjects in selected combination -->
+                <div id="combination-subjects" class="mt-3" style="display: none;">
+                    <h6>Subjects in this combination:</h6>
+                    <div id="subjects-list" class="row"></div>
+                </div>
+                
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> No combinations available for this grade. Please create combinations first.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions mt-4 mb-4">
+            <button type="submit" class="btn btn-primary btn-lg" {% if not combinations %}disabled{% endif %}>
+                <i class="fas fa-save"></i> Assign Combination
+            </button>
+            <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const combinationSelect = document.getElementById('combination');
+    const subjectsDiv = document.getElementById('combination-subjects');
+    const subjectsList = document.getElementById('subjects-list');
+    
+    // Combination data from server
+    const combinationsData = {
+        {% for combination in combinations %}
+        {{ combination.id }}: [
+            {% for subject in combination.subjects.all %}
+            "{{ subject.name }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    combinationSelect.addEventListener('change', function() {
+        const combinationId = this.value;
+        
+        if (combinationId && combinationsData[combinationId]) {
+            const subjects = combinationsData[combinationId];
+            subjectsList.innerHTML = '';
+            
+            subjects.forEach(function(subject) {
+                const subjectDiv = document.createElement('div');
+                subjectDiv.className = 'col-md-6 mb-2';
+                subjectDiv.innerHTML = `
+                    <span class="badge badge-info" style="padding: 8px 12px; font-size: 14px;">
+                        <i class="fas fa-book"></i> ${subject}
+                    </span>
+                `;
+                subjectsList.appendChild(subjectDiv);
+            });
+            
+            subjectsDiv.style.display = 'block';
+        } else {
+            subjectsDiv.style.display = 'none';
+        }
+    });
+    
+    // Trigger change if combination is already selected
+    if (combinationSelect.value) {
+        combinationSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}
+

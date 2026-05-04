@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Edit Combination - {{ student.get_full_name }}{% endblock %}
+{% block page_title %}Edit Combination: {{ student.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-edit"></i> Edit Combination: {{ student.get_full_name }}</h2>
+            <p class="text-muted">Grade: <strong>{{ current_enrollment.grade.name }}</strong></p>
+            {% if current_enrollment.combination %}
+            <p class="text-muted">Current Combination: <strong>{{ current_enrollment.combination.name }}</strong></p>
+            {% endif %}
+        </div>
+        <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="editCombinationTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="change-combination-tab" data-toggle="tab" href="#change-combination" role="tab">
+                <i class="fas fa-exchange-alt"></i> Change Combination
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="edit-subjects-tab" data-toggle="tab" href="#edit-subjects" role="tab">
+                <i class="fas fa-edit"></i> Edit Subjects Manually
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="editCombinationTabContent">
+        <!-- Change Combination Tab -->
+        <div class="tab-pane fade show active" id="change-combination" role="tabpanel">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="change_combination">
+                
+                <div class="card" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Change Combination</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Change the combination to automatically update subjects. This will replace the current combination subjects with the new combination's subjects.</p>
+                        
+                        {% if combinations %}
+                        <div class="form-group">
+                            <label for="combination"><strong>Select New Combination:</strong></label>
+                            <select name="combination" id="combination" class="form-control" required>
+                                <option value="">-- Select Combination --</option>
+                                {% for combination in combinations %}
+                                <option value="{{ combination.id }}" {% if current_enrollment.combination and current_enrollment.combination.id == combination.id %}selected{% endif %}>
+                                    {{ combination.name }}{% if combination.code %} ({{ combination.code }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Selecting a new combination will automatically assign its subjects and remove the old combination's subjects.</small>
+                        </div>
+                        
+                        <!-- Show subjects in selected combination -->
+                        <div id="combination-subjects" class="mt-3" style="display: none;">
+                            <h6>Subjects in selected combination:</h6>
+                            <div id="subjects-list" class="row"></div>
+                        </div>
+                        
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No combinations available for this grade.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary" {% if not combinations %}disabled{% endif %}>
+                            <i class="fas fa-save"></i> Change Combination
+                        </button>
+                        <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Edit Subjects Manually Tab -->
+        <div class="tab-pane fade" id="edit-subjects" role="tabpanel">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_subjects">
+                
+                <div class="card" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div class="card-header" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                        <h5 class="mb-0"><i class="fas fa-edit"></i> Edit Subjects Manually</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Manually select subjects for this student. This allows you to customize the subject selection beyond the standard combination.</p>
+                        
+                        {% if current_enrollment.combination %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Current Combination:</strong> {{ current_enrollment.combination.name }}<br>
+                            <small>Changing subjects manually will override the combination. You can always change back to the combination.</small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label><strong>Select Subjects:</strong></label>
+                            <div class="row">
+                                {% for subject in all_a_level_subjects %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="subjects" value="{{ subject.id }}" id="subject_{{ subject.id }}" 
+                                               {% if subject.id in assigned_subjects %}checked{% endif %}>
+                                        <label class="form-check-label" for="subject_{{ subject.id }}">
+                                            {{ subject.name }}
+                                            {% if subject.id in combination_subjects %}
+                                            <span class="badge badge-primary badge-sm ml-2">In Combination</span>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="form-text text-muted">Select the subjects this student should take. Currently assigned subjects are pre-selected.</small>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Update Subjects
+                        </button>
+                        <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.nav-tabs .nav-link {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: #667eea;
+    background-color: #f8f9fa;
+    border-color: #667eea #667eea #f8f9fa;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const combinationSelect = document.getElementById('combination');
+    const subjectsDiv = document.getElementById('combination-subjects');
+    const subjectsList = document.getElementById('subjects-list');
+    
+    // Combination data from server
+    const combinationsData = {
+        {% for combination in combinations %}
+        {{ combination.id }}: [
+            {% for subject in combination.subjects.all %}
+            "{{ subject.name }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    if (combinationSelect) {
+        combinationSelect.addEventListener('change', function() {
+            const combinationId = this.value;
+            
+            if (combinationId && combinationsData[combinationId]) {
+                const subjects = combinationsData[combinationId];
+                subjectsList.innerHTML = '';
+                
+                subjects.forEach(function(subject) {
+                    const subjectDiv = document.createElement('div');
+                    subjectDiv.className = 'col-md-6 mb-2';
+                    subjectDiv.innerHTML = `
+                        <span class="badge badge-info" style="padding: 8px 12px; font-size: 14px;">
+                            <i class="fas fa-book"></i> ${subject}
+                        </span>
+                    `;
+                    subjectsList.appendChild(subjectDiv);
+                });
+                
+                subjectsDiv.style.display = 'block';
+            } else {
+                subjectsDiv.style.display = 'none';
+            }
+        });
+        
+        // Trigger change if combination is already selected
+        if (combinationSelect.value) {
+            combinationSelect.dispatchEvent(new Event('change'));
+        }
+    }
+});
+</script>
+{% endblock %}
+

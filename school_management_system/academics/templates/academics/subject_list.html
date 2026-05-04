@@ -1,0 +1,1720 @@
+{% extends 'base.html' %}
+{% block title %}Subjects Management{% endblock %}
+{% block page_title %}Subjects Management{% endblock %}
+
+{% block content %}
+<div class="subjects-container">
+    <!-- Header Section -->
+    <div class="subjects-header">
+        <div class="header-content">
+            <h1><i class="fas fa-book"></i> Subjects & Curriculum</h1>
+            <p>Manage subjects and their levels (Primary, O-Level, A-Level) for your school</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'cleanup_compulsory_subjects' %}" class="btn btn-warning mr-2" title="Clean up incorrectly marked compulsory subjects">
+                <i class="fas fa-broom"></i>
+                Cleanup Compulsory Subjects
+            </a>
+            <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addSubjectModal">
+                <i class="fas fa-plus-circle"></i>
+                Add New Subject
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="info-card">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>How it works:</strong> Subjects are organized by level (Primary, O-Level, A-Level). Teachers will be assigned to these subjects for specific classes. The level determines which grading system is used for marks in that subject.
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Search Bar -->
+    <div class="subjects-card mb-4">
+        <div class="card-header">
+            <form method="GET" action="{% url 'subject_list' %}" class="search-form">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control form-control-lg" placeholder="Search subjects by name or code..." value="{{ search_query|default:'' }}" id="subjectSearchInput">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        {% if search_query %}
+                        <a href="{% url 'subject_list' %}" class="btn btn-secondary btn-lg" title="Clear search">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if search_query %}
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle"></i> Showing results for "<strong>{{ search_query }}</strong>"
+        <a href="{% url 'subject_list' %}" class="btn btn-sm btn-link">Clear search</a>
+    </div>
+    {% endif %}
+
+    <!-- Subjects by Level -->
+    {% if subjects_by_level %}
+    {% for level, level_subjects in subjects_by_level.items %}
+    <div class="subjects-card">
+        <div class="card-header">
+            <h3>
+                <i class="fas fa-graduation-cap"></i> {{ level }} Subjects
+            </h3>
+            <div class="total-count">
+                <span class="count-label">Total:</span>
+                <span class="count-value">{{ level_subjects|length }} Subject{{ level_subjects|length|pluralize }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if level_subjects %}
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                                                          <th><i class="fas fa-hashtag"></i> #</th>
+                              <th><i class="fas fa-book"></i> Subject Name</th>
+                              <th><i class="fas fa-code"></i> Subject Code</th>
+                              <th><i class="fas fa-layer-group"></i> Level</th>
+                              <th><i class="fas fa-check-circle"></i> Compulsory</th>
+                              <th><i class="fas fa-file-alt"></i> Has Papers</th>
+                              <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in level_subjects %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ subject.name }}</strong></td>
+                            <td>
+                                {% if subject.code %}
+                                <span class="code-badge">{{ subject.code }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                                                          <td>
+                                  <span class="level-badge level-{{ subject.level|lower }}">
+                                      {{ subject.get_level_display }}
+                                  </span>
+                              </td>
+                              <td>
+                                  {% if subject.is_compulsory %}
+                                  <span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>
+                                  {% else %}
+                                  <span class="badge badge-secondary"><i class="fas fa-times"></i> No</span>
+                                  {% endif %}
+                              </td>
+                              <td>
+                                  {% if subject.has_papers %}
+                                  <span class="badge badge-info"><i class="fas fa-file-alt"></i> Yes ({{ subject.get_papers.count }} paper{{ subject.get_papers.count|pluralize }})</span>
+                                  {% else %}
+                                  <span class="badge badge-secondary">No</span>
+                                  {% endif %}
+                              </td>
+                              <td>
+                                  {% if subject.has_elective_papers %}
+                                  <span class="badge badge-success"><i class="fas fa-list-check"></i> Yes</span>
+                                  {% else %}
+                                  <span class="badge badge-secondary">No</span>
+                                  {% endif %}
+                              </td>
+                              <td>
+                                  <div class="action-buttons">
+                                      <button type="button" class="action-btn edit-btn" title="Edit Subject" data-subject-id="{{ subject.id }}" data-subject-name="{{ subject.name|escapejs }}" data-subject-code="{{ subject.code|default:""|escapejs }}" data-subject-level="{{ subject.level|escapejs }}" data-subject-compulsory="{{ subject.is_compulsory|yesno:"true,false" }}" data-subject-has-papers="{{ subject.has_papers|yesno:"true,false" }}" data-subject-paper-selection-mode="{{ subject.paper_selection_mode|default:'selective'|escapejs }}" data-subject-has-elective-papers="{{ subject.has_elective_papers|yesno:"true,false" }}">
+                                          <i class="fas fa-edit"></i>
+                                      </button>
+                                      {% if subject.has_papers %}
+                                      <button type="button" class="action-btn papers-btn manage-papers-btn" title="Manage Papers" data-subject-id="{{ subject.id }}" data-subject-name="{{ subject.name|escapejs }}">
+                                          <i class="fas fa-file-alt"></i>
+                                      </button>
+                                      {% endif %}
+                                      <button type="button" class="action-btn delete-btn" title="Delete Subject" data-subject-id="{{ subject.id }}" data-subject-name="{{ subject.name|escapejs }}">
+                                          <i class="fas fa-trash"></i>
+                                      </button>
+                                  </div>
+                              </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h3>No {{ level }} Subjects</h3>
+                <p>Add subjects for {{ level }} to get started</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-book"></i>
+        </div>
+        <h3>No Subjects Found</h3>
+        <p>Get started by creating your first subject</p>
+        <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addSubjectModal">
+            <i class="fas fa-plus-circle"></i>
+            Add First Subject
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" role="dialog" aria-labelledby="addSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubjectModalLabel"><i class="fas fa-plus-circle"></i> Add New Subject</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addSubjectForm" method="post" action="{% url 'subject_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Subject level should match your school type (Primary, O-Level, or A-Level).
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-book"></i> Subject Name *</label>
+                        <input type="text" class="form-control" name="name" id="name" required placeholder="e.g., Mathematics, English, Science">
+                        <small class="form-text text-muted">
+                            Enter the full name of the subject
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="code"><i class="fas fa-code"></i> Subject Code</label>
+                        <input type="text" class="form-control" name="code" id="code" placeholder="e.g., MATH, ENG, SCI" maxlength="50">
+                        <small class="form-text text-muted">
+                            Short code/abbreviation for the subject (optional)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="level"><i class="fas fa-layer-group"></i> Level *</label>
+                        <select class="form-control" name="level" id="level" required>
+                            {% if school %}
+                                {% if school.is_primary %}
+                                <option value="P">Primary</option>
+                                {% elif school.is_high_school %}
+                                <option value="O">O-Level</option>
+                                <option value="A">A-Level</option>
+                                {% else %}
+                                <option value="P">Primary</option>
+                                <option value="O">O-Level</option>
+                                <option value="A">A-Level</option>
+                                {% endif %}
+                            {% else %}
+                            <option value="P">Primary</option>
+                            <option value="O">O-Level</option>
+                            <option value="A">A-Level</option>
+                            {% endif %}
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Select the appropriate level for this subject
+                        </small>
+                    </div>
+                    
+                    <div class="form-group" id="compulsory-field-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_compulsory" id="is_compulsory">
+                            <label class="form-check-label" for="is_compulsory">
+                                <i class="fas fa-check-circle"></i> Compulsory Subject (O-Level Only)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Compulsory subjects are automatically assigned to all O-Level students. Not applicable for A-Level.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_papers" id="has_papers" onchange="togglePaperSelectionMode()">
+                            <label class="form-check-label" for="has_papers">
+                                <i class="fas fa-file-alt"></i> Has Multiple Papers (e.g., Literature, Mathematics)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Enable this if the subject has multiple papers (e.g., Literature Paper 1, Paper 2, Paper 3)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group" id="paper_selection_mode-field-group" style="display: none;">
+                        <label for="paper_selection_mode"><i class="fas fa-tasks"></i> Paper Selection Mode *</label>
+                        <select class="form-control" name="paper_selection_mode" id="paper_selection_mode">
+                            <option value="selective">Selective Papers (Students/Teachers choose which papers)</option>
+                            <option value="all_compulsory">All Papers Compulsory (All papers automatically assigned)</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> <strong>Selective:</strong> Students/teachers choose which papers to take. <strong>All Compulsory:</strong> All papers are automatically assigned.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group" id="has_elective_papers-field-group" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_elective_papers" id="has_elective_papers">
+                            <label class="form-check-label" for="has_elective_papers">
+                                <i class="fas fa-list-check"></i> Has Elective Papers (e.g., History, Art, French)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Enable this for subjects with elective papers that students/teachers can choose from. Only these subjects will appear when assigning papers. Examples: History, Art, French.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Papers Modal -->
+<div class="modal fade" id="managePapersModal" tabindex="-1" role="dialog" aria-labelledby="managePapersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="managePapersModalLabel">
+                    <i class="fas fa-file-alt"></i> Manage Papers - <span id="modalSubjectName"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="papersListContainer">
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Loading papers...</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="mb-3" id="paperFormTitle"><i class="fas fa-plus-circle"></i> Add New Paper</h6>
+                <form id="addPaperForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="paperSubjectId" name="subject">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="paperName">Paper Name *</label>
+                            <input type="text" class="form-control" id="paperName" name="name" required placeholder="e.g., Paper 1, Pure Mathematics">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="paperNumber">Paper Number *</label>
+                            <input type="number" class="form-control" id="paperNumber" name="paper_number" required min="1" placeholder="1, 2, 3...">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="paperCode">Paper Code</label>
+                            <input type="text" class="form-control" id="paperCode" name="code" placeholder="e.g., 250/1">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block" id="paperSubmitBtn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-block mt-2" id="paperCancelBtn" style="display: none;" onclick="cancelEditPaper()">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paperDescription">Description (Optional)</label>
+                        <textarea class="form-control" id="paperDescription" name="description" rows="2" placeholder="Paper description..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div class="modal fade" id="editSubjectModal" tabindex="-1" role="dialog" aria-labelledby="editSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSubjectModalLabel"><i class="fas fa-edit"></i> Edit Subject</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="editSubjectForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_name"><i class="fas fa-book"></i> Subject Name *</label>
+                        <input type="text" class="form-control" name="name" id="edit_name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_code"><i class="fas fa-code"></i> Subject Code</label>
+                        <input type="text" class="form-control" name="code" id="edit_code" maxlength="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_level"><i class="fas fa-layer-group"></i> Level *</label>
+                        <select class="form-control" name="level" id="edit_level" required>
+                            {% if school %}
+                                {% if school.is_primary %}
+                                <option value="P">Primary</option>
+                                {% elif school.is_high_school %}
+                                <option value="O">O-Level</option>
+                                <option value="A">A-Level</option>
+                                {% else %}
+                                <option value="P">Primary</option>
+                                <option value="O">O-Level</option>
+                                <option value="A">A-Level</option>
+                                {% endif %}
+                            {% else %}
+                            <option value="P">Primary</option>
+                            <option value="O">O-Level</option>
+                            <option value="A">A-Level</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="edit_compulsory-field-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_compulsory" id="edit_is_compulsory">
+                            <label class="form-check-label" for="edit_is_compulsory">
+                                <i class="fas fa-check-circle"></i> Compulsory Subject (O-Level Only)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Only applicable for O-Level subjects. Not available for A-Level.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_papers" id="edit_has_papers" onchange="togglePaperSelectionMode()">
+                            <label class="form-check-label" for="edit_has_papers">
+                                <i class="fas fa-file-alt"></i> Has Multiple Papers (e.g., Literature, Mathematics)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Enable this if the subject has multiple papers (e.g., Literature Paper 1, Paper 2, Paper 3)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group" id="edit_paper_selection_mode-field-group" style="display: none;">
+                        <label for="edit_paper_selection_mode"><i class="fas fa-tasks"></i> Paper Selection Mode *</label>
+                        <select class="form-control" name="paper_selection_mode" id="edit_paper_selection_mode">
+                            <option value="selective">Selective Papers (Students/Teachers choose which papers)</option>
+                            <option value="all_compulsory">All Papers Compulsory (All papers automatically assigned)</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> <strong>Selective:</strong> Students/teachers choose which papers to take. <strong>All Compulsory:</strong> All papers are automatically assigned.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group" id="edit_has_elective_papers-field-group" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_elective_papers" id="edit_has_elective_papers">
+                            <label class="form-check-label" for="edit_has_elective_papers">
+                                <i class="fas fa-list-check"></i> Has Elective Papers (e.g., History, Art, French)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Enable this for subjects with elective papers that students/teachers can choose from. Only these subjects will appear when assigning papers. Examples: History, Art, French.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.subjects-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.subjects-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    opacity: 0.9;
+    font-size: 16px;
+    margin: 0;
+}
+
+.graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.subjects-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.total-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.count-label {
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+.count-value {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 16px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+}
+
+.modern-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: white;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.modern-table td {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+.code-badge {
+    padding: 4px 10px;
+    background: var(--info);
+    color: white;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.level-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.level-badge.level-p {
+    background: #4CAF50;
+    color: white;
+}
+
+.level-badge.level-o {
+    background: #2196F3;
+    color: white;
+}
+
+.level-badge.level-a {
+    background: #FF9800;
+    color: white;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-md);
+}
+
+.info-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.info-content i {
+    font-size: 24px;
+    color: #2196f3;
+    margin-top: 4px;
+}
+
+.info-content div {
+    flex: 1;
+    color: var(--gray-800);
+    line-height: 1.6;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--gray-400);
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--gray-600);
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.primary-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.primary-action-btn:hover {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-header .close {
+    color: white;
+    opacity: 0.8;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+}
+
+.modal-body .form-group label {
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 12px;
+}
+
+.edit-btn {
+    background: rgba(234, 179, 8, 0.1);
+    color: var(--warning);
+}
+
+.edit-btn:hover {
+    background: var(--warning);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.delete-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+// Wait for jQuery to load - this script runs before jQuery, so we need to wait
+(function() {
+    // Get CSRF token from cookie helper function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Function to initialize subject list functionality
+    function initSubjectList() {
+        // Check if jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.warn('jQuery not loaded yet, retrying...');
+            setTimeout(initSubjectList, 100);
+            return;
+        }
+
+        var $ = jQuery;
+        console.log('jQuery loaded, version:', $.fn.jquery);
+        
+        // Wait for document ready
+        $(document).ready(function() {
+            console.log('Subject list page JavaScript initialized');
+            
+            // Verify Bootstrap is loaded
+            if (typeof $.fn.modal === 'undefined') {
+                console.error('Bootstrap modal is not available!');
+                console.warn('Bootstrap might still be loading. Functionality may be limited.');
+            } else {
+                console.log('Bootstrap modal available');
+            }
+    // Handle add subject form submission
+    $('#addSubjectForm').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Creating...').prop('disabled', true);
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            if (response.success) {
+                $('#addSubjectModal').modal('hide');
+                form[0].reset();
+                location.reload();
+            } else {
+                alert('Error: ' + (response.error || JSON.stringify(response.errors)));
+            }
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || xhr.responseJSON?.errors || 'Failed to create subject';
+            alert('Error: ' + JSON.stringify(error));
+        },
+        complete: function() {
+            submitBtn.html(originalText).prop('disabled', false);
+        }
+    });
+    });
+
+    // Handle edit subject form submission
+    $('#editSubjectForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const submitBtn = form.find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Updating...').prop('disabled', true);
+        
+        // Get CSRF token
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                console.log('Edit subject response:', response);
+                if (response && response.success) {
+                    $('#editSubjectModal').modal('hide');
+                    // Show success message
+                    const successMsg = $('<div class="alert alert-success alert-dismissible fade show" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"><i class="fas fa-check-circle"></i> ' + (response.message || 'Subject updated successfully!') + '<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+                    $('body').append(successMsg);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 500);
+                } else {
+                    alert('Error: ' + (response.error || JSON.stringify(response.errors || 'Unknown error')));
+                    submitBtn.html(originalText).prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Edit subject error:', xhr, status, error);
+                let errorMsg = 'Failed to update subject';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON.errors) {
+                        errorMsg = JSON.stringify(xhr.responseJSON.errors);
+                    }
+                } else if (xhr.responseText) {
+                    // Might be HTML error page
+                    errorMsg = 'Server error. Please check the console for details.';
+                }
+                alert('Error: ' + errorMsg);
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+    
+    // Define deleteSubject function inside document.ready to ensure it has access to jQuery
+    window.deleteSubject = function(subjectId, subjectName) {
+        if (!confirm('Are you sure you want to delete "' + subjectName + '"? This action cannot be undone and will delete all associated papers and marks.')) {
+            return false;
+        }
+        
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            alert('Error: jQuery is not loaded. Please refresh the page.');
+            return false;
+        }
+        
+        // Get CSRF token
+        let csrfToken = $('[name=csrfmiddlewaretoken]').first().val() || 
+                         $('input[name="csrfmiddlewaretoken"]').first().val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        if (!csrfToken) {
+            console.warn('CSRF token not found, trying alternative methods');
+            // Try to get from meta tag if available
+            const metaToken = $('meta[name=csrf-token]').attr('content');
+            if (metaToken) {
+                csrfToken = metaToken;
+            } else {
+                alert('Error: CSRF token not found. Please refresh the page.');
+                return false;
+            }
+        }
+        
+        // Show loading indicator
+        const deleteBtn = $('.delete-btn[data-subject-id="' + subjectId + '"]');
+        const originalHtml = deleteBtn.html();
+        deleteBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+        
+        $.ajax({
+            url: '/academics/subjects/' + subjectId + '/delete/',
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            data: {
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(response) {
+                console.log('Delete response:', response);
+                if (response && response.success) {
+                    // Show success message briefly, then reload
+                    const successMsg = $('<div class="alert alert-success alert-dismissible fade show" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"><i class="fas fa-check-circle"></i> Subject deleted successfully!<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+                    $('body').append(successMsg);
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    deleteBtn.html(originalHtml).prop('disabled', false);
+                    alert('Error: ' + (response?.error || response?.message || 'Failed to delete subject'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Delete error:', xhr, status, error);
+                deleteBtn.html(originalHtml).prop('disabled', false);
+                
+                // Check if it's a successful redirect (status 200 with HTML response)
+                if (xhr.status === 200 && xhr.responseText) {
+                    // Might be an HTML redirect, reload the page
+                    window.location.reload();
+                    return;
+                }
+                
+                const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || error || 'Failed to delete subject';
+                alert('Error: ' + errorMsg + '. Please try again or refresh the page.');
+            }
+        });
+        
+        return false;
+    };
+
+// Function to toggle compulsory field based on level
+function toggleCompulsoryField() {
+    const level = $('#level').val();
+    const editLevel = $('#edit_level').val();
+    
+    // For add form
+    if (level) {
+        if (level === 'O') {
+            $('#compulsory-field-group').show();
+        } else {
+            $('#compulsory-field-group').hide();
+            $('#is_compulsory').prop('checked', false);
+        }
+    }
+    
+    // For edit form
+    if (editLevel) {
+        if (editLevel === 'O') {
+            $('#edit_compulsory-field-group').show();
+        } else {
+            $('#edit_compulsory-field-group').hide();
+            $('#edit_is_compulsory').prop('checked', false);
+        }
+    }
+}
+
+// Function to edit subject - populate modal
+function editSubject(subjectId, subjectName, subjectCode, subjectLevel, isCompulsory, hasPapers, paperSelectionMode, hasElectivePapers) {
+    // Set form action
+    $('#editSubjectForm').attr('action', '/academics/subjects/' + subjectId + '/edit/');
+    
+    // Populate form fields
+    $('#edit_name').val(subjectName);
+    $('#edit_code').val(subjectCode || '');
+    $('#edit_level').val(subjectLevel);
+    
+    // Only set compulsory if O-Level
+    // Handle both boolean and string values
+    const isCompulsoryBool = isCompulsory === true || isCompulsory === 'true';
+    const hasPapersBool = hasPapers === true || hasPapers === 'true';
+    const hasElectivePapersBool = hasElectivePapers === true || hasElectivePapers === 'true';
+    
+    if (subjectLevel === 'O') {
+        $('#edit_is_compulsory').prop('checked', isCompulsoryBool);
+        $('#edit_compulsory-field-group').show();
+    } else {
+        $('#edit_is_compulsory').prop('checked', false);
+        $('#edit_compulsory-field-group').hide();
+    }
+    
+    $('#edit_has_papers').prop('checked', hasPapersBool);
+    
+    // Set paper selection mode and elective papers
+    if (hasPapersBool) {
+        $('#edit_paper_selection_mode').val(paperSelectionMode || 'selective');
+        $('#edit_paper_selection_mode-field-group').show();
+        $('#edit_has_elective_papers').prop('checked', hasElectivePapersBool);
+        $('#edit_has_elective_papers-field-group').show();
+    } else {
+        $('#edit_paper_selection_mode-field-group').hide();
+        $('#edit_has_elective_papers-field-group').hide();
+        $('#edit_paper_selection_mode').val('selective');
+        $('#edit_has_elective_papers').prop('checked', false);
+    }
+    
+    // Show modal
+    $('#editSubjectModal').modal('show');
+}
+
+
+    // Initialize compulsory field toggle
+    toggleCompulsoryField();
+    
+    // Debug: Check if manage papers buttons exist
+    console.log('Manage papers buttons found:', $('.manage-papers-btn').length);
+    
+    // Event handler for Manage Papers button
+    $(document).on('click', '.manage-papers-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const subjectId = $btn.data('subject-id');
+        const subjectName = $btn.data('subject-name');
+        
+        if (!subjectId || !subjectName) {
+            console.error('Missing subject ID or name:', subjectId, subjectName);
+            alert('Error: Invalid subject information. Please refresh the page and try again.');
+            return false;
+        }
+        
+        console.log('Manage Papers button clicked for:', subjectId, subjectName);
+        managePapers(subjectId, subjectName);
+        return false;
+    });
+    
+    // Event handler for Delete Subject button
+    $(document).on('click', '.delete-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const subjectId = $btn.data('subject-id');
+        const subjectName = $btn.data('subject-name');
+        
+        if (!subjectId || !subjectName) {
+            console.error('Missing subject ID or name:', subjectId, subjectName);
+            alert('Error: Invalid subject information. Please refresh the page and try again.');
+            return false;
+        }
+        
+        console.log('Delete Subject button clicked for:', subjectId, subjectName);
+        deleteSubject(subjectId, subjectName);
+        return false;
+    });
+    
+    // Event handler for Edit Subject button
+    $(document).on('click', '.edit-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const subjectId = $btn.data('subject-id');
+        const subjectName = $btn.data('subject-name');
+        const subjectCode = $btn.data('subject-code') || '';
+        const subjectLevel = $btn.data('subject-level');
+        const isCompulsory = $btn.data('subject-compulsory');
+        const hasPapers = $btn.data('subject-has-papers');
+        const paperSelectionMode = $btn.data('subject-paper-selection-mode') || 'selective';
+        const hasElectivePapers = $btn.data('subject-has-elective-papers') || false;
+        
+        if (!subjectId || !subjectName || !subjectLevel) {
+            console.error('Missing subject information:', {subjectId, subjectName, subjectLevel});
+            alert('Error: Invalid subject information. Please refresh the page and try again.');
+            return false;
+        }
+        
+        console.log('Edit Subject button clicked for:', subjectId, subjectName);
+        editSubject(subjectId, subjectName, subjectCode, subjectLevel, isCompulsory, hasPapers, paperSelectionMode, hasElectivePapers);
+        return false;
+    });
+    
+    // Define managePapers function inside document.ready to ensure it has access to jQuery
+    window.managePapers = function(subjectId, subjectName) {
+        console.log('Opening manage papers modal for:', subjectId, subjectName);
+        
+        if (!subjectId || !subjectName) {
+            console.error('Invalid subject ID or name');
+            alert('Error: Invalid subject information. Please refresh the page and try again.');
+            return false;
+        }
+        
+        // Check if jQuery is loaded
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            console.error('jQuery is not loaded!');
+            alert('Error: jQuery is not loaded. Please refresh the page.');
+            return false;
+        }
+        
+        // Check if Bootstrap modal is available
+        if (typeof $.fn.modal === 'undefined') {
+            console.error('Bootstrap modal is not loaded!');
+            alert('Error: Bootstrap is not loaded. Please refresh the page.');
+            return false;
+        }
+        
+        // Get modal element
+        const modal = $('#managePapersModal');
+        if (modal.length === 0) {
+            console.error('Modal element (#managePapersModal) not found!');
+            alert('Error: Modal element not found. Please refresh the page.');
+            return false;
+        }
+        
+        // Reset form before setting new data
+        $('#addPaperForm')[0].reset();
+        $('#addPaperForm').removeData('edit-mode');
+        $('#addPaperForm').removeData('edit-paper-id');
+        $('#paperFormTitle').html('<i class="fas fa-plus-circle"></i> Add New Paper');
+        $('#paperSubmitBtn').html('<i class="fas fa-plus"></i> Add').removeClass('btn-success').addClass('btn-primary');
+        $('#paperCancelBtn').hide();
+        
+        // Set subject data
+        modal.data('subject-id', subjectId);
+        $('#modalSubjectName').text(subjectName);
+        $('#paperSubjectId').val(subjectId);
+        
+        // Load papers first, then show modal
+        loadPapers(subjectId);
+        
+        // Show modal with a small delay to ensure data is set
+        setTimeout(function() {
+            try {
+                modal.modal('show');
+                console.log('Modal opened successfully');
+            } catch (error) {
+                console.error('Error showing modal:', error);
+                alert('Error opening modal: ' + (error.message || error) + '. Please ensure Bootstrap is loaded correctly.');
+            }
+        }, 100);
+        
+        return false;
+    };
+    
+    // Reset form when modal is closed
+    $('#managePapersModal').on('hidden.bs.modal', function() {
+        $('#addPaperForm')[0].reset();
+        $('#addPaperForm').removeData('edit-mode');
+        $('#addPaperForm').removeData('edit-paper-id');
+        $('#paperFormTitle').html('<i class="fas fa-plus-circle"></i> Add New Paper');
+        $('#paperSubmitBtn').html('<i class="fas fa-plus"></i> Add').removeClass('btn-success').addClass('btn-primary');
+        $('#paperCancelBtn').hide();
+    });
+    
+    // Cancel edit paper function
+    window.cancelEditPaper = function() {
+        $('#addPaperForm')[0].reset();
+        $('#addPaperForm').removeData('edit-mode');
+        $('#addPaperForm').removeData('edit-paper-id');
+        $('#paperFormTitle').html('<i class="fas fa-plus-circle"></i> Add New Paper');
+        $('#paperSubmitBtn').html('<i class="fas fa-plus"></i> Add').removeClass('btn-success').addClass('btn-primary');
+        $('#paperCancelBtn').hide();
+        
+        // Restore subject ID
+        const subjectId = $('#managePapersModal').data('subject-id');
+        if (subjectId) {
+            $('#paperSubjectId').val(subjectId);
+        }
+    };
+    
+    // Load papers for a subject - defined inside document.ready
+    window.loadPapers = function(subjectId) {
+        console.log('Loading papers for subject:', subjectId);
+        
+        // Ensure jQuery is available
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            console.error('jQuery not available');
+            return;
+        }
+        
+        const papersContainer = $('#papersListContainer');
+        
+        if (!papersContainer.length) {
+            console.error('Papers container (#papersListContainer) not found!');
+            return;
+        }
+        
+        papersContainer.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading papers...</p></div>');
+        
+        // Get CSRF token from form or cookie
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        if (!csrfToken) {
+            console.warn('CSRF token not found, proceeding without it');
+        }
+        
+        $.ajax({
+            url: '/academics/subjects/' + subjectId + '/papers/',
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            success: function(response) {
+                console.log('Papers loaded:', response);
+                if (response.papers && response.papers.length > 0) {
+                    let html = '<div class="table-responsive">';
+                    html += '<table class="table table-sm table-hover table-bordered">';
+                    html += '<thead class="thead-light"><tr><th style="width: 50px;">#</th><th>Paper Name</th><th style="width: 100px;">Paper Number</th><th style="width: 120px;">Code</th><th style="width: 100px;">Status</th><th style="width: 120px;">Actions</th></tr></thead>';
+                    html += '<tbody>';
+                    response.papers.forEach(function(paper, index) {
+                        html += '<tr data-paper-id="' + paper.id + '">';
+                        html += '<td class="text-center">' + (index + 1) + '</td>';
+                        html += '<td><strong>' + escapeHtml(paper.name) + '</strong>';
+                        if (paper.description) {
+                            html += '<br><small class="text-muted">' + escapeHtml(paper.description) + '</small>';
+                        }
+                        html += '</td>';
+                        html += '<td class="text-center">' + (paper.paper_number || '-') + '</td>';
+                        html += '<td>' + (paper.code ? '<span class="badge badge-info">' + escapeHtml(paper.code) + '</span>' : '<span class="text-muted">-</span>') + '</td>';
+                        html += '<td class="text-center"><span class="badge ' + (paper.is_active ? 'badge-success' : 'badge-secondary') + '">' + (paper.is_active ? 'Active' : 'Inactive') + '</span></td>';
+                        html += '<td class="text-center">';
+                        html += '<button class="btn btn-sm btn-primary mr-1 edit-paper-btn" data-paper-id="' + paper.id + '" title="Edit Paper"><i class="fas fa-edit"></i></button>';
+                        html += '<button class="btn btn-sm btn-danger delete-paper-btn" data-paper-id="' + paper.id + '" data-paper-name="' + escapeHtml(paper.name) + '" title="Delete Paper"><i class="fas fa-trash"></i></button>';
+                        html += '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                    papersContainer.html(html);
+                    
+                    // Debug: Verify buttons are created and event handlers are attached
+                    setTimeout(function() {
+                        var $ = window.jQuery || window.$;
+                        var deleteButtons = $('.delete-paper-btn');
+                        console.log('Delete buttons found after load:', deleteButtons.length);
+                        deleteButtons.each(function() {
+                            console.log('Button:', $(this).data('paper-id'), $(this).data('paper-name'));
+                        });
+                    }, 100);
+                } else {
+                    papersContainer.html('<div class="alert alert-info"><i class="fas fa-info-circle"></i> No papers added yet. Add papers below.</div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading papers:', xhr, status, error);
+                const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || error || 'Unknown error';
+                papersContainer.html('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load papers. Error: ' + errorMsg + '</div>');
+            }
+        });
+    };
+    
+    // Escape HTML to prevent XSS
+    window.escapeHtml = function(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    };
+
+    // Handle edit paper button click
+    $(document).on('click', '.edit-paper-btn', function() {
+        const paperId = $(this).data('paper-id');
+        editPaper(paperId);
+    });
+
+    // Function to edit a paper
+    window.editPaper = function(paperId) {
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            alert('Error: jQuery is not loaded.');
+            return;
+        }
+        
+        // Get CSRF token
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        $.ajax({
+            url: '/academics/subject-papers/' + paperId + '/edit/',
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            success: function(response) {
+                if (response.paper) {
+                    const paper = response.paper;
+                    // Populate edit form (we'll reuse the add form)
+                    $('#paperName').val(paper.name);
+                    $('#paperNumber').val(paper.paper_number || '');
+                    $('#paperCode').val(paper.code || '');
+                    $('#paperDescription').val(paper.description || '');
+                    $('#addPaperForm').data('edit-paper-id', paperId);
+                    $('#addPaperForm').data('edit-mode', true);
+                    
+                    // Ensure subject ID is set
+                    if (paper.subject_id) {
+                        $('#paperSubjectId').val(paper.subject_id);
+                    }
+                    
+                    // Change form title
+                    $('#paperFormTitle').html('<i class="fas fa-edit"></i> Edit Paper');
+                    
+                    // Change submit button
+                    const submitBtn = $('#paperSubmitBtn');
+                    submitBtn.html('<i class="fas fa-save"></i> Update').removeClass('btn-primary').addClass('btn-success');
+                    
+                    // Show cancel button
+                    $('#paperCancelBtn').show();
+                    
+                    // Scroll to form
+                    const modalBody = $('#managePapersModal').find('.modal-body');
+                    modalBody.animate({
+                        scrollTop: $('#addPaperForm').offset().top - modalBody.offset().top + modalBody.scrollTop() - 20
+                    }, 300);
+                } else {
+                    alert('Error: Paper data not found in response.');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading paper:', xhr);
+                const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || 'Failed to load paper details';
+                alert('Error: ' + errorMsg + '. Please try again.');
+            }
+        });
+    };
+
+    // Delete paper handler is now registered globally after document.ready (see below)
+    // This ensures it works with dynamically created buttons
+    
+    // Delete a paper (legacy function for compatibility)
+    window.deletePaper = function(paperId, paperName) {
+        if (!confirm('Are you sure you want to delete "' + (paperName || 'this paper') + '"? This action cannot be undone.')) {
+            return;
+        }
+        
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            alert('Error: jQuery is not loaded.');
+            return;
+        }
+        
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        $.ajax({
+            url: '/academics/subject-papers/' + paperId + '/delete/',
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            success: function(response) {
+                console.log('Delete response:', response);
+                if (response.success) {
+                    const subjectId = $('#managePapersModal').data('subject-id');
+                    if (subjectId) {
+                        loadPapers(subjectId);
+                    } else {
+                        alert('Error: Could not reload papers. Please refresh the page.');
+                    }
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to delete paper'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Delete error:', xhr, status, error);
+                const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || error || 'Failed to delete paper';
+                alert('Error: ' + errorMsg);
+            }
+        });
+    };
+
+    // Handle add/edit paper form submission
+    $('#addPaperForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const subjectId = $('#managePapersModal').data('subject-id') || $('#paperSubjectId').val();
+        
+        if (!subjectId) {
+            alert('Error: Subject ID not found. Please close and reopen the modal.');
+            return false;
+        }
+        
+        const submitBtn = form.find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        const isEditMode = form.data('edit-mode');
+        const paperId = form.data('edit-paper-id');
+        
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> ' + (isEditMode ? 'Updating...' : 'Adding...')).prop('disabled', true);
+        
+        // Get CSRF token
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                         $('input[name="csrfmiddlewaretoken"]').val() || 
+                         (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        // Build form data - ensure subject is included
+        let formData = form.serialize();
+        if (!formData.includes('subject=')) {
+            formData += '&subject=' + subjectId;
+        }
+        
+        let url = '/academics/subject-papers/create/';
+        if (isEditMode && paperId) {
+            url = '/academics/subject-papers/' + paperId + '/edit/';
+        }
+        
+        $.ajax({
+            url: url,
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    form[0].reset();
+                    form.removeData('edit-mode');
+                    form.removeData('edit-paper-id');
+                    
+                    // Reset form UI
+                    $('#paperFormTitle').html('<i class="fas fa-plus-circle"></i> Add New Paper');
+                    submitBtn.html('<i class="fas fa-plus"></i> Add').removeClass('btn-success').addClass('btn-primary');
+                    $('#paperCancelBtn').hide();
+                    
+                    // Reload papers list
+                    loadPapers(subjectId);
+                    
+                    // Show success message
+                    const papersContainer = $('#papersListContainer');
+                    const successMsg = $('<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> Paper ' + (isEditMode ? 'updated' : 'added') + ' successfully!<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+                    papersContainer.prepend(successMsg);
+                    setTimeout(function() {
+                        successMsg.fadeOut(function() {
+                            $(this).remove();
+                        });
+                    }, 3000);
+                } else {
+                    alert('Error: ' + (response.error || JSON.stringify(response.errors)));
+                }
+            },
+            error: function(xhr) {
+                console.error('Paper form error:', xhr);
+                let errorMsg = 'Failed to ' + (isEditMode ? 'update' : 'add') + ' paper';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseJSON.errors) {
+                        errorMsg = JSON.stringify(xhr.responseJSON.errors);
+                    }
+                }
+                alert('Error: ' + errorMsg);
+            },
+            complete: function() {
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+        
+        return false;
+    });
+
+        }); // End of $(document).ready
+        
+        // Register delete paper handler at global scope after jQuery is ready
+        // This ensures it's available for dynamically created buttons
+        if (typeof window.deletePaperHandlerRegistered === 'undefined') {
+            window.deletePaperHandlerRegistered = true;
+            console.log('Registering global delete paper handler');
+            
+            // Use a more specific selector to avoid conflicts
+            $(document).off('click', '.delete-paper-btn').on('click', '.delete-paper-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Delete paper button clicked (global handler)');
+                
+                var $ = window.jQuery || window.$;
+                if (!$) {
+                    console.error('jQuery not available');
+                    alert('Error: jQuery is not loaded.');
+                    return false;
+                }
+                
+                var $btn = $(this);
+                var paperId = $btn.attr('data-paper-id') || $btn.data('paper-id');
+                var paperName = $btn.attr('data-paper-name') || $btn.data('paper-name') || 'this paper';
+                
+                console.log('Paper to delete:', paperId, paperName);
+                
+                if (!paperId) {
+                    console.error('No paper ID found');
+                    alert('Error: Could not find paper ID.');
+                    return false;
+                }
+                
+                var originalHtml = $btn.html();
+                $btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+                
+                if (!confirm('Are you sure you want to delete "' + paperName + '"? This action cannot be undone and will delete all associated marks for this paper.')) {
+                    $btn.html(originalHtml).prop('disabled', false);
+                    return false;
+                }
+                
+                var csrfToken = $('[name=csrfmiddlewaretoken]').first().val() || 
+                               $('input[name="csrfmiddlewaretoken"]').first().val() || 
+                               (window.getCookie ? window.getCookie('csrftoken') : null);
+                
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    $btn.html(originalHtml).prop('disabled', false);
+                    alert('Error: CSRF token not found. Please refresh the page.');
+                    return false;
+                }
+                
+                $.ajax({
+                    url: '/academics/subject-papers/' + paperId + '/delete/',
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken
+                    },
+                    data: {
+                        'csrfmiddlewaretoken': csrfToken
+                    },
+                    success: function(response) {
+                        console.log('Delete response:', response);
+                        if (response && response.success) {
+                            var subjectId = $('#managePapersModal').data('subject-id');
+                            if (subjectId) {
+                                if (window.loadPapers) {
+                                    window.loadPapers(subjectId);
+                                }
+                                var papersContainer = $('#papersListContainer');
+                                var successMsg = $('<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle"></i> Paper deleted successfully!<button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+                                papersContainer.prepend(successMsg);
+                                setTimeout(function() {
+                                    successMsg.fadeOut(function() {
+                                        $(this).remove();
+                                    });
+                                }, 3000);
+                            } else {
+                                $btn.html(originalHtml).prop('disabled', false);
+                                alert('Error: Could not reload papers.');
+                            }
+                        } else {
+                            $btn.html(originalHtml).prop('disabled', false);
+                            alert('Error: ' + (response ? (response.error || 'Failed to delete paper') : 'Unknown error'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Delete error:', xhr, status, error);
+                        $btn.html(originalHtml).prop('disabled', false);
+                        var errorMsg = 'Failed to delete paper';
+                        if (xhr.responseJSON) {
+                            errorMsg = xhr.responseJSON.error || xhr.responseJSON.message || errorMsg;
+                        }
+                        alert('Error: ' + errorMsg);
+                    }
+                });
+                
+                return false;
+            });
+        }
+    }
+
+    // Make getCookie available globally
+    window.getCookie = function(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    };
+
+    // Start initialization - will retry if jQuery not loaded yet
+    initSubjectList();
+})(); // End of IIFE
+
+</script>
+
+<style>
+.papers-btn {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.papers-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+/* Search Bar Styling */
+.search-form .input-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.search-form .form-control {
+    border: 2px solid #e0e0e0;
+    border-right: none;
+    transition: all 0.3s ease;
+}
+
+.search-form .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.search-form .input-group-append .btn {
+    border-left: none;
+    padding: 10px 25px;
+}
+
+#subjectSearchInput {
+    font-size: 16px;
+}
+</style>
+{% endblock %}

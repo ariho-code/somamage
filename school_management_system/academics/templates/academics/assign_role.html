@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Assign Role - {{ teacher.get_full_name }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Assign Role to {{ teacher.get_full_name }}</h3>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Save</button>
+  </form>
+</div>
+{% endblock %}

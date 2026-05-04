@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: white; margin-bottom: 8px;">{{ lesson.title }}</h2>
+                <p style="color: rgba(255,255,255,0.9); margin: 0;">
+                    <a href="{% url 'course_detail' course.id %}" style="color: rgba(255,255,255,0.9); text-decoration: underline;">{{ course.title }}</a>
+                </p>
+            </div>
+            <div style="text-align: right; color: rgba(255,255,255,0.9);">
+                <div style="font-size: 14px;">
+                    <i class="fas fa-clock"></i> {{ lesson.duration_minutes }} minutes
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    {% if lesson.description %}
+                    <div style="margin-bottom: 24px; padding: 20px; background: var(--gray-50); border-radius: 12px;">
+                        <p style="color: var(--gray-700); margin: 0; line-height: 1.6;">{{ lesson.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if lesson.video_url %}
+                    <div style="margin-bottom: 24px;">
+                        <h5 style="font-weight: 700; margin-bottom: 16px;"><i class="fas fa-video"></i> Video Lesson</h5>
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; background: var(--gray-900);">
+                            <iframe 
+                                src="{{ lesson.video_url|safe }}" 
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    {% elif lesson.video_file %}
+                    <div style="margin-bottom: 24px;">
+                        <h5 style="font-weight: 700; margin-bottom: 16px;"><i class="fas fa-video"></i> Video Lesson</h5>
+                        <video controls style="width: 100%; border-radius: 12px;">
+                            <source src="{{ lesson.video_file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <h5 style="font-weight: 700; margin-bottom: 16px;"><i class="fas fa-book-open"></i> Lesson Content</h5>
+                        <div style="color: var(--gray-700); line-height: 1.8; font-size: 15px;">
+                            {{ lesson.content|safe|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    {% if user.is_student %}
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+                        <button class="btn btn-success btn-lg" onclick="markLessonComplete()" style="border-radius: 12px; padding: 16px 32px; font-weight: 600;">
+                            <i class="fas fa-check-circle"></i> Mark as Complete
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: sticky; top: 100px;">
+                <div class="card-body" style="padding: 24px;">
+                    <h5 style="font-weight: 700; margin-bottom: 20px;"><i class="fas fa-list"></i> Course Lessons</h5>
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        {% for l in all_lessons %}
+                        <a href="{% url 'lesson_detail' course.id l.id %}" 
+                           class="list-group-item list-group-item-action {% if l.id == lesson.id %}active{% endif %}" 
+                           style="border-radius: 8px; margin-bottom: 8px; padding: 12px; border: 1px solid var(--gray-200); {% if l.id == lesson.id %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea;{% else %}background: var(--gray-50);{% endif %}">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: {% if l.id == lesson.id %}rgba(255,255,255,0.2){% else %}var(--gray-200){% endif %}; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">
+                                    {{ forloop.counter }}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 14px;">{{ l.title }}</div>
+                                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">
+                                        <i class="fas fa-clock"></i> {{ l.duration_minutes }} min
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if previous_lesson or next_lesson %}
+            <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 24px;">
+                    <h6 style="font-weight: 700; margin-bottom: 16px;">Navigation</h6>
+                    {% if previous_lesson %}
+                    <a href="{% url 'lesson_detail' course.id previous_lesson.id %}" class="btn btn-outline-primary btn-block mb-2" style="border-radius: 8px;">
+                        <i class="fas fa-arrow-left"></i> Previous Lesson
+                    </a>
+                    {% endif %}
+                    {% if next_lesson %}
+                    <a href="{% url 'lesson_detail' course.id next_lesson.id %}" class="btn btn-primary btn-block" style="border-radius: 8px;">
+                        Next Lesson <i class="fas fa-arrow-right"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'course_detail' course.id %}" class="btn btn-outline-secondary btn-block" style="border-radius: 8px;">
+                        <i class="fas fa-arrow-left"></i> Back to Course
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function markLessonComplete() {
+    // This would typically make an AJAX call to mark the lesson as complete
+    fetch('{% url "lesson_detail" course.id lesson.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            action: 'mark_complete'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Lesson marked as complete!');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to mark lesson as complete. Please try again.');
+    });
+}
+</script>
+{% endblock %}
+

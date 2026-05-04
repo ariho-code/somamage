@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card">
+        <h2><i class="fas fa-graduation-cap"></i> My Classes - E-Class</h2>
+        <p>Access study materials, quizzes, and exams for your classes</p>
+    </div>
+    
+    {% if classes_list %}
+    <div class="row">
+        {% for class_info in classes_list %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s; height: 100%;">
+                <div class="card-body" style="padding: 32px;">
+                    <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--gray-900);">
+                        <i class="fas fa-layer-group" style="color: var(--primary);"></i> {{ class_info.grade.name }}
+                    </h4>
+                    
+                    {% if class_info.courses %}
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--gray-700); font-size: 14px; display: block; margin-bottom: 12px;">Available Courses:</strong>
+                        {% for course in class_info.courses %}
+                        <a href="{% url 'student_class_detail' course.id %}" class="btn btn-outline-primary btn-sm btn-block mb-2" style="border-radius: 8px; text-align: left; padding: 10px 16px;">
+                            <i class="fas fa-book"></i> {{ course.title }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color: var(--gray-500); font-size: 14px; margin-bottom: 20px;">No courses available yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <div class="card-body" style="padding: 60px; text-align: center;">
+            <i class="fas fa-graduation-cap" style="font-size: 64px; color: var(--gray-400); margin-bottom: 24px;"></i>
+            <h4 style="color: var(--gray-600); margin-bottom: 16px;">No Classes Found</h4>
+            <p style="color: var(--gray-500);">You are not enrolled in any classes yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

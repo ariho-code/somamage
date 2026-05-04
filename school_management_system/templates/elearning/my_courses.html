@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card">
+        <h2><i class="fas fa-graduation-cap"></i> My Courses</h2>
+        <p>Continue your learning journey</p>
+    </div>
+    
+    {% if enrollments %}
+    <div class="row">
+        {% for enrollment in enrollments %}
+        <div class="col-md-6 mb-4">
+            <div class="card course-card" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s; height: 100%;">
+                {% if enrollment.course.thumbnail %}
+                <img src="{{ enrollment.course.thumbnail.url }}" class="card-img-top" alt="{{ enrollment.course.title }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                {% endif %}
+                <div class="card-body" style="padding: 24px; display: flex; flex-direction: column;">
+                    <h5 class="card-title" style="font-weight: 700; margin-bottom: 12px;">{{ enrollment.course.title }}</h5>
+                    <p class="card-text" style="color: var(--gray-600); margin-bottom: 16px; font-size: 14px; flex: 1;">{{ enrollment.course.description|truncatewords:25 }}</p>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; color: var(--gray-600);">Progress</span>
+                            <span style="font-size: 14px; font-weight: 600; color: var(--gray-900);">{{ enrollment.progress|floatformat:0 }}%</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden;">
+                            <div style="width: {{ enrollment.progress }}%; height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: auto;">
+                        <a href="{% url 'course_detail' enrollment.course.id %}" class="btn btn-primary" style="flex: 1; border-radius: 12px; padding: 12px; font-weight: 600;">
+                            <i class="fas fa-play"></i> Continue
+                        </a>
+                        <button class="btn btn-outline-secondary" style="border-radius: 12px; padding: 12px; width: 44px;" onclick="showCourseInfo({{ enrollment.course.id }})" title="Course Info">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200); display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-500);">
+                        <span><i class="fas fa-book"></i> {{ enrollment.course.get_lesson_count }} lessons</span>
+                        <span><i class="fas fa-calendar"></i> Enrolled {{ enrollment.enrolled_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <div class="card-body" style="padding: 60px; text-align: center;">
+            <i class="fas fa-book-open" style="font-size: 64px; color: var(--gray-400); margin-bottom: 24px;"></i>
+            <h4 style="color: var(--gray-600); margin-bottom: 16px;">No Enrolled Courses</h4>
+            <p style="color: var(--gray-500); margin-bottom: 32px;">You haven't enrolled in any courses yet. Browse available courses to get started!</p>
+            <a href="{% url 'elearning_home' %}" class="btn btn-primary btn-lg" style="border-radius: 12px; padding: 16px 32px; font-weight: 600;">
+                <i class="fas fa-search"></i> Browse Courses
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+</style>
+
+<script>
+function showCourseInfo(courseId) {
+    // Could show a modal with course details
+    window.location.href = '/elearning/courses/' + courseId + '/';
+}
+</script>
+{% endblock %}
+

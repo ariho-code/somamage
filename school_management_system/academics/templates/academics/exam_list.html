@@ -1,0 +1,1056 @@
+{% extends 'base.html' %}
+{% block title %}Exams Management{% endblock %}
+{% block page_title %}Exams Management{% endblock %}
+
+{% block content %}
+<div class="exams-container">
+    <!-- Header Section -->
+    <div class="exams-header">
+        <div class="header-content">
+            <h1><i class="fas fa-clipboard-list"></i> Exams & Assessments</h1>
+            <p>Configure exams and their percentage weights for each term (e.g., BOT, MID Term, CAT 1, CAT 2, EOT)</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addExamModal">
+                <i class="fas fa-plus-circle"></i>
+                Add New Exam
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="info-card">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>How it works:</strong> Teachers will see these exams when entering marks. The percentage weight determines how much each exam contributes to the final term grade. 
+                <strong>Total should equal 100%</strong> for a complete term assessment.
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Common Exams -->
+    {% if terms %}
+    <div class="quick-add-card">
+        <div class="card-header">
+            <h3><i class="fas fa-bolt"></i> Quick Add Common Exams</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Select a term and quickly add common exam types:</p>
+            <div class="quick-add-buttons">
+                <button type="button" class="quick-add-btn" onclick="quickAddExam('BOT', 10)" title="Beginning of Term">
+                    <i class="fas fa-play-circle"></i> BOT (10%)
+                </button>
+                <button type="button" class="quick-add-btn" onclick="quickAddExam('CAT 1', 15)" title="Continuous Assessment Test 1">
+                    <i class="fas fa-clipboard-check"></i> CAT 1 (15%)
+                </button>
+                <button type="button" class="quick-add-btn" onclick="quickAddExam('CAT 2', 15)" title="Continuous Assessment Test 2">
+                    <i class="fas fa-clipboard-check"></i> CAT 2 (15%)
+                </button>
+                <button type="button" class="quick-add-btn" onclick="quickAddExam('Mid-Term', 20)" title="Mid-Term Exam">
+                    <i class="fas fa-calendar-alt"></i> Mid-Term (20%)
+                </button>
+                <button type="button" class="quick-add-btn" onclick="quickAddExam('EOT', 40)" title="End of Term">
+                    <i class="fas fa-stop-circle"></i> EOT (40%)
+                </button>
+            </div>
+            <div class="quick-add-term-select mt-3">
+                <label for="quick_add_term"><i class="fas fa-calendar"></i> Select Term:</label>
+                <select class="form-control" id="quick_add_term" style="max-width: 300px; display: inline-block; margin-left: 10px;">
+                    <option value="">-- Select Term First --</option>
+                    {% if terms %}
+                    {% for term in terms %}
+                    <option value="{{ term.id }}" {% if current_term and current_term.id == term.id %}selected{% endif %}>
+                        {{ term.name }} ({{ term.academic_year.name }})
+                    </option>
+                    {% endfor %}
+                    {% else %}
+                    <option value="" disabled>No terms available. Please add terms in School Settings first.</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Messages -->
+    <div id="ajaxMessages" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;"></div>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Exams by Term -->
+    {% if exams_by_term %}
+    {% for term_key, term_data in exams_by_term.items %}
+    <div class="exams-card">
+        <div class="card-header">
+            <h3><i class="fas fa-calendar-alt"></i> {{ term_key }}</h3>
+            <div class="total-weight">
+                <span class="weight-label">Total Weight:</span>
+                {% if term_data.total_weight|floatformat:0 == "100" %}
+                <span class="weight-value weight-complete">{{ term_data.total_weight|floatformat:0 }}% <i class="fas fa-check-circle"></i> Complete</span>
+                {% elif term_data.total_weight > 100 %}
+                <span class="weight-value weight-over">{{ term_data.total_weight|floatformat:0 }}% <i class="fas fa-exclamation-triangle"></i> Over 100%</span>
+                {% else %}
+                <span class="weight-value weight-incomplete">{{ term_data.total_weight|floatformat:0 }}% <i class="fas fa-info-circle"></i> Incomplete</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if term_data.exams %}
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> #</th>
+                            <th><i class="fas fa-file-alt"></i> Exam Name</th>
+                            <th><i class="fas fa-percent"></i> Weight (%)</th>
+                            <th><i class="fas fa-info-circle"></i> Description</th>
+                            <th><i class="fas fa-sort-numeric-down"></i> Order</th>
+                            <th><i class="fas fa-toggle-on"></i> Status</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in term_data.exams %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ exam.name }}</strong></td>
+                            <td>
+                                <span class="weight-badge {% if exam.percentage_weight >= 30 %}weight-high{% elif exam.percentage_weight >= 15 %}weight-medium{% else %}weight-low{% endif %}">
+                                    {{ exam.percentage_weight }}%
+                                </span>
+                            </td>
+                            <td>
+                                {% if exam.name == 'BOT' or exam.name == 'Beginning of Term' %}
+                                    <span class="exam-description">Beginning of Term Assessment</span>
+                                {% elif exam.name == 'MID' or exam.name == 'Mid-Term' or 'mid' in exam.name|lower %}
+                                    <span class="exam-description">Mid-Term Examination</span>
+                                {% elif 'CAT 1' in exam.name %}
+                                    <span class="exam-description">Continuous Assessment Test 1</span>
+                                {% elif 'CAT 2' in exam.name %}
+                                    <span class="exam-description">Continuous Assessment Test 2</span>
+                                {% elif exam.name == 'EOT' or 'End of Term' in exam.name or 'EOT' in exam.name %}
+                                    <span class="exam-description">End of Term Examination</span>
+                                {% else %}
+                                    <span class="exam-description text-muted">Custom Exam</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ exam.order|default:"0" }}</td>
+                            <td>
+                                {% if exam.is_active %}
+                                <span class="status-badge published">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                                {% else %}
+                                <span class="status-badge draft">
+                                    <i class="fas fa-times-circle"></i> Inactive
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button type="button" class="action-btn edit-btn" title="Edit Exam" onclick="editExam({{ exam.id }}, '{{ exam.name|escapejs }}', {{ exam.percentage_weight }}, {{ exam.term.id }}, {{ exam.is_active|yesno:"true,false" }}, {{ exam.order|default:0 }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="action-btn delete-btn" title="Delete Exam" onclick="deleteExam({{ exam.id }}, '{{ exam.name|escapejs }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>No Exams</h3>
+                <p>Add exams for this term to get started</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-clipboard-list"></i>
+        </div>
+        <h3>No Exams Found</h3>
+        <p>Get started by creating your first exam</p>
+        <button type="button" class="primary-action-btn" data-toggle="modal" data-target="#addExamModal">
+            <i class="fas fa-plus-circle"></i>
+            Add First Exam
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Exam Modal -->
+<div class="modal fade" id="addExamModal" tabindex="-1" role="dialog" aria-labelledby="addExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addExamModalLabel"><i class="fas fa-plus-circle"></i> Add New Exam</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addExamForm" method="post" action="{% url 'exam_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Exam weights should total 100% for a complete term assessment.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-file-alt"></i> Exam Name *</label>
+                        <input type="text" class="form-control" name="name" id="name" required placeholder="e.g., BOT, CAT 1, CAT 2, Mid-Term, EOT">
+                        <small class="form-text text-muted">
+                            Common exam names: <strong>BOT</strong> (Beginning of Term), <strong>CAT 1</strong>, <strong>CAT 2</strong>, <strong>Mid-Term</strong>, <strong>EOT</strong> (End of Term)
+                        </small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="percentage_weight"><i class="fas fa-percent"></i> Percentage Weight *</label>
+                                <input type="number" class="form-control" name="percentage_weight" id="percentage_weight" step="0.01" min="0" max="100" required placeholder="e.g., 30.00">
+                                <small class="form-text text-muted">Percentage this exam contributes to final grade</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="order"><i class="fas fa-sort-numeric-down"></i> Display Order</label>
+                                <input type="number" class="form-control" name="order" id="order" min="0" value="0">
+                                <small class="form-text text-muted">Lower numbers appear first</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="term"><i class="fas fa-calendar"></i> Term *</label>
+                        <select class="form-control" name="term" id="term" required>
+                            <option value="">-- Select Term --</option>
+                            {% if debug_info %}
+                            <!-- Debug Information -->
+                            <option value="" disabled>Debug Info:</option>
+                            <option value="" disabled>Has School: {{ debug_info.has_school }}</option>
+                            {% if debug_info.has_school %}
+                            <option value="" disabled>School Name: {{ debug_info.school_name }}</option>
+                            <option value="" disabled>Has Active Year: {{ debug_info.has_active_year }}</option>
+                            <option value="" disabled>Active Year: {{ debug_info.active_year_name }}</option>
+                            {% endif %}
+                            <option value="" disabled>Term Count: {{ debug_info.term_count }}</option>
+                            <option value="" disabled>Terms:</option>
+                            {% for term in debug_info.term_list %}
+                            <option value="" disabled>- {{ term }}</option>
+                            {% endfor %}
+                            <option value="" disabled>------------------------</option>
+                            {% endif %}
+
+                            {% if terms %}
+                            {% for term in terms %}
+                            <option value="{{ term.id }}" {% if current_term and current_term.id == term.id %}selected{% endif %}>
+                                {{ term.name }} ({{ term.academic_year.name }})
+                            </option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="" disabled>No terms available. Please add terms in School Settings first.</option>
+                            {% endif %}
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            {% if terms %}
+                            Terms are configured by headteacher in School Settings ({{ terms|length }} available)
+                            {% else %}
+                            <span style="color: #ef4444;">No terms configured yet. Please add terms in School Settings first.</span>
+                            {% if user.is_headteacher or user.is_superadmin %}
+                            <div class="mt-2">
+                                <a href="{% url 'school_settings' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-cog"></i> Manage School Settings
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="is_active" id="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Active (Available for mark entry)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Exam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Exam Modal -->
+<div class="modal fade" id="editExamModal" tabindex="-1" role="dialog" aria-labelledby="editExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editExamModalLabel"><i class="fas fa-edit"></i> Edit Exam</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="editExamForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_name"><i class="fas fa-file-alt"></i> Exam Name *</label>
+                        <input type="text" class="form-control" name="name" id="edit_name" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_percentage_weight"><i class="fas fa-percent"></i> Percentage Weight *</label>
+                                <input type="number" class="form-control" name="percentage_weight" id="edit_percentage_weight" step="0.01" min="0" max="100" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="edit_order"><i class="fas fa-sort-numeric-down"></i> Display Order</label>
+                                <input type="number" class="form-control" name="order" id="edit_order" min="0" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_term"><i class="fas fa-calendar"></i> Term *</label>
+                        <select class="form-control" name="term" id="edit_term" required>
+                            <option value="">-- Select Term --</option>
+                            {% if terms %}
+                            {% for term in terms %}
+                            <option value="{{ term.id }}">{{ term.name }} ({{ term.academic_year.name }})</option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="" disabled>No terms available</option>
+                            {% endif %}
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Terms are configured by headteacher in School Settings
+                            {% if terms %}({{ terms|length }} available){% endif %}
+                            {% if not terms %}
+                                {% if request.user.is_headteacher or request.user.is_superadmin %}
+                                <div class="mt-2">
+                                    <a href="{% url 'school_settings' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cog"></i> Manage School Settings
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="is_active" id="edit_is_active">
+                            <label class="form-check-label" for="edit_is_active">
+                                Active (Available for mark entry)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Exam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.exams-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.exams-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    opacity: 0.9;
+    font-size: 16px;
+    margin: 0;
+}
+
+.graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.exams-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.total-weight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.weight-label {
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+.weight-value {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 16px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+}
+
+.modern-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: white;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.modern-table td {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+.weight-badge {
+    padding: 6px 12px;
+    background: var(--info);
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.weight-badge.weight-high {
+    background: #dc3545;
+}
+
+.weight-badge.weight-medium {
+    background: #ffc107;
+    color: #000;
+}
+
+.weight-badge.weight-low {
+    background: #17a2b8;
+}
+
+.weight-value.weight-complete {
+    color: #28a745;
+}
+
+.weight-value.weight-over {
+    color: #dc3545;
+}
+
+.weight-value.weight-incomplete {
+    color: #ffc107;
+}
+
+.exam-description {
+    font-size: 12px;
+    color: var(--gray-600);
+    font-style: italic;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-md);
+}
+
+.info-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.info-content i {
+    font-size: 24px;
+    color: #2196f3;
+    margin-top: 4px;
+}
+
+.info-content div {
+    flex: 1;
+    color: var(--gray-800);
+    line-height: 1.6;
+}
+
+.quick-add-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.quick-add-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.quick-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    border: 1px solid var(--gray-300);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--gray-800);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.quick-add-btn:hover {
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    color: white;
+    border-color: var(--gray-800);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.quick-add-term-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quick-add-term-select label {
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.published {
+    background: var(--success);
+    color: white;
+}
+
+.status-badge.draft {
+    background: var(--gray-300);
+    color: var(--gray-700);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 12px;
+}
+
+.edit-btn {
+    background: rgba(234, 179, 8, 0.1);
+    color: var(--warning);
+}
+
+.edit-btn:hover {
+    background: var(--warning);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.delete-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--gray-400);
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--gray-600);
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.primary-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.primary-action-btn:hover {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.modal-header .close {
+    color: white;
+    opacity: 0.8;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+}
+
+.modal-body .form-group label {
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+</style>
+
+<script>
+// Function to show nice notification messages
+function showNotification(message, type) {
+    // Clean message - remove any JSON formatting
+    let cleanMessage = message;
+    if (typeof message === 'object') {
+        cleanMessage = message.message || message.error || JSON.stringify(message);
+    }
+    
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show shadow-lg" role="alert" style="animation: slideInRight 0.3s ease-out;">
+            <i class="fas ${icon} mr-2"></i>
+            <strong>${type === 'success' ? 'Success!' : 'Error!'}</strong> ${cleanMessage}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    `);
+    $('#ajaxMessages').empty().append(notification);
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        notification.fadeOut(300, function() {
+            $(this).remove();
+        });
+    }, 5000);
+}
+
+// Handle add exam form submission
+$('#addExamForm').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Creating...').prop('disabled', true);
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        dataType: 'json',  // Ensure JSON is parsed
+        success: function(response) {
+            // Handle both string and object responses
+            let parsedResponse = response;
+            if (typeof response === 'string') {
+                try {
+                    parsedResponse = JSON.parse(response);
+                } catch (e) {
+                    showNotification('Error parsing response', 'error');
+                    return;
+                }
+            }
+            
+            if (parsedResponse.success) {
+                showNotification(parsedResponse.message || 'Exam created successfully!', 'success');
+                $('#addExamModal').modal('hide');
+                form[0].reset();
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            } else {
+                showNotification(parsedResponse.error || 'Failed to create exam', 'error');
+            }
+        },
+        error: function(xhr) {
+            let error = 'Failed to create exam';
+            try {
+                const response = xhr.responseJSON || JSON.parse(xhr.responseText);
+                error = response.error || response.errors || error;
+            } catch (e) {
+                error = xhr.responseText || error;
+            }
+            showNotification(error, 'error');
+        },
+        complete: function() {
+            submitBtn.html(originalText).prop('disabled', false);
+        }
+    });
+});
+
+
+// Handle edit exam form submission
+$('#editExamForm').on('submit', function(e) {
+    e.preventDefault();
+    e.stopPropagation();  // Prevent any default behavior
+    
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Updating...').prop('disabled', true);
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        dataType: 'json',  // Ensure JSON is parsed
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+        success: function(response) {
+            // Handle both string and object responses
+            let parsedResponse = response;
+            if (typeof response === 'string') {
+                try {
+                    parsedResponse = JSON.parse(response);
+                } catch (e) {
+                    showNotification('Error parsing response', 'error');
+                    submitBtn.html(originalText).prop('disabled', false);
+                    return;
+                }
+            }
+            
+            // Extract message from response
+            const message = parsedResponse.message || parsedResponse.error || 'Exam updated successfully!';
+            
+            if (parsedResponse.success) {
+                showNotification(message, 'success');
+                $('#editExamModal').modal('hide');
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            } else {
+                showNotification(message, 'error');
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            let error = 'Failed to update exam';
+            try {
+                if (xhr.responseJSON) {
+                    error = xhr.responseJSON.error || xhr.responseJSON.errors || error;
+                } else if (xhr.responseText) {
+                    const parsed = JSON.parse(xhr.responseText);
+                    error = parsed.error || parsed.errors || error;
+                }
+            } catch (e) {
+                error = xhr.responseText || error;
+            }
+            showNotification(error, 'error');
+            submitBtn.html(originalText).prop('disabled', false);
+        },
+        complete: function() {
+            // Already handled in success/error
+        }
+    });
+    
+    return false;  // Prevent form submission
+});
+
+// Delete exam function
+function deleteExam(examId, examName) {
+    if (!confirm('Are you sure you want to delete "' + examName + '"? This action cannot be undone.')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/academics/exams/' + examId + '/delete/',
+        method: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                showNotification(response.message || 'Exam deleted successfully!', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            } else {
+                showNotification(response.error || 'Failed to delete exam', 'error');
+            }
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Failed to delete exam';
+            showNotification(error, 'error');
+        }
+    });
+}
+
+// Quick add exam function
+function quickAddExam(examName, percentage) {
+    // Try to get term from quick_add_term dropdown, or use current term from main form
+    let termId = $('#quick_add_term').val();
+    
+    // If no term selected in quick add, try to use current term from main form
+    if (!termId) {
+        termId = $('#term').val();
+    }
+    
+    if (!termId) {
+        alert('Please select a term first!');
+        $('#quick_add_term').focus();
+        return;
+    }
+    
+    // Pre-fill the add exam modal
+    $('#name').val(examName);
+    $('#percentage_weight').val(percentage);
+    $('#term').val(termId);
+    $('#is_active').prop('checked', true);
+    
+    // Calculate order based on exam type
+    let order = 0;
+    if (examName === 'BOT') order = 1;
+    else if (examName === 'CAT 1') order = 2;
+    else if (examName === 'CAT 2') order = 3;
+    else if (examName === 'Mid-Term') order = 4;
+    else if (examName === 'EOT') order = 5;
+    $('#order').val(order);
+    
+    // Open the modal
+    $('#addExamModal').modal('show');
+    
+    // Focus on percentage weight in case user wants to adjust
+    setTimeout(function() {
+        $('#percentage_weight').focus().select();
+    }, 500);
+}
+
+// Function to edit exam - populate modal
+function editExam(examId, examName, percentageWeight, termId, isActive, order) {
+    // Set form action
+    $('#editExamForm').attr('action', '/academics/exams/' + examId + '/edit/');
+    
+    // Populate form fields
+    $('#edit_name').val(examName);
+    $('#edit_percentage_weight').val(percentageWeight);
+    $('#edit_order').val(order || 0);
+    $('#edit_is_active').prop('checked', isActive);
+    
+    // Set term - ensure the option exists in the dropdown
+    if ($('#edit_term option[value="' + termId + '"]').length > 0) {
+        $('#edit_term').val(termId);
+    } else {
+        console.warn('Term ID ' + termId + ' not found in edit term dropdown');
+    }
+    
+    // Show modal
+    $('#editExamModal').modal('show');
+}
+
+// Reset modals on close
+$('#addExamModal').on('hidden.bs.modal', function() {
+    $(this).find('form')[0].reset();
+});
+
+$('#editExamModal').on('hidden.bs.modal', function() {
+    $(this).find('form')[0].reset();
+});
+</script>
+{% endblock %}
+

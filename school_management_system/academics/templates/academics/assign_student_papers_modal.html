@@ -1,0 +1,133 @@
+{% csrf_token %}
+<input type="hidden" name="enrollment_id" value="{{ enrollment.id }}">
+
+{% if subjects_data %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> Select the papers this student will take for each subject. For A-Level subjects like History, students typically choose 2 papers.
+</div>
+
+<div id="subjectsPapersContainer">
+    {% for subject_data in subjects_data %}
+    <div class="card mb-3 subject-paper-card" data-subject-id="{{ subject_data.subject.id }}">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fas fa-book"></i> {{ subject_data.subject.name }}
+                {% if subject_data.assigned_paper_ids %}
+                <span class="badge badge-success ml-2">{{ subject_data.assigned_paper_ids|length }} paper{{ subject_data.assigned_paper_ids|length|pluralize }} assigned</span>
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for paper in subject_data.papers %}
+                <div class="col-md-6 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input paper-checkbox" type="checkbox" name="papers_{{ subject_data.subject.id }}" id="paper_{{ paper.id }}" value="{{ paper.id }}" data-subject-id="{{ subject_data.subject.id }}" {% if paper.id in subject_data.assigned_paper_ids %}checked{% endif %}>
+                        <label class="form-check-label" for="paper_{{ paper.id }}">
+                            <strong>{{ paper.name }}</strong>
+                            {% if paper.code %}
+                            <span class="badge badge-info ml-1">{{ paper.code }}</span>
+                            {% endif %}
+                            {% if paper.description %}
+                            <br><small class="text-muted">{{ paper.description }}</small>
+                            {% endif %}
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-primary save-subject-papers-btn" data-subject-id="{{ subject_data.subject.id }}">
+                    <i class="fas fa-save"></i> Save for {{ subject_data.subject.name }}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    // Handle save button for each subject
+    $(document).on('click', '.save-subject-papers-btn', function() {
+        var $btn = $(this);
+        var subjectId = $btn.data('subject-id');
+        var enrollmentId = {{ enrollment.id }};
+        var paperIds = [];
+        
+        $('input[name="papers_' + subjectId + '"]:checked').each(function() {
+            paperIds.push($(this).val());
+        });
+        
+        var originalText = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Saving...').prop('disabled', true);
+        
+        // Get CSRF token
+        var csrfToken = $('[name=csrfmiddlewaretoken]').val() || 
+                       $('input[name="csrfmiddlewaretoken"]').val() || 
+                       (window.getCookie ? window.getCookie('csrftoken') : null);
+        
+        // Build form data properly
+        var formData = new FormData();
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        formData.append('subject', subjectId);
+        paperIds.forEach(function(id) {
+            formData.append('papers', id);
+        });
+        
+        $.ajax({
+            url: '/academics/students/' + enrollmentId + '/assign-papers/',
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.success) {
+                    $btn.html('<i class="fas fa-check"></i> Saved').removeClass('btn-primary').addClass('btn-success');
+                    setTimeout(function() {
+                        $btn.html(originalText).removeClass('btn-success').addClass('btn-primary');
+                    }, 2000);
+                    
+                    // Update badge
+                    var paperCount = paperIds.length;
+                    var card = $btn.closest('.subject-paper-card');
+                    var badge = card.find('.badge-success');
+                    if (paperCount > 0) {
+                        if (badge.length) {
+                            badge.text(paperCount + ' paper' + (paperCount > 1 ? 's' : '') + ' assigned');
+                        } else {
+                            card.find('.card-header h6').append('<span class="badge badge-success ml-2">' + paperCount + ' paper' + (paperCount > 1 ? 's' : '') + ' assigned</span>');
+                        }
+                    } else {
+                        badge.remove();
+                    }
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to save'));
+                    $btn.html(originalText).prop('disabled', false);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error saving papers:', xhr);
+                var errorMsg = 'Failed to save papers';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert('Error: ' + errorMsg);
+                $btn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+});
+</script>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> No subjects with elective papers found for this student.
+    <br><small>Only subjects marked with "Has Elective Papers" (like History, Art, French) will appear here. Please mark the relevant subjects in the Subject settings.</small>
+</div>
+{% endif %}
+

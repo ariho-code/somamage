@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<style>
+    .form-container { max-width: 600px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .form-container h2 { margin-bottom: 20px; font-family: "Poppins", sans-serif; }
+    .form-group label { font-weight: 600; }
+    .btn-primary { width: 100%; padding: 10px; }
+</style>
+<div class="form-container">
+    <h2>{{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endblock %}

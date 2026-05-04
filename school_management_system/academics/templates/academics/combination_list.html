@@ -1,0 +1,451 @@
+{% extends 'base.html' %}
+{% block title %}A-Level Combinations{% endblock %}
+{% block page_title %}A-Level Combinations Management{% endblock %}
+
+{% block content %}
+<div class="combinations-container">
+    <!-- Header Section -->
+    <div class="combinations-header">
+        <div class="header-content">
+            <h1><i class="fas fa-puzzle-piece"></i> A-Level Combinations</h1>
+            <p>Manage A-Level subject combinations (e.g., PCM, BAM, HEG, Literature, etc.)</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'combination_create' %}" class="primary-action-btn">
+                <i class="fas fa-plus-circle"></i>
+                Add New Combination
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="info-card">
+        <div class="info-content">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>How it works:</strong> A-Level combinations group subjects together. When students are enrolled in A-Level with a combination, they automatically get assigned all subjects in that combination. Example: PCM (Physics, Chemistry, Mathematics), BAM (Biology, Agriculture, Mathematics).
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Combinations List -->
+    {% if combinations %}
+    <div class="combinations-card">
+        <div class="card-header">
+            <h3>
+                <i class="fas fa-graduation-cap"></i> Available Combinations
+            </h3>
+            <div class="total-count">
+                <span class="count-label">Total:</span>
+                <span class="count-value">{{ combinations|length }} Combination{{ combinations|length|pluralize }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                                                        <tr>
+                                    <th><i class="fas fa-hashtag"></i> #</th>
+                                    <th><i class="fas fa-puzzle-piece"></i> Combination Name</th>
+                                    <th><i class="fas fa-code"></i> Code</th>
+                                    <th><i class="fas fa-book"></i> Subjects</th>
+                                    <th><i class="fas fa-cog"></i> Actions</th>
+                                </tr>
+                    </thead>
+                    <tbody>
+                        {% for combination in combinations %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ combination.name }}</strong></td>
+                                                                <td>
+                                        {% if combination.code %}
+                                        <span class="code-badge">{{ combination.code }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                {% if combination.subjects.all %}
+                                <div class="subjects-list">
+                                    {% for subject in combination.subjects.all %}
+                                    <span class="subject-tag">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">No subjects assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{% url 'combination_edit' combination.id %}" class="action-btn edit-btn" title="Edit Combination">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="action-btn delete-btn" title="Delete Combination" onclick="deleteCombination({{ combination.id }}, '{{ combination.name|escapejs }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-puzzle-piece"></i>
+        </div>
+        <h3>No Combinations Found</h3>
+        <p>Get started by creating your first A-Level combination</p>
+        <a href="{% url 'combination_create' %}" class="primary-action-btn">
+            <i class="fas fa-plus-circle"></i>
+            Add First Combination
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.combinations-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.combinations-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-content p {
+    opacity: 0.9;
+    font-size: 16px;
+    margin: 0;
+}
+
+.graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.combinations-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.total-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.count-label {
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+.count-value {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 16px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+}
+
+.modern-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: white;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.modern-table td {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+.code-badge {
+    padding: 4px 10px;
+    background: var(--info);
+    color: white;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.grade-badge {
+    padding: 6px 12px;
+    background: #FF9800;
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.subjects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.subject-tag {
+    padding: 4px 10px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-md);
+}
+
+.info-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.info-content i {
+    font-size: 24px;
+    color: #2196f3;
+    margin-top: 4px;
+}
+
+.info-content div {
+    flex: 1;
+    color: var(--gray-800);
+    line-height: 1.6;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 40px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--gray-400);
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--gray-600);
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.primary-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.primary-action-btn:hover {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.edit-btn {
+    background: rgba(234, 179, 8, 0.1);
+    color: var(--warning);
+}
+
+.edit-btn:hover {
+    background: var(--warning);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.delete-btn:hover {
+    background: var(--danger);
+    color: white;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+function deleteCombination(combinationId, combinationName) {
+    if (!confirm('Are you sure you want to delete "' + combinationName + '"? This action cannot be undone.')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/academics/combinations/' + combinationId + '/delete/',
+        method: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (response.error || 'Failed to delete combination'));
+            }
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Failed to delete combination';
+            alert('Error: ' + error);
+        }
+    });
+}
+</script>
+{% endblock %}
+

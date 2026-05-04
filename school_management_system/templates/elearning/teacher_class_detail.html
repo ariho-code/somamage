@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: white; margin-bottom: 8px;">{{ grade.name }} - E-Learning Management</h2>
+                <p style="color: rgba(255,255,255,0.9); margin: 0;">Manage study materials, quizzes, and exams</p>
+            </div>
+            <a href="{% url 'teacher_classes' %}" class="btn btn-light" style="border-radius: 12px; padding: 10px 20px; font-weight: 600;">
+                <i class="fas fa-arrow-left"></i> Back to Classes
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Study Materials Section -->
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h4 style="font-weight: 700;"><i class="fas fa-book"></i> Study Materials</h4>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#addMaterialModal" style="border-radius: 12px; padding: 10px 20px; font-weight: 600;">
+                            <i class="fas fa-plus"></i> Add Material
+                        </button>
+                    </div>
+                    
+                    <div class="row">
+                        {% for material in materials %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card" style="border-radius: 12px; border: 1px solid var(--gray-200);">
+                                <div class="card-body" style="padding: 20px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                        <h6 style="font-weight: 600; margin: 0;">{{ material.title }}</h6>
+                                        <a href="{% url 'delete_material' material.id %}" onclick="return confirm('Delete this material?')" class="text-danger" style="font-size: 14px;">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                    <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 12px;">{{ material.get_material_type_display }}</p>
+                                    {% if material.description %}
+                                    <p style="font-size: 13px; color: var(--gray-700); margin-bottom: 12px;">{{ material.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <small style="color: var(--gray-500); font-size: 11px;">
+                                        <i class="fas fa-calendar"></i> {{ material.created_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div style="padding: 40px; text-align: center; color: var(--gray-500);">
+                                <i class="fas fa-book-open" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                                No materials added yet
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quizzes Section -->
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h4 style="font-weight: 700;"><i class="fas fa-question-circle"></i> Quizzes</h4>
+                        <button class="btn btn-success" data-toggle="modal" data-target="#addQuizModal" style="border-radius: 4px; padding: 8px 24px; font-weight: 500; font-size: 14px;">
+                            <i class="fas fa-plus"></i> Add Quiz
+                        </button>
+                    </div>
+                    
+                    <div class="list-group">
+                        {% for quiz in quizzes %}
+                        <div class="list-group-item" style="border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--gray-200); padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h6 style="font-weight: 600; margin-bottom: 8px;">{{ quiz.title }}</h6>
+                                    <p style="color: var(--gray-600); font-size: 14px; margin-bottom: 8px;">{{ quiz.description|truncatewords:20 }}</p>
+                                    <div style="display: flex; gap: 16px; font-size: 12px; color: var(--gray-500);">
+                                        {% if quiz.due_date %}
+                                        <span><i class="fas fa-calendar"></i> Due: {{ quiz.due_date|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if quiz.start_time %}
+                                        <span><i class="fas fa-clock"></i> Start: {{ quiz.start_time|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if quiz.duration_minutes %}
+                                        <span><i class="fas fa-hourglass-half"></i> Duration: {{ quiz.duration_minutes }} min</span>
+                                        {% endif %}
+                                        <span><i class="fas fa-star"></i> {{ quiz.total_points }} points</span>
+                                    </div>
+                                </div>
+                                <a href="{% url 'delete_assignment' quiz.id %}" onclick="return confirm('Delete this quiz?')" class="text-danger" style="margin-left: 16px;">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="padding: 40px; text-align: center; color: var(--gray-500);">
+                            <i class="fas fa-question-circle" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            No quizzes added yet
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exams Section -->
+            <div class="card mb-4" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="card-body" style="padding: 32px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h4 style="font-weight: 700;"><i class="fas fa-clipboard-list"></i> Exams</h4>
+                        <button class="btn btn-warning" data-toggle="modal" data-target="#addExamModal" style="border-radius: 4px; padding: 8px 24px; font-weight: 500; font-size: 14px;">
+                            <i class="fas fa-plus"></i> Add Exam
+                        </button>
+                    </div>
+                    
+                    <div class="list-group">
+                        {% for exam in exams %}
+                        <div class="list-group-item" style="border-radius: 8px; margin-bottom: 12px; border: 1px solid #e8eaed; padding: 16px; background: #ffffff; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h6 style="font-weight: 400; margin-bottom: 8px; color: #202124; font-size: 16px;">{{ exam.title }}</h6>
+                                    <p style="color: #5f6368; font-size: 14px; margin-bottom: 8px;">{{ exam.description|truncatewords:20 }}</p>
+                                    <div style="display: flex; gap: 16px; font-size: 12px; color: #5f6368; flex-wrap: wrap;">
+                                        {% if exam.exam_pdf %}
+                                        <span><i class="fas fa-file-pdf"></i> PDF uploaded</span>
+                                        {% endif %}
+                                        {% if exam.due_date %}
+                                        <span><i class="fas fa-calendar"></i> Due: {{ exam.due_date|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if exam.start_time %}
+                                        <span><i class="fas fa-clock"></i> Start: {{ exam.start_time|date:"M d, Y H:i" }}</span>
+                                        {% endif %}
+                                        {% if exam.duration_minutes %}
+                                        <span><i class="fas fa-hourglass-half"></i> {{ exam.duration_minutes }} min</span>
+                                        {% endif %}
+                                        <span><i class="fas fa-star"></i> {{ exam.total_points }} points</span>
+                                        {% if exam.allow_attachments %}
+                                        <span><i class="fas fa-paperclip"></i> Attachments allowed</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{% url 'delete_assignment' exam.id %}" onclick="return confirm('Delete this exam?')" class="text-danger" style="margin-left: 16px; padding: 8px;">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="padding: 40px; text-align: center; color: var(--gray-500);">
+                            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            No exams added yet
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Material Modal -->
+<div class="modal fade" id="addMaterialModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-book"></i> Add Study Material</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'add_material' course.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Material Type</label>
+                        <select name="material_type" class="form-control">
+                            <option value="pdf">PDF Document</option>
+                            <option value="doc">Word Document</option>
+                            <option value="ppt">PowerPoint</option>
+                            <option value="video">Video File</option>
+                            <option value="image">Image</option>
+                            <option value="link">External Link</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload File</label>
+                        <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.avi,.mov,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="form-group">
+                        <label>Or External URL (YouTube, etc.)</label>
+                        <input type="url" name="external_url" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Quiz Modal -->
+<div class="modal fade" id="addQuizModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-question-circle"></i> Add Quiz</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'add_quiz_exam' course.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_type" value="quiz">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Due Date & Time</label>
+                                <input type="datetime-local" name="due_date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Start Time (for timed quiz)</label>
+                                <input type="datetime-local" name="start_time" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Duration (minutes)</label>
+                                <input type="number" name="duration_minutes" class="form-control" min="1" placeholder="e.g., 30">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Total Points</label>
+                                <input type="number" name="total_points" class="form-control" value="100" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Quiz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Exam Modal -->
+<div class="modal fade" id="addExamModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list"></i> Add Exam</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'add_quiz_exam' course.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_type" value="exam">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Exam PDF *</label>
+                        <input type="file" name="exam_pdf" class="form-control" accept=".pdf" required>
+                        <small class="form-text text-muted">Upload the exam paper as PDF</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" name="allow_attachments" class="form-check-input" id="allowAttachments" checked>
+                            <label class="form-check-label" for="allowAttachments">
+                                Allow students to attach files with their submission
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Due Date & Time</label>
+                                <input type="datetime-local" name="due_date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Start Time (for timed exam)</label>
+                                <input type="datetime-local" name="start_time" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Duration (minutes)</label>
+                                <input type="number" name="duration_minutes" class="form-control" min="1" placeholder="e.g., 120">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Total Points</label>
+                                <input type="number" name="total_points" class="form-control" value="100" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Add Exam</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

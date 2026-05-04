@@ -1,0 +1,838 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <!-- Header Section -->
+    <div class="form-header">
+        <div class="header-content">
+            <h1><i class="fas fa-{% if 'Academic Year' in title %}calendar-alt{% elif 'Student' in title %}user-graduate{% elif 'Teacher' in title %}chalkboard-teacher{% elif 'Fee' in title %}money-bill-wave{% elif 'Mark' in title %}edit{% elif 'Report' in title %}file-alt{% elif 'Timetable' in title %}calendar-day{% else %}plus-circle{% endif %}"></i> {{ title }}</h1>
+            <p>{% if 'Academic Year' in title %}Configure academic periods and schedules{% elif 'Student' in title %}Manage student information and records{% elif 'Teacher' in title %}Add or update teaching staff details{% elif 'Fee' in title %}Configure fee structures and payments{% elif 'Mark' in title %}Enter and manage student marks{% elif 'Report' in title %}Generate and manage academic reports{% elif 'Timetable' in title %}Create and organize class schedules{% else %}Create new record{% endif %}</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-{% if 'Academic Year' in title %}calendar-check{% elif 'Student' in title %}graduation-cap{% elif 'Teacher' in title %}user-tie{% elif 'Fee' in title %}calculator{% elif 'Mark' in title %}clipboard-check{% elif 'Report' in title %}chart-line{% elif 'Timetable' in title %}clock{% else %}file-signature{% endif %}"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="form-card">
+        <div class="card-header">
+            <h3><i class="fas fa-{% if 'Edit' in title %}edit{% else %}plus-circle{% endif %}"></i> {{ title }}</h3>
+            <div class="header-actions">
+                <button type="submit" form="mainForm" class="save-btn">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+                <a href="javascript:history.back()" class="cancel-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Cancel
+                </a>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" id="mainForm" class="enhanced-form">
+                {% csrf_token %}
+                
+                <div class="form-sections">
+                    {% for field in form %}
+                    <div class="form-section {% if field.errors %}has-error{% endif %}">
+                        <div class="section-header">
+                            <label for="{{ field.id_for_label }}" class="section-label">
+                                <i class="fas fa-{% if field.name == 'name' %}tag{% elif field.name == 'start_date' %}calendar-alt{% elif field.name == 'end_date' %}calendar-check{% elif field.name == 'is_active' %}toggle-on{% else %}edit{% endif %}"></i>
+                                {{ field.label }}
+                                {% if field.field.required %}
+                                <span class="required-asterisk">*</span>
+                                {% endif %}
+                            </label>
+                            {% if field.help_text %}
+                            <div class="help-tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <div class="tooltip-text">{{ field.help_text }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="input-container">
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {% for error in field.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+        
+        <div class="card-footer">
+            <div class="footer-actions">
+                <button type="submit" form="mainForm" class="primary-action-btn">
+                    <i class="fas fa-save"></i>
+                    Save {{ title|split:" "|last }}
+                </button>
+                <a href="javascript:history.back()" class="secondary-action-btn">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Help Section -->
+    <div class="help-section">
+        <div class="help-header">
+            <h4><i class="fas fa-life-ring"></i> Need Help?</h4>
+        </div>
+        <div class="help-content">
+            <div class="help-item">
+                <i class="fas fa-asterisk"></i>
+                <div class="help-text">
+                    <strong>Required Fields</strong>
+                    <p>Fields marked with <span class="required-asterisk">*</span> are mandatory</p>
+                </div>
+            </div>
+            <div class="help-item">
+                <i class="fas fa-info-circle"></i>
+                <div class="help-text">
+                    <strong>Additional Information</strong>
+                    <p>Hover over the info icon for field-specific guidance</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-page-container {
+        padding: 0;
+        animation: fadeInUp 0.8s ease-out;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Header Styles */
+    .form-header {
+        background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 35px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-xl);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+        animation: pulse 8s infinite;
+    }
+
+    .header-content h1 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .header-content p {
+        opacity: 0.9;
+        font-size: 16px;
+        margin: 0;
+        max-width: 500px;
+    }
+
+    .graphic-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 25px 30px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .card-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .save-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--gray-900);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 14px;
+    }
+
+    .save-btn:hover {
+        background: var(--gray-800);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .cancel-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--gray-200);
+        color: var(--gray-700);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: var(--transition);
+        font-size: 14px;
+    }
+
+    .cancel-btn:hover {
+        background: var(--gray-300);
+        color: var(--gray-900);
+        transform: translateY(-2px);
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    /* Enhanced Form Styles */
+    .enhanced-form {
+        width: 100%;
+    }
+
+    .form-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        background: var(--gray-50);
+        border-radius: 12px;
+        border: 2px solid transparent;
+        transition: var(--transition);
+    }
+
+    .form-section:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-300);
+    }
+
+    .form-section.has-error {
+        border-color: var(--danger);
+        background: rgba(239, 68, 68, 0.05);
+    }
+
+    .form-section.focused {
+        border-color: var(--gray-600);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .section-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 15px;
+        margin: 0;
+    }
+
+    .required-asterisk {
+        color: var(--danger);
+        font-weight: 700;
+    }
+
+    .help-tooltip {
+        position: relative;
+        color: var(--gray-500);
+        cursor: help;
+    }
+
+    .help-tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(-5px);
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        opacity: 0;
+        width: 200px;
+        background: var(--gray-800);
+        color: white;
+        text-align: center;
+        border-radius: 8px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.3s ease;
+        font-size: 13px;
+        font-weight: normal;
+        line-height: 1.4;
+    }
+
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: var(--gray-800) transparent transparent transparent;
+    }
+
+    .input-container {
+        width: 100%;
+    }
+
+    .input-container input,
+    .input-container textarea,
+    .input-container select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: 10px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: white;
+        font-family: inherit;
+    }
+
+    .input-container input:focus,
+    .input-container textarea:focus,
+    .input-container select:focus {
+        border-color: var(--gray-600);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+        outline: none;
+        background: white;
+    }
+
+    .input-container textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .input-container select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 16px;
+        padding-right: 45px;
+    }
+
+    .error-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--danger);
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 6px;
+        border-left: 3px solid var(--danger);
+    }
+
+    /* Card Footer */
+    .card-footer {
+        padding: 25px 30px;
+        border-top: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .footer-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+    }
+
+    .primary-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 28px;
+        background: var(--gray-900);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 15px;
+    }
+
+    .primary-action-btn:hover {
+        background: var(--gray-800);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .secondary-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 28px;
+        background: white;
+        color: var(--gray-700);
+        border: 2px solid var(--gray-300);
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: var(--transition);
+        font-size: 15px;
+    }
+
+    .secondary-action-btn:hover {
+        background: var(--gray-50);
+        color: var(--gray-900);
+        border-color: var(--gray-400);
+        transform: translateY(-2px);
+    }
+
+    /* Help Section */
+    .help-section {
+        background: white;
+        border-radius: 16px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    .help-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .help-header h4 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    .help-content {
+        padding: 25px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .help-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .help-item i {
+        width: 40px;
+        height: 40px;
+        background: var(--gray-100);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-700);
+        flex-shrink: 0;
+    }
+
+    .help-text strong {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .help-text p {
+        color: var(--gray-600);
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .form-header {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .card-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .footer-actions {
+            flex-direction: column;
+        }
+
+        .primary-action-btn,
+        .secondary-action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .help-content {
+            grid-template-columns: 1fr;
+        }
+
+        .graphic-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .form-header {
+            padding: 20px;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-footer {
+            padding: 20px;
+        }
+
+        .form-section {
+            padding: 15px;
+        }
+
+        .help-content {
+            padding: 20px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation to form sections
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe form elements
+        const formSections = document.querySelectorAll('.form-section');
+        formSections.forEach((section, index) => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(20px)';
+            section.style.transition = `opacity 0.6s ease, transform 0.6s ease ${index * 0.1}s`;
+            observer.observe(section);
+        });
+
+        // Enhanced form interactions
+        const formInputs = document.querySelectorAll('.input-container input, .input-container textarea, .input-container select');
+        formInputs.forEach(input => {
+            const formSection = input.closest('.form-section');
+            
+            input.addEventListener('focus', function() {
+                formSection.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                if (this.value === '') {
+                    formSection.classList.remove('focused');
+                }
+            });
+
+            // Add real-time validation
+            input.addEventListener('input', function() {
+                if (this.value !== '') {
+                    formSection.classList.remove('has-error');
+                }
+            });
+        });
+
+        // Auto-save simulation for better UX
+        const form = document.getElementById('mainForm');
+        let saveTimeout;
+        
+        form.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            const saveBtns = document.querySelectorAll('.save-btn, .primary-action-btn');
+            
+            // Show saving state
+            saveBtns.forEach(btn => {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+                btn.disabled = true;
+                
+                saveTimeout = setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    
+                    // Show success indicator
+                    showSuccessMessage('Changes saved successfully');
+                }, 800);
+            });
+        });
+
+        // Form submission enhancement
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds if still processing
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        function showSuccessMessage(message) {
+            const existingMessage = document.querySelector('.success-message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+            
+            const successMessage = document.createElement('div');
+            successMessage.className = 'success-message';
+            successMessage.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            successMessage.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 10px;
+                font-weight: 600;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideInRight 0.3s ease-out;
+                box-shadow: var(--shadow-lg);
+            `;
+            
+            document.body.appendChild(successMessage);
+            
+            setTimeout(() => {
+                successMessage.style.animation = 'slideOutRight 0.3s ease-in forwards';
+                setTimeout(() => successMessage.remove(), 300);
+            }, 3000);
+        }
+
+        // Add custom styles for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+
+    // Field icon mapping function (to be implemented in backend or via template tags)
+    function getFieldIcon(fieldName) {
+        const iconMap = {
+            'name': 'tag',
+            'title': 'heading',
+            'description': 'align-left',
+            'start_date': 'calendar-plus',
+            'end_date': 'calendar-check',
+            'email': 'envelope',
+            'phone': 'phone',
+            'address': 'map-marker-alt',
+            'motto': 'quote-left',
+            'website': 'globe',
+            'logo': 'image',
+            'is_active': 'power-off',
+            'academic_year': 'calendar-alt',
+            'term': 'layer-group',
+            'grade': 'users-class',
+            'subject': 'book',
+            'teacher': 'user-tie',
+            'student': 'user-graduate',
+            'marks': 'percentage',
+            'fee': 'money-bill-wave',
+            'amount': 'dollar-sign',
+            'payment': 'credit-card',
+            'balance': 'balance-scale',
+            'room': 'door-open',
+            'time': 'clock',
+            'day': 'calendar-day'
+        };
+        
+        for (const [key, icon] of Object.entries(iconMap)) {
+            if (fieldName.toLowerCase().includes(key)) {
+                return icon;
+            }
+        }
+        
+        return 'circle';
+    }
+
+    // Apply icons to labels
+    document.querySelectorAll('.section-label').forEach(label => {
+        const fieldName = label.getAttribute('for').replace('id_', '');
+        const iconElement = label.querySelector('i');
+        if (iconElement) {
+            iconElement.className = `fas fa-${getFieldIcon(fieldName)}`;
+        }
+    });
+</script>
+{% endblock %}

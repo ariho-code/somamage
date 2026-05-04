@@ -1,0 +1,600 @@
+{% extends 'base.html' %}
+{% block title %}Add Student{% endblock %}
+{% block page_title %}Add New Student{% endblock %}
+
+{% block content %}
+<div class="add-student-container">
+    <div class="form-card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-plus"></i> Add New Student</h3>
+            <a href="{% url 'student_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Students
+            </a>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data" id="addStudentForm">
+                {% csrf_token %}
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-user"></i> Student Information</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.first_name.label_tag }}
+                                {{ student_form.first_name }}
+                                {% if student_form.first_name.errors %}
+                                <div class="error-message">{{ student_form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.last_name.label_tag }}
+                                {{ student_form.last_name }}
+                                {% if student_form.last_name.errors %}
+                                <div class="error-message">{{ student_form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.date_of_birth.label_tag }}
+                                {{ student_form.date_of_birth }}
+                                {% if student_form.date_of_birth.errors %}
+                                <div class="error-message">{{ student_form.date_of_birth.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.gender.label_tag }}
+                                {{ student_form.gender }}
+                                {% if student_form.gender.errors %}
+                                <div class="error-message">{{ student_form.gender.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.admission_number.label_tag }}
+                                {{ student_form.admission_number }}
+                                <small class="form-text text-muted">Leave blank to auto-generate</small>
+                                {% if student_form.admission_number.errors %}
+                                <div class="error-message">{{ student_form.admission_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.index_number.label_tag }}
+                                {{ student_form.index_number }}
+                                {% if student_form.index_number.errors %}
+                                <div class="error-message">{{ student_form.index_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.blood_group.label_tag }}
+                                {{ student_form.blood_group }}
+                                {% if student_form.blood_group.errors %}
+                                <div class="error-message">{{ student_form.blood_group.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.photo.label_tag }}
+                                {{ student_form.photo }}
+                                {% if student_form.photo.errors %}
+                                <div class="error-message">{{ student_form.photo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-users"></i> Guardian Information</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ guardian_form.name.label_tag }}
+                                {{ guardian_form.name }}
+                                {% if guardian_form.name.errors %}
+                                <div class="error-message">{{ guardian_form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ guardian_form.phone.label_tag }}
+                                {{ guardian_form.phone }}
+                                {% if guardian_form.phone.errors %}
+                                <div class="error-message">{{ guardian_form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ guardian_form.email.label_tag }}
+                                {{ guardian_form.email }}
+                                {% if guardian_form.email.errors %}
+                                <div class="error-message">{{ guardian_form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ guardian_form.address.label_tag }}
+                                {{ guardian_form.address }}
+                                {% if guardian_form.address.errors %}
+                                <div class="error-message">{{ guardian_form.address.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-heartbeat"></i> Medical Information</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    {{ student_form.has_disabilities }}
+                                    <label class="form-check-label" for="{{ student_form.has_disabilities.id_for_label }}">
+                                        {{ student_form.has_disabilities.label }}
+                                    </label>
+                                </div>
+                                {% if student_form.disabilities %}
+                                <div id="disabilities-field" style="margin-top: 10px;">
+                                    {{ student_form.disabilities.label_tag }}
+                                    {{ student_form.disabilities }}
+                                    {% if student_form.disabilities.errors %}
+                                    <div class="text-danger">{{ student_form.disabilities.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    {{ student_form.has_chronic_diseases }}
+                                    <label class="form-check-label" for="{{ student_form.has_chronic_diseases.id_for_label }}">
+                                        {{ student_form.has_chronic_diseases.label }}
+                                    </label>
+                                </div>
+                                {% if student_form.chronic_diseases %}
+                                <div id="chronic-diseases-field" style="margin-top: 10px;">
+                                    {{ student_form.chronic_diseases.label_tag }}
+                                    {{ student_form.chronic_diseases }}
+                                    {% if student_form.chronic_diseases.errors %}
+                                    <div class="text-danger">{{ student_form.chronic_diseases.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    {{ student_form.has_special_care_needs }}
+                                    <label class="form-check-label" for="{{ student_form.has_special_care_needs.id_for_label }}">
+                                        {{ student_form.has_special_care_needs.label }}
+                                    </label>
+                                </div>
+                                {% if student_form.special_care_needs %}
+                                <div id="special-care-field" style="margin-top: 10px;">
+                                    {{ student_form.special_care_needs.label_tag }}
+                                    {{ student_form.special_care_needs }}
+                                    {% if student_form.special_care_needs.errors %}
+                                    <div class="text-danger">{{ student_form.special_care_needs.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.allergies.label_tag }}
+                                {{ student_form.allergies }}
+                                {% if student_form.allergies.errors %}
+                                <div class="text-danger">{{ student_form.allergies.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        {{ student_form.medical_notes.label_tag }}
+                        {{ student_form.medical_notes }}
+                        {% if student_form.medical_notes.errors %}
+                        <div class="text-danger">{{ student_form.medical_notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-phone-alt"></i> Emergency Contact</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.emergency_contact_name.label_tag }}
+                                {{ student_form.emergency_contact_name }}
+                                {% if student_form.emergency_contact_name.errors %}
+                                <div class="text-danger">{{ student_form.emergency_contact_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ student_form.emergency_contact_phone.label_tag }}
+                                {{ student_form.emergency_contact_phone }}
+                                {% if student_form.emergency_contact_phone.errors %}
+                                <div class="text-danger">{{ student_form.emergency_contact_phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-graduation-cap"></i> Enrollment Information</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ enrollment_form.grade.label_tag }}
+                                {{ enrollment_form.grade }}
+                                {% if enrollment_form.grade.errors %}
+                                <div class="error-message">{{ enrollment_form.grade.errors }}</div>
+                                {% endif %}
+                                {% if enrollment_form.grade.help_text %}
+                                <small class="form-text text-muted">{{ enrollment_form.grade.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group" id="combination-field-group" style="display: none;">
+                                {{ enrollment_form.combination.label_tag }}
+                                {{ enrollment_form.combination }}
+                                {% if enrollment_form.combination.errors %}
+                                <div class="error-message">{{ enrollment_form.combination.errors }}</div>
+                                {% endif %}
+                                {% if enrollment_form.combination.help_text %}
+                                <small class="form-text text-muted">{{ enrollment_form.combination.help_text }}</small>
+                                {% endif %}
+                                <div id="combination-subjects" class="mt-2" style="display: none;">
+                                    <small class="text-info"><i class="fas fa-info-circle"></i> Selected combination subjects: <span id="combination-subjects-list"></span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ enrollment_form.academic_year.label_tag }}
+                                {{ enrollment_form.academic_year }}
+                                {% if enrollment_form.academic_year.errors %}
+                                <div class="error-message">{{ enrollment_form.academic_year.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ enrollment_form.date_joined.label_tag }}
+                                {{ enrollment_form.date_joined }}
+                                {% if enrollment_form.date_joined.errors %}
+                                <div class="error-message">{{ enrollment_form.date_joined.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Add Student
+                    </button>
+                    <a href="{% url 'student_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.add-student-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-header .btn {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.card-header .btn:hover {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+}
+
+.form-section h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--gray-900);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+
+.error-message {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 5px;
+    padding: 6px 10px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid var(--danger);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid var(--gray-200);
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-900);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-300);
+    transform: translateY(-2px);
+    color: var(--gray-900);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    const gradeSelect = $('#id_grade');
+    const combinationFieldGroup = $('#combination-field-group');
+    const combinationSelect = $('#id_combination');
+    const combinationSubjectsDiv = $('#combination-subjects');
+    const combinationSubjectsList = $('#combination-subjects-list');
+    
+    // Handle grade change
+    gradeSelect.on('change', function() {
+        const gradeId = $(this).val();
+        
+        if (!gradeId) {
+            combinationFieldGroup.hide();
+            combinationSelect.val('');
+            return;
+        }
+        
+        // Fetch combinations for this grade
+        $.ajax({
+            url: '/academics/combinations/by-grade/' + gradeId + '/',
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.is_a_level && response.combinations.length > 0) {
+                    // Show combination field
+                    combinationFieldGroup.show();
+                    combinationSelect.attr('required', false);
+                    
+                    // Populate combination options
+                    combinationSelect.empty();
+                    combinationSelect.append('<option value="">-- Select Combination (Optional) --</option>');
+                    
+                    response.combinations.forEach(function(combo) {
+                        const option = $('<option></option>')
+                            .attr('value', combo.id)
+                            .text(combo.name + (combo.code ? ' (' + combo.code + ')' : ''));
+                        option.data('subjects', combo.subjects);
+                        combinationSelect.append(option);
+                    });
+                } else {
+                    // Hide combination field for non-A-Level or if no combinations
+                    combinationFieldGroup.hide();
+                    combinationSelect.val('');
+                    combinationSubjectsDiv.hide();
+                }
+            },
+            error: function() {
+                // Hide on error
+                combinationFieldGroup.hide();
+                combinationSelect.val('');
+            }
+        });
+    });
+    
+    // Handle combination change to show subjects
+    combinationSelect.on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const subjects = selectedOption.data('subjects');
+        
+        if (subjects && subjects.length > 0) {
+            combinationSubjectsList.text(subjects.join(', '));
+            combinationSubjectsDiv.show();
+        } else {
+            combinationSubjectsDiv.hide();
+        }
+    });
+    
+    // Trigger on page load if grade is already selected
+    if (gradeSelect.val()) {
+        gradeSelect.trigger('change');
+    }
+    
+    // Handle form submission - re-enable disabled fields
+    $('#addStudentForm').on('submit', function() {
+        // Re-enable disabled grade field if it was disabled
+        const gradeField = $('#id_grade');
+        if (gradeField.prop('disabled')) {
+            gradeField.prop('disabled', false);
+        }
+    });
+    
+    // Medical fields toggle
+    const hasDisabilities = document.getElementById('{{ student_form.has_disabilities.id_for_label }}');
+    const disabilitiesField = document.getElementById('disabilities-field');
+    const hasChronicDiseases = document.getElementById('{{ student_form.has_chronic_diseases.id_for_label }}');
+    const chronicDiseasesField = document.getElementById('chronic-diseases-field');
+    const hasSpecialCare = document.getElementById('{{ student_form.has_special_care_needs.id_for_label }}');
+    const specialCareField = document.getElementById('special-care-field');
+    
+    function toggleField(checkbox, field) {
+        if (checkbox && field) {
+            field.style.display = checkbox.checked ? 'block' : 'none';
+            checkbox.addEventListener('change', function() {
+                field.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+    }
+    
+    toggleField(hasDisabilities, disabilitiesField);
+    toggleField(hasChronicDiseases, chronicDiseasesField);
+    toggleField(hasSpecialCare, specialCareField);
+});
+</script>
+{% endblock %}

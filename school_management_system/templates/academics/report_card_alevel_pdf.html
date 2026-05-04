@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Card - {% if report_card.enrollment.student.user %}{{ report_card.enrollment.student.user.get_full_name|default:report_card.enrollment.student.user.username }}{% else %}{{ report_card.enrollment.student.get_full_name|default:"Student" }}{% endif %}</title>
+    <style>
+/* A-Level Report Card Styles - Ugandan Format */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', serif;
+    color: #1e293b;
+    background: white;
+    line-height: 1.4;
+}
+
+.report-card-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: white;
+    position: relative;
+    overflow: hidden;
+    padding: 20px;
+}
+
+/* Watermark - School Logo */
+.watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    width: 600px;
+    height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.watermark img,
+.watermark-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.1;
+}
+
+/* Fallback watermark text if no logo */
+.watermark-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 140px;
+    font-weight: bold;
+    color: rgba(255, 215, 0, 0.12);
+    z-index: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 25px;
+    font-family: 'Times New Roman', serif;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+/* School Logo/Seal - Original style without background or rounded */
+.school-seal {
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    position: relative;
+}
+
+.school-logo-img {
+    max-width: 120px;
+    max-height: 120px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Header Section */
+.report-header {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-bottom: 3px solid #1e40af;
+    position: relative;
+    z-index: 1;
+}
+
+.school-name {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1e293b;
+    margin-bottom: 8px;
+    font-family: 'Times New Roman', serif;
+    letter-spacing: 1px;
+}
+
+.school-details {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 5px;
+    line-height: 1.8;
+}
+
+.school-motto {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1e40af;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.report-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1e293b;
+    text-transform: uppercase;
+    margin-top: 15px;
+    padding: 12px;
+    background: #f1f5f9;
+    border: 2px solid #1e40af;
+    letter-spacing: 1px;
+}
+
+/* Student Information Section */
+.student-info-section {
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.student-info-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.student-photo-col {
+    text-align: center;
+}
+
+.student-photo {
+    width: 100px;
+    height: 120px;
+    border-radius: 8px;
+    border: 3px solid #1e40af;
+    object-fit: cover;
+    background: #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.student-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    font-size: 13px;
+}
+
+.info-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #1e293b;
+    min-width: 120px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.info-value {
+    color: #334155;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Subject Performance Table */
+.subjects-table-section {
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.subjects-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.subjects-table thead {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+}
+
+.subjects-table th {
+    padding: 10px 6px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    text-transform: uppercase;
+    border: 1px solid #1e3a8a;
+    letter-spacing: 0.5px;
+}
+
+.subjects-table td {
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+}
+
+.subjects-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.subject-code {
+    font-weight: bold;
+    color: #1e40af;
+    font-size: 11px;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+    padding-left: 10px;
+    font-size: 11px;
+}
+
+.paper-number {
+    font-weight: bold;
+    color: #475569;
+    font-size: 11px;
+}
+
+.score-cell {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 11px;
+}
+
+.grade-cell {
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.grade-d1 {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.grade-d2 {
+    color: #22c55e;
+}
+
+.grade-c3 {
+    color: #3b82f6;
+}
+
+.grade-c4 {
+    color: #60a5fa;
+}
+
+.grade-c5 {
+    color: #f59e0b;
+}
+
+.comment-cell {
+    font-size: 10px;
+    font-style: italic;
+    color: #475569;
+    text-align: left;
+    padding-left: 8px;
+}
+
+/* Comments Section */
+.comments-section {
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.comment-box {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8fafc;
+    border-left: 4px solid #1e40af;
+    border-radius: 4px;
+}
+
+.comment-label {
+    font-weight: bold;
+    font-size: 13px;
+    color: #1e293b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.comment-text {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.signature-line {
+    border-top: 2px solid #1e293b;
+    margin-top: 30px;
+    padding-top: 5px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+/* Term Dates */
+.term-dates {
+    padding: 15px 20px;
+    background: #f8fafc;
+    border-top: 2px solid #e2e8f0;
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    color: #475569;
+}
+
+/* Grading Scale */
+.grading-scale {
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+    margin-top: 20px;
+}
+
+.grading-scale-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #1e293b;
+    margin-bottom: 10px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.grading-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 10px;
+}
+
+.grading-table th,
+.grading-table td {
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.grading-table thead {
+    background: #1e40af;
+    color: white;
+}
+
+.grading-table th {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+/* Disclaimer */
+.disclaimer {
+    text-align: center;
+    padding: 15px;
+    color: #dc2626;
+    font-weight: bold;
+    font-size: 12px;
+    position: relative;
+    z-index: 1;
+    border-top: 2px solid #dc2626;
+    margin-top: 20px;
+}
+
+@media print {
+    .report-card-container {
+        box-shadow: none;
+        max-width: 100%;
+    }
+    
+    .watermark {
+        opacity: 0.08 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .watermark-logo {
+        opacity: 0.1 !important;
+    }
+    
+    .subjects-table thead {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    .school-seal {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+    
+    .disclaimer {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="report-card-container">
+        <!-- Watermark - School Logo -->
+        <div class="watermark">
+            {% if report_card.enrollment.grade.school.logo %}
+            <img src="{{ report_card.enrollment.grade.school.logo.url }}" alt="School Logo Watermark" class="watermark-logo">
+            {% else %}
+            <div class="watermark-text">CELEBRATING EXCELLENCE</div>
+            {% endif %}
+        </div>
+        
+        <!-- Header -->
+        <div class="report-header">
+            <!-- School Seal/Logo -->
+            <div class="school-seal">
+                {% if report_card.enrollment.grade.school.logo %}
+                <img src="{{ report_card.enrollment.grade.school.logo.url }}" alt="School Logo" class="school-logo-img">
+                {% endif %}
+            </div>
+            
+            <!-- School Name -->
+            <div class="school-name">{{ report_card.enrollment.grade.school.name|default:"SCHOOL NAME" }}</div>
+            
+            <!-- School Details -->
+            <div class="school-details">
+                {% if report_card.enrollment.grade.school.school_type %}
+                {{ report_card.enrollment.grade.school.get_school_type_display|upper }}<br>
+                {% endif %}
+                {% if report_card.enrollment.grade.school.address %}
+                P.O BOX {{ report_card.enrollment.grade.school.address|upper }}<br>
+                {% endif %}
+                {% if report_card.enrollment.grade.school.phone %}
+                {{ report_card.enrollment.grade.school.phone }}{% if report_card.enrollment.grade.school.email %}, {{ report_card.enrollment.grade.school.email }}{% endif %}
+                {% endif %}
+            </div>
+            
+            <!-- Motto -->
+            {% if report_card.enrollment.grade.school.motto %}
+            <div class="school-motto">MOTTO: {{ report_card.enrollment.grade.school.motto|upper }}</div>
+            {% endif %}
+            
+            <!-- Report Title -->
+            <div class="report-title">
+                END OF {{ report_card.term.name|upper }} {{ report_card.term.academic_year.name|upper }} STUDENT REPORT CARD
+            </div>
+        </div>
+        
+        <!-- Student Information -->
+        <div class="student-info-section">
+            <div class="student-info-grid">
+                <!-- Student Photo -->
+                <div class="student-photo-col">
+                    {% if report_card.enrollment.student.photo %}
+                    <img src="{{ report_card.enrollment.student.photo.url }}" alt="Student Photo" class="student-photo">
+                    {% else %}
+                    <div class="student-photo" style="display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+                        <span style="font-size: 40px;">☺</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Student Details -->
+                <div class="student-details-grid">
+                    <div class="info-row">
+                        <span class="info-label">NAME:</span>
+                        <span class="info-value">{% if report_card.enrollment.student.user %}{{ report_card.enrollment.student.user.get_full_name|default:report_card.enrollment.student.user.username|upper }}{% else %}{{ report_card.enrollment.student.get_full_name|default:report_card.enrollment.student.first_name|default:"STUDENT"|upper }}{% endif %}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">STUDENT ID:</span>
+                        <span class="info-value">{{ report_card.enrollment.student.admission_number|default:"--" }}</span>
+                    </div>
+                    
+                    {% if report_card.enrollment.student.index_number %}
+                    <div class="info-row">
+                        <span class="info-label">PAYMENT CODE:</span>
+                        <span class="info-value">{{ report_card.enrollment.student.index_number }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-row">
+                        <span class="info-label">CLASS:</span>
+                        <span class="info-value">{{ report_card.enrollment.grade.name|upper }}</span>
+                    </div>
+                    
+                    {% if report_card.enrollment.combination %}
+                    <div class="info-row">
+                        <span class="info-label">COMBINATION:</span>
+                        <span class="info-value">{{ report_card.enrollment.combination.name|upper }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report_card.enrollment.stream %}
+                    <div class="info-row">
+                        <span class="info-label">STREAM:</span>
+                        <span class="info-value">{{ report_card.enrollment.stream|upper }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report_card.enrollment.student.gender %}
+                    <div class="info-row">
+                        <span class="info-label">SEX:</span>
+                        <span class="info-value">{{ report_card.enrollment.student.get_gender_display|upper }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report_card.enrollment.student.index_number %}
+                    <div class="info-row">
+                        <span class="info-label">LIN:</span>
+                        <span class="info-value">{{ report_card.enrollment.student.index_number }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-row">
+                        <span class="info-label">TOTAL POINTS:</span>
+                        <span class="info-value" style="font-size: 16px; font-weight: bold; color: #1e40af;">{{ report_card.total_points|floatformat:0|default:"0" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subject Performance Table -->
+        <div class="subjects-table-section">
+            <table class="subjects-table">
+                <thead>
+                    <tr>
+                        <th>SUBJECT CODE</th>
+                        <th>SUBJECT NAME</th>
+                        <th>PAPER</th>
+                        <th>MOT</th>
+                        <th>EOT</th>
+                        <th>AVG</th>
+                        <th>GRADE</th>
+                        <th>SCORE</th>
+                        <th>COMMENT</th>
+                        <th>INITIAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if marks_by_subject %}
+                        {% for subject_id, subject_data in marks_by_subject.items %}
+                            {% for paper in subject_data.papers %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ subject_data.papers|length }}" class="subject-code">{{ subject_data.subject.code|default:subject_data.subject.name|slice:":10"|upper }}</td>
+                                <td rowspan="{{ subject_data.papers|length }}" class="subject-name">{{ subject_data.subject.name|upper }}</td>
+                                {% endif %}
+                                <td class="paper-number">{{ paper.paper_number }}</td>
+                                <td class="score-cell">{% if paper.mot %}{{ paper.mot|floatformat:0 }}{% else %}--{% endif %}</td>
+                                <td class="score-cell">{% if paper.eot %}{{ paper.eot|floatformat:0 }}{% else %}--{% endif %}</td>
+                                <td class="score-cell">{% if paper.avg %}{{ paper.avg|floatformat:1 }}{% else %}--{% endif %}</td>
+                                <td class="grade-cell grade-{{ paper.grade|lower|default:"--" }}">{% if paper.grade %}{{ paper.grade }}{% else %}--{% endif %}</td>
+                                <td class="grade-cell">{% if paper.score %}{{ paper.score }}{% else %}--{% endif %}</td>
+                                <td class="comment-cell">{% if paper.comment %}{{ paper.comment|upper }}{% else %}--{% endif %}</td>
+                                <td class="paper-number">{% if paper.teacher %}{{ paper.teacher.first_name|first|upper }}{{ paper.teacher.last_name|first|upper }}{% else %}--{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td class="subject-code">{{ subject_data.subject.code|default:subject_data.subject.name|slice:":10"|upper }}</td>
+                                <td class="subject-name">{{ subject_data.subject.name|upper }}</td>
+                                <td class="paper-number">1</td>
+                                <td class="score-cell">--</td>
+                                <td class="score-cell">--</td>
+                                <td class="score-cell">--</td>
+                                <td class="grade-cell">--</td>
+                                <td class="grade-cell">--</td>
+                                <td class="comment-cell">--</td>
+                                <td class="paper-number">--</td>
+                            </tr>
+                            {% endfor %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 20px; color: #94a3b8;">No marks recorded for this term.</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for mark in marks %}
+                        <tr>
+                            <td class="subject-code">{{ mark.subject.code|default:mark.subject.name|slice:":10"|upper }}</td>
+                            <td class="subject-name">{{ mark.subject.name|upper }}</td>
+                            <td class="paper-number">1</td>
+                            <td class="score-cell">{{ mark.score|floatformat:0|default:"--" }}</td>
+                            <td class="score-cell">{{ mark.score|floatformat:0|default:"--" }}</td>
+                            <td class="score-cell">{{ mark.score|floatformat:1|default:"--" }}</td>
+                            <td class="grade-cell grade-{{ mark.grade|lower|default:"--" }}">{{ mark.grade|default:"--" }}</td>
+                            <td class="grade-cell">{{ mark.grade|default:"--" }}</td>
+                            <td class="comment-cell">{{ mark.comments|default:"--"|upper }}</td>
+                            <td class="paper-number">{{ mark.teacher.first_name|first|upper|default:"--" }}{{ mark.teacher.last_name|first|upper|default:"" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 20px; color: #94a3b8;">No marks recorded for this term.</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Comments Section -->
+        <div class="comments-section">
+            <div class="comment-box">
+                <div class="comment-label">CLASS TEACHER'S COMMENT:</div>
+                <div class="comment-text">{{ report_card.class_teacher_comment|default:"--"|upper }}</div>
+                <div class="signature-line">Signature...............</div>
+            </div>
+            
+            <div class="comment-box">
+                <div class="comment-label">HEAD TEACHER'S COMMENT:</div>
+                <div class="comment-text">{{ report_card.headteacher_comment|default:"--"|upper }}</div>
+                <div class="signature-line">Signature...............</div>
+            </div>
+        </div>
+        
+        <!-- Term Dates -->
+        <div class="term-dates">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <strong>Next Term Begins On:</strong> {{ report_card.term.end_date|date:"Y-m-d"|default:"--" }}
+                </div>
+                <div>
+                    <strong>Ends On:</strong> {{ report_card.term.end_date|date:"Y-m-d"|default:"--" }}
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>School requirements:</strong> --
+            </div>
+        </div>
+        
+        <!-- Grading Scale -->
+        <div class="grading-scale">
+            <div class="grading-scale-title">Grading Scale</div>
+            <table class="grading-table">
+                <thead>
+                    <tr>
+                        <th>RANGE</th>
+                        <th>GRADE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>80.0-100.0</td><td>D1</td></tr>
+                    <tr><td>75.0-79.9</td><td>D2</td></tr>
+                    <tr><td>66.0-74.9</td><td>C3</td></tr>
+                    <tr><td>60.0-65.9</td><td>C4</td></tr>
+                    <tr><td>55.0-59.9</td><td>C5</td></tr>
+                    <tr><td>50.0-54.9</td><td>C6</td></tr>
+                    <tr><td>45.0-49.9</td><td>P7</td></tr>
+                    <tr><td>40.0-44.9</td><td>P8</td></tr>
+                    <tr><td>0.0-39.9</td><td>F9</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            This report is invalid without a valid school stamp.
+        </div>
+    </div>
+</body>
+</html>
+

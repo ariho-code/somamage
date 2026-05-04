@@ -1,0 +1,58 @@
+# Core Django
+Django==5.2.6
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.5.1
+
+# Database
+psycopg2-binary==2.9.10
+dj-database-url==2.2.0
+
+# Security & Authentication
+django-cors-headers==4.7.0
+django-axes==7.0.1
+django-security==0.10.1
+django-password-validators==1.7.3
+
+# Background Tasks
+celery[redis]==5.5.3
+django-redis==5.4.0
+redis==6.4.0
+
+# File Storage & Media
+cloudinary==1.43.0
+django-cloudinary-storage==0.3.0
+Pillow==11.3.0
+
+# PDF Generation & Documents
+weasyprint==66.0
+
+# Rate Limiting & Filtering
+django-ratelimit==4.1.0
+django-filter==25.1
+
+# Forms & UI
+django-crispy-forms==2.3
+
+# Configuration
+python-decouple==3.8
+python-dotenv==1.0.1
+
+# HTTP Requests
+requests==2.31.0
+
+# Date/Time Utilities
+python-dateutil==2.9.0
+
+# Additional Django Extensions
+django-contrib-humanize==0.1
+django-guardian==3.2.0
+django-phonenumber-field==8.1.0
+
+# Excel Support
+openpyxl==3.1.5
+
+# Production Server
+gunicorn==21.2.0
+
+# Development Tools (optional for production)
+whitenoise==6.6.0

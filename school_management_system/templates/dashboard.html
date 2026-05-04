@@ -1,0 +1,590 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Dashboard — SomaMange{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}{% if school %}{{ school.name }}{% endif %}{% if selected_academic_year %} · {{ selected_academic_year.name }}{% if selected_term %} · {{ selected_term.name }}{% endif %}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═════════════════════════════════════════════════════
+   DASHBOARD (theme-aware via base.html variables)
+═════════════════════════════════════════════════════ */
+
+.dash-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── Hero greeting ── */
+.dash-hero {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px;
+    padding: 22px 26px;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+    color: #fff;
+    overflow: hidden;
+}
+.dash-hero::before {
+    content: ''; position: absolute; top: -60px; right: -40px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+}
+.dash-hero::after {
+    content: ''; position: absolute; bottom: -80px; left: 30%;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+}
+.hero-left { position: relative; z-index: 1; flex: 1; min-width: 0; }
+.hero-right { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; }
+.hero-greet {
+    font-family: 'Poppins', sans-serif;
+    font-size: 22px; font-weight: 800;
+    line-height: 1.15; margin-bottom: 6px; letter-spacing: -0.4px;
+}
+.hero-sub { font-size: 13.5px; opacity: 0.92; max-width: 640px; }
+.hero-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff; font-size: 13px; font-weight: 600;
+    transition: background var(--transition);
+}
+.hero-cta:hover { background: rgba(255,255,255,0.26); color: #fff; }
+.hero-cta svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Stat cards ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); }
+.stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+}
+.stat-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stat.indigo .stat-icon { background: rgba(79,70,229,0.12); color: #4f46e5; }
+.stat.emerald .stat-icon { background: rgba(16,185,129,0.12); color: #10b981; }
+.stat.amber .stat-icon { background: rgba(245,158,11,0.14); color: #d97706; }
+.stat.cyan .stat-icon { background: rgba(8,145,178,0.12); color: #0891b2; }
+.stat-num {
+    font-family: 'Poppins', sans-serif;
+    font-size: 28px; font-weight: 800; color: var(--text);
+    line-height: 1; letter-spacing: -0.8px;
+}
+.stat-label { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+.stat-delta { display: flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.stat-delta.up { background: rgba(16,185,129,0.12); color: #059669; }
+.stat-delta.flat { background: var(--surface-2); color: var(--text-muted); }
+.stat-delta svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Panels ── */
+.panels-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.panels-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.panel-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.panel-head-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-glow); color: var(--accent);
+}
+.panel-head-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.panel-title { font-family: 'Poppins', sans-serif; font-size: 14.5px; font-weight: 700; color: var(--text); line-height: 1.15; }
+.panel-sub   { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+.panel-action { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); }
+.panel-body { padding: 10px 12px 14px; flex: 1; }
+.panel-body.chart { padding: 18px; }
+
+/* Timeline (schedule) */
+.sched-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 10px;
+    border-radius: 10px;
+    transition: background var(--transition);
+}
+.sched-item + .sched-item { margin-top: 2px; }
+.sched-item:hover { background: var(--surface); }
+.sched-time {
+    flex-shrink: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px; font-weight: 700;
+    color: var(--text); line-height: 1.15;
+    text-align: center;
+    min-width: 56px;
+    padding: 6px 0;
+    border-right: 2px solid var(--border);
+}
+.sched-time .t2 { color: var(--text-muted); font-weight: 500; font-size: 10.5px; margin-top: 2px; }
+.sched-main { flex: 1; min-width: 0; }
+.sched-subject { font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.sched-meta { font-size: 11.5px; color: var(--text-muted); }
+.sched-pill { padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.sched-pill.now { background: rgba(16,185,129,0.14); color: #059669; }
+.sched-pill.upcoming { background: var(--surface-2); color: var(--text-muted); }
+
+/* Activity */
+.act-item {
+    display: flex; gap: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    transition: background var(--transition);
+}
+.act-item + .act-item { margin-top: 2px; }
+.act-item:hover { background: var(--surface); }
+.act-icon {
+    width: 32px; height: 32px; flex-shrink: 0;
+    border-radius: 8px;
+    background: var(--accent-glow); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+}
+.act-main { flex: 1; min-width: 0; }
+.act-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.act-msg   { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+.act-time  { font-size: 10.5px; color: var(--text-dim); margin-top: 4px; }
+
+/* Empty state */
+.empty-state {
+    text-align: center; padding: 30px 16px;
+    color: var(--text-muted);
+}
+.empty-state svg { width: 36px; height: 36px; opacity: 0.4; margin-bottom: 10px; }
+.empty-state-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.empty-state-sub { font-size: 12px; color: var(--text-muted); }
+
+/* Quick actions */
+.qa-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.qa-card {
+    padding: 14px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+    color: var(--text);
+}
+.qa-card:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--accent-glow2); color: var(--text); }
+.qa-icon {
+    width: 34px; height: 34px; margin: 0 auto 8px;
+    border-radius: 10px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+}
+.qa-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.qa-label { font-size: 11.5px; font-weight: 600; line-height: 1.15; }
+
+/* Chart containers */
+.chart-box { position: relative; height: 260px; }
+
+@media (max-width: 1100px) {
+    .stats-grid  { grid-template-columns: repeat(2, 1fr); }
+    .panels-2, .panels-3 { grid-template-columns: 1fr; }
+    .qa-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+    .dash-hero { flex-direction: column; align-items: flex-start; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .hero-greet { font-size: 19px; }
+    .qa-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+
+    <!-- Hero -->
+    <div class="dash-hero">
+        <div class="hero-left">
+            <div class="hero-greet">
+                {% now "H" as hour %}{% if hour|add:0 < 12 %}Good morning{% elif hour|add:0 < 17 %}Good afternoon{% else %}Good evening{% endif %},
+                {{ user.first_name|default:user.username }}
+            </div>
+            <div class="hero-sub">
+                {% if request.user.is_headteacher or request.user.is_superadmin %}
+                    Here's what's happening at your school today. Use the academic-year switcher in the top bar to change context.
+                {% elif request.user.is_teacher %}
+                    Your classes, marks entry and materials — all in one place.
+                {% elif request.user.is_bursar %}
+                    Payments, balances and receipts — at a glance.
+                {% elif request.user.is_parent %}
+                    Track your children's progress, fees and attendance.
+                {% elif request.user.is_student %}
+                    Your schedule, reports and learning materials.
+                {% else %}
+                    Welcome back.
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-right">
+            {% if request.user.is_headteacher or request.user.is_superadmin %}
+            <a href="{% url 'student_list' %}" class="hero-cta">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                Students
+            </a>
+            <a href="{% url 'report_card_list' %}" class="hero-cta">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Report Cards
+            </a>
+            {% elif request.user.is_teacher %}
+            <a href="{% url 'mark_entry_list' %}" class="hero-cta">
+                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Enter Marks
+            </a>
+            {% elif request.user.is_bursar %}
+            <a href="{% url 'fee_payment_create' %}" class="hero-cta">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Record Payment
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ══════════════ STAT CARDS ══════════════ #}
+    {% if request.user.is_headteacher or request.user.is_superadmin %}
+    <div class="stats-grid">
+        <div class="stat indigo">
+            <div class="stat-top">
+                <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+                <span class="stat-delta up"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>Active</span>
+            </div>
+            <div class="stat-num">{{ total_students|default:0 }}</div>
+            <div class="stat-label">Students enrolled</div>
+        </div>
+        <div class="stat emerald">
+            <div class="stat-top">
+                <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <span class="stat-delta flat">—</span>
+            </div>
+            <div class="stat-num">{{ total_teachers|default:0 }}</div>
+            <div class="stat-label">Teaching staff</div>
+        </div>
+        <div class="stat amber">
+            <div class="stat-top">
+                <div class="stat-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+                <span class="stat-delta up"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+            </div>
+            <div class="stat-num">{{ fee_collection_rate|default:0|floatformat:0 }}%</div>
+            <div class="stat-label">Fee collection rate</div>
+        </div>
+        <div class="stat cyan">
+            <div class="stat-top">
+                <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <span class="stat-delta flat">Term</span>
+            </div>
+            <div class="stat-num">{{ total_report_cards|default:0 }}</div>
+            <div class="stat-label">Report cards</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if request.user.is_teacher %}
+    <div class="stats-grid">
+        <div class="stat indigo">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/></svg></div></div>
+            <div class="stat-num">{{ today_schedule_count|default:0 }}</div>
+            <div class="stat-label">Lessons today</div>
+        </div>
+        <div class="stat emerald">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div>
+            <div class="stat-num">{% if is_class_teacher %}{{ class_students_count|default:0 }}{% else %}{{ user.subjects_taught.count|default:0 }}{% endif %}</div>
+            <div class="stat-label">{% if is_class_teacher %}Class students{% else %}Subjects taught{% endif %}</div>
+        </div>
+        <div class="stat amber">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg></div></div>
+            <div class="stat-num">{{ total_marks_entered|default:0 }}</div>
+            <div class="stat-label">Marks entered</div>
+        </div>
+        <div class="stat cyan">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+            <div class="stat-num">{{ total_report_cards|default:0 }}</div>
+            <div class="stat-label">Report cards</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if request.user.is_bursar %}
+    <div class="stats-grid">
+        <div class="stat indigo">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div></div>
+            <div class="stat-num">{{ total_fees_paid|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Collected (UGX)</div>
+        </div>
+        <div class="stat amber">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg></div></div>
+            <div class="stat-num">{{ outstanding_balances|default:0 }}</div>
+            <div class="stat-label">Outstanding balances</div>
+        </div>
+        <div class="stat emerald">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+            <div class="stat-num">{{ paid_balances|default:0 }}</div>
+            <div class="stat-label">Fully paid</div>
+        </div>
+        <div class="stat cyan">
+            <div class="stat-top"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div>
+            <div class="stat-num">{{ fee_collection_rate|default:0|floatformat:0 }}%</div>
+            <div class="stat-label">Collection rate</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ══════════════ SCHEDULE + ACTIVITY ══════════════ #}
+    <div class="panels-2">
+        <!-- Today's schedule -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-head-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                <div><div class="panel-title">Today's Schedule</div><div class="panel-sub">{{ today_schedule_count|default:0 }} lesson{{ today_schedule_count|pluralize }} today</div></div>
+                <a href="{% url 'timetable_list' %}" class="panel-action">View all →</a>
+            </div>
+            <div class="panel-body">
+                {% if today_schedule %}
+                    {% for slot in today_schedule %}
+                    <div class="sched-item">
+                        <div class="sched-time">
+                            <div class="t1">{{ slot.start }}</div>
+                            <div class="t2">{{ slot.end }}</div>
+                        </div>
+                        <div class="sched-main">
+                            <div class="sched-subject">{{ slot.subject }}</div>
+                            <div class="sched-meta">{{ slot.grade }}{% if slot.room %} · {{ slot.room }}{% endif %}</div>
+                        </div>
+                        <span class="sched-pill {% if slot.status == 'Now' %}now{% else %}upcoming{% endif %}">{{ slot.status|default:"Upcoming" }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div class="empty-state-title">No lessons scheduled</div>
+                        <div class="empty-state-sub">Enjoy your free day.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-head-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                <div><div class="panel-title">Recent Activity</div><div class="panel-sub">Latest notifications</div></div>
+                <a href="{% url 'notifications' %}" class="panel-action">View all →</a>
+            </div>
+            <div class="panel-body">
+                {% if recent_activity %}
+                    {% for a in recent_activity %}
+                    <div class="act-item">
+                        <div class="act-icon"><i class="{{ a.icon }}" style="font-size:13px;"></i></div>
+                        <div class="act-main">
+                            <div class="act-title">{{ a.title }}</div>
+                            {% if a.message %}<div class="act-msg">{{ a.message }}</div>{% endif %}
+                            <div class="act-time">{{ a.time }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+                        <div class="empty-state-title">No recent activity</div>
+                        <div class="empty-state-sub">Notifications will show up here.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ══════════════ ADMIN CHARTS ══════════════ #}
+    {% if request.user.is_headteacher or request.user.is_superadmin %}
+    <div class="panels-3">
+        <!-- Grade performance -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-head-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                <div><div class="panel-title">Performance by Class</div><div class="panel-sub">Average score (%)</div></div>
+            </div>
+            <div class="panel-body chart">
+                <div class="chart-box"><canvas id="chartGrades"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Fee collection doughnut -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-head-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+                <div><div class="panel-title">Fee Collection</div><div class="panel-sub">{{ fee_collection_rate|default:0|floatformat:0 }}% collected</div></div>
+            </div>
+            <div class="panel-body chart">
+                <div class="chart-box"><canvas id="chartFees"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    {# Subject performance #}
+    {% if subject_averages_json %}
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-head-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+            <div><div class="panel-title">Subject Performance</div><div class="panel-sub">Top subjects by average score</div></div>
+        </div>
+        <div class="panel-body chart">
+            <div class="chart-box" style="height:300px;"><canvas id="chartSubjects"></canvas></div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# ══════════════ QUICK ACTIONS ══════════════ #}
+    {% if request.user.is_headteacher or request.user.is_superadmin %}
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-head-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div><div class="panel-title">Quick Actions</div><div class="panel-sub">Jump to what you need</div></div>
+        </div>
+        <div class="panel-body">
+            <div class="qa-grid">
+                <a href="{% url 'student_list' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+                    <div class="qa-label">Students</div>
+                </a>
+                <a href="{% url 'staff_list' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                    <div class="qa-label">Teachers</div>
+                </a>
+                <a href="{% url 'grade_list' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+                    <div class="qa-label">Classes</div>
+                </a>
+                <a href="{% url 'mark_entry_list' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg></div>
+                    <div class="qa-label">Marks</div>
+                </a>
+                <a href="{% url 'report_card_list' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div>
+                    <div class="qa-label">Reports</div>
+                </a>
+                <a href="{% url 'school_settings' %}" class="qa-card">
+                    <div class="qa-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg></div>
+                    <div class="qa-label">Settings</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Read CSS vars for theme-aware charts
+    const css = getComputedStyle(document.documentElement);
+    const accent = css.getPropertyValue('--accent').trim() || '#4f46e5';
+    const muted  = css.getPropertyValue('--text-muted').trim() || '#64748b';
+    const border = css.getPropertyValue('--border').trim() || '#e5e7eb';
+    const success = css.getPropertyValue('--success').trim() || '#10b981';
+    const warn   = css.getPropertyValue('--warning').trim() || '#f59e0b';
+
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.color = muted;
+    Chart.defaults.borderColor = border;
+
+    // Grades chart
+    const gradeData = {{ grade_averages_json|default:"{}"|safe }};
+    const gCtx = document.getElementById('chartGrades');
+    if (gCtx && Object.keys(gradeData).length) {
+        new Chart(gCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(gradeData),
+                datasets: [{
+                    label: 'Avg score',
+                    data: Object.values(gradeData),
+                    backgroundColor: accent + 'cc',
+                    borderRadius: 6,
+                    barThickness: 'flex',
+                    maxBarThickness: 36,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, max: 100, grid: { color: border } }
+                }
+            }
+        });
+    } else if (gCtx) {
+        gCtx.parentElement.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><div class="empty-state-title">No data yet</div><div class="empty-state-sub">Enter marks to see class averages.</div></div>';
+    }
+
+    // Fees doughnut
+    const fCtx = document.getElementById('chartFees');
+    if (fCtx) {
+        const collected = {{ fee_collection_rate|default:0|floatformat:0 }};
+        const remaining = Math.max(0, 100 - collected);
+        new Chart(fCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Collected', 'Outstanding'],
+                datasets: [{
+                    data: [collected, remaining],
+                    backgroundColor: [success, border],
+                    borderWidth: 0,
+                    cutout: '72%',
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            }
+        });
+    }
+
+    // Subject chart
+    const subData = {{ subject_averages_json|default:"{}"|safe }};
+    const sCtx = document.getElementById('chartSubjects');
+    if (sCtx && Object.keys(subData).length) {
+        new Chart(sCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(subData),
+                datasets: [{
+                    label: 'Avg score',
+                    data: Object.values(subData),
+                    backgroundColor: accent + 'aa',
+                    borderRadius: 6,
+                    maxBarThickness: 26,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, max: 100, grid: { color: border } },
+                    y: { grid: { display: false } },
+                }
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="welcome-card" style="background: #ffffff; border: 1px solid #e8eaed; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="color: #202124; margin-bottom: 8px; font-weight: 400; font-size: 24px;">{{ assignment.title }}</h2>
+                <p style="color: #5f6368; margin: 0; font-size: 14px;">{{ assignment.course.title }}</p>
+            </div>
+            <a href="{% url 'student_class_detail' assignment.course.id %}" class="btn btn-secondary" style="border-radius: 4px; padding: 8px 24px;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+    
+    {% if submission and submission.is_graded %}
+    <!-- Results View -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-body">
+            <div style="text-align: center; padding: 32px;">
+                <h3 style="color: #202124; margin-bottom: 16px; font-weight: 400;">Your Score</h3>
+                <div style="font-size: 64px; font-weight: 300; color: #1a73e8; margin-bottom: 8px;">
+                    {{ submission.score|floatformat:0 }}/{{ submission.total_score|floatformat:0 }}
+                </div>
+                <div style="font-size: 24px; color: #5f6368; margin-bottom: 24px;">
+                    {{ submission.get_percentage|floatformat:1 }}%
+                </div>
+                <div style="margin-top: 32px;">
+                    <h4 style="color: #202124; margin-bottom: 16px; font-weight: 400;">Review Your Answers</h4>
+                    {% for answer in submission.quiz_answers.all %}
+                    <div style="background: #f8f9fa; border-radius: 4px; padding: 16px; margin-bottom: 12px; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <strong style="color: #202124;">{{ answer.question.question_text }}</strong>
+                            <span style="color: {% if answer.is_correct %}#34a853{% else %}#ea4335{% endif %}; font-weight: 500;">
+                                {% if answer.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                            </span>
+                        </div>
+                            <div style="color: #5f6368; font-size: 14px;">
+                                <div>Your answer: {{ answer.selected_option.option_text|default:answer.text_answer|default:"No answer" }}</div>
+                                {% if not answer.is_correct and answer.question.question_type == 'multiple_choice' %}
+                                <div style="color: #34a853; margin-top: 4px;">
+                                    Correct answer: {% for opt in answer.question.options.all %}{% if opt.is_correct %}{{ opt.option_text }}{% endif %}{% endfor %}
+                                </div>
+                                {% endif %}
+                                <div style="margin-top: 8px;">
+                                    Points: {{ answer.points_earned }}/{{ question.points }}
+                                </div>
+                            </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Quiz Taking Interface -->
+    <div class="card">
+        <div class="card-body">
+            <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e8eaed;">
+                <p style="color: #5f6368; margin-bottom: 12px;">{{ assignment.description|linebreaks }}</p>
+                <div style="display: flex; gap: 24px; font-size: 14px; color: #5f6368;">
+                    {% if assignment.due_date %}
+                    <span><i class="fas fa-calendar"></i> Due: {{ assignment.due_date|date:"M d, Y H:i" }}</span>
+                    {% endif %}
+                    {% if assignment.duration_minutes %}
+                    <span><i class="fas fa-clock"></i> Duration: {{ assignment.duration_minutes }} minutes</span>
+                    {% endif %}
+                    <span><i class="fas fa-star"></i> Total: {{ assignment.total_points }} points</span>
+                </div>
+            </div>
+            
+            <form id="quizForm" method="post" action="{% url 'submit_assignment' assignment.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="started_at" id="startedAt" value="">
+                
+                {% for question in questions %}
+                <div style="margin-bottom: 32px; padding: 20px; background: #f8f9fa; border-radius: 4px;">
+                    <div style="margin-bottom: 16px;">
+                        <strong style="color: #202124; font-size: 16px; font-weight: 500;">
+                            Question {{ forloop.counter }} ({{ question.points }} points)
+                        </strong>
+                        <p style="color: #202124; margin-top: 8px; font-size: 14px;">{{ question.question_text }}</p>
+                    </div>
+                    
+                    {% if question.question_type == 'multiple_choice' %}
+                        {% for option in question.options.all %}
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;">
+                                <input type="radio" name="question_{{ question.id }}" value="{{ option.id }}" 
+                                       style="margin-right: 12px;" required>
+                                <span style="color: #202124; font-size: 14px;">{{ option.option_text }}</span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    {% elif question.question_type == 'true_false' %}
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px;">
+                                <input type="radio" name="question_{{ question.id }}" value="true" style="margin-right: 12px;" required>
+                                <span style="color: #202124; font-size: 14px;">True</span>
+                            </label>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px;">
+                                <input type="radio" name="question_{{ question.id }}" value="false" style="margin-right: 12px;" required>
+                                <span style="color: #202124; font-size: 14px;">False</span>
+                            </label>
+                        </div>
+                    {% elif question.question_type == 'short_answer' %}
+                        <textarea name="question_{{ question.id }}" class="form-control" rows="3" 
+                                  placeholder="Enter your answer..." required></textarea>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e8eaed;">
+                    <button type="submit" class="btn btn-primary" style="border-radius: 4px; padding: 10px 32px; font-size: 14px;">
+                        <i class="fas fa-paper-plane"></i> Submit Quiz
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Record start time
+        document.getElementById('startedAt').value = new Date().toISOString();
+        
+        // Timer for timed quizzes
+        {% if assignment.duration_minutes %}
+        let duration = {{ assignment.duration_minutes }} * 60; // Convert to seconds
+        let timer = setInterval(function() {
+            duration--;
+            let minutes = Math.floor(duration / 60);
+            let seconds = duration % 60;
+            document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            if (duration <= 0) {
+                clearInterval(timer);
+                document.getElementById('quizForm').submit();
+            }
+        }, 1000);
+        {% endif %}
+        
+        // Convert form data to JSON for submission
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const answers = {};
+            
+            {% for question in questions %}
+            const q{{ question.id }} = formData.get('question_{{ question.id }}');
+            if (q{{ question.id }}) {
+                answers['{{ question.id }}'] = {
+                    {% if question.question_type == 'multiple_choice' %}
+                    'option_id': parseInt(q{{ question.id }})
+                    {% elif question.question_type == 'true_false' %}
+                    'answer': q{{ question.id }}
+                    {% elif question.question_type == 'short_answer' %}
+                    'text': q{{ question.id }}
+                    {% endif %}
+                };
+            }
+            {% endfor %}
+            
+            const submitData = new FormData();
+            submitData.append('answers', JSON.stringify(answers));
+            submitData.append('started_at', formData.get('started_at'));
+            submitData.append('csrfmiddlewaretoken', formData.get('csrfmiddlewaretoken'));
+            
+            fetch('{% url "submit_assignment" assignment.id %}', {
+                method: 'POST',
+                body: submitData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error submitting quiz. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback to regular form submission
+                const form = document.getElementById('quizForm');
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'answers';
+                hiddenInput.value = JSON.stringify(answers);
+                form.appendChild(hiddenInput);
+                form.submit();
+            });
+        });
+    </script>
+    {% endif %}
+</div>
+{% endblock %}
+

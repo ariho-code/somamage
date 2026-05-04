@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Mark Entry — EduManage{% endblock %}
+{% block page_title %}Mark Entry{% endblock %}
+{% block page_subtitle %}Enter and manage student scores{% endblock %}
+
+{% block extra_css %}
+<style>
+.me-wrap { display:flex; flex-direction:column; gap:20px; }
+
+/* Hero */
+.me-hero {
+    background:linear-gradient(135deg,#7c3aed 0%,#4f46e5 100%);
+    border-radius:var(--radius); padding:24px 28px; color:#fff;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    position:relative; overflow:hidden;
+}
+.me-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.07); pointer-events:none; }
+.me-hero-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px; }
+.me-hero-sub   { font-size:13px; opacity:.85; }
+.me-hero-icon  { width:60px; height:60px; background:rgba(255,255,255,.18); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; position:relative; z-index:1; }
+
+/* Filter card */
+.me-filter-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden;
+}
+.me-filter-head {
+    padding:14px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px;
+}
+.me-filter-head-icon { width:30px; height:30px; background:rgba(79,70,229,.1); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#4f46e5; font-size:13px; }
+.me-filter-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+.me-filter-body { padding:20px; }
+.me-filter-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+.me-filter-group label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:6px; }
+.me-filter-group select {
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+    background:var(--input-bg); color:var(--text); font-size:13.5px; outline:none;
+    cursor:pointer; transition:border-color 150ms;
+}
+.me-filter-group select:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+.me-load-btn {
+    padding:10px 20px; background:#4f46e5; color:#fff; border:none;
+    border-radius:8px; font-size:13.5px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:all 150ms;
+    align-self:flex-end;
+}
+.me-load-btn:hover { background:#4338ca; transform:translateY(-1px); }
+
+/* Student table card */
+.me-table-card {
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); overflow:hidden;
+}
+.me-table-head {
+    padding:14px 20px; background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.me-table-title { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:var(--text); }
+.me-table-meta  { font-size:12px; color:var(--text-muted); }
+
+/* Student rows */
+.me-student-list { }
+.me-student-row {
+    display:flex; align-items:center; gap:16px;
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    transition:background 150ms;
+}
+.me-student-row:last-child { border-bottom:none; }
+.me-student-row:hover { background:var(--surface); }
+.me-student-num { width:28px; height:28px; border-radius:8px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--text-muted); flex-shrink:0; }
+.me-student-info { flex:1; min-width:0; }
+.me-student-name { font-size:14px; font-weight:600; color:var(--text); }
+.me-student-id   { font-size:11px; color:var(--text-muted); }
+.me-score-wrap { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.me-score-input {
+    width:90px; padding:8px 12px; text-align:center;
+    border:1px solid var(--border); border-radius:8px;
+    background:var(--input-bg); color:var(--text); font-size:14px; font-weight:700;
+    outline:none; transition:border-color 150ms;
+}
+.me-score-input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+.me-score-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.me-grade-badge {
+    min-width:34px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; font-family:'Poppins',sans-serif;
+}
+.grade-A  { background:#d1fae5; color:#065f46; }
+.grade-B  { background:#dbeafe; color:#1e40af; }
+.grade-C  { background:#fef3c7; color:#92400e; }
+.grade-D  { background:#fee2e2; color:#991b1b; }
+.grade-F  { background:#fde8e8; color:#7f1d1d; }
+.grade-none { background:var(--surface-2); color:var(--text-dim); }
+
+/* Save bar */
+.me-save-bar {
+    position:sticky; bottom:16px;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:14px 20px; box-shadow:0 8px 30px rgba(0,0,0,.12);
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    flex-wrap:wrap;
+}
+.me-save-info { font-size:13.5px; color:var(--text-muted); }
+.me-save-info strong { color:var(--text); }
+.me-save-btn {
+    padding:11px 28px; background:#4f46e5; color:#fff; border:none;
+    border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:all 150ms;
+}
+.me-save-btn:hover { background:#4338ca; transform:translateY(-1px); }
+
+/* Placeholder state */
+.me-placeholder {
+    padding:60px 24px; text-align:center;
+}
+.me-placeholder-icon { font-size:52px; color:var(--text-dim); margin-bottom:16px; }
+.me-placeholder-title { font-family:'Poppins',sans-serif; font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.me-placeholder-sub   { font-size:13.5px; color:var(--text-muted); max-width:380px; margin:0 auto; }
+
+/* Paper tab */
+.me-paper-tabs { display:flex; gap:8px; padding:14px 20px 0; flex-wrap:wrap; }
+.me-paper-tab {
+    padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-muted); cursor:pointer;
+    transition:all 150ms;
+}
+.me-paper-tab.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+
+@media (max-width: 768px) {
+    .me-filter-grid { grid-template-columns:1fr 1fr; }
+}
+@media (max-width: 520px) {
+    .me-filter-grid { grid-template-columns:1fr; }
+    .me-hero { flex-direction:column; }
+    .me-student-row { flex-wrap:wrap; gap:10px; }
+    .me-score-wrap { width:100%; justify-content:flex-end; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="me-wrap">
+
+<!-- Hero -->
+<div class="me-hero">
+    <div style="position:relative;z-index:1;">
+        <div class="me-hero-title">Mark Entry</div>
+        <div class="me-hero-sub">Enter student scores for exams and assessments</div>
+    </div>
+    <div class="me-hero-icon"><i class="fas fa-pen-alt"></i></div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Filter -->
+<div class="me-filter-card">
+    <div class="me-filter-head">
+        <div class="me-filter-head-icon"><i class="fas fa-filter"></i></div>
+        <span class="me-filter-title">Select Class, Subject &amp; Exam</span>
+    </div>
+    <div class="me-filter-body">
+        <div class="me-filter-grid">
+            <div class="me-filter-group">
+                <label>Class / Grade</label>
+                <select id="filterGrade" onchange="onGradeChange()">
+                    <option value="">— Select class —</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade.pk }}" {% if selected_grade == grade.pk|stringformat:'s' %}selected{% endif %}>{{ grade.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="me-filter-group">
+                <label>Subject</label>
+                <select id="filterSubject" onchange="onFilterChange()">
+                    <option value="">— Select subject —</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject.pk }}" {% if selected_subject == subject.pk|stringformat:'s' %}selected{% endif %}>{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="me-filter-group">
+                <label>Exam</label>
+                <select id="filterExam" onchange="onFilterChange()">
+                    <option value="">— Select exam —</option>
+                    {% for exam in exams %}
+                    <option value="{{ exam.pk }}" {% if selected_exam == exam.pk|stringformat:'s' %}selected{% endif %}>{{ exam.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="me-filter-group" style="display:flex;flex-direction:column;">
+                <label>&nbsp;</label>
+                <button class="me-load-btn" id="loadStudentsBtn" onclick="loadStudents()">
+                    <i class="fas fa-search"></i> Load Students
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student list card -->
+<div class="me-table-card" id="studentCard">
+    <div class="me-table-head">
+        <div>
+            <div class="me-table-title" id="tableTitle">Student Scores</div>
+            <div class="me-table-meta" id="tableMeta">Select class, subject, and exam above to load students</div>
+        </div>
+        <div id="saveBarTop" style="display:none;">
+            <button class="me-save-btn" onclick="saveAllMarks()">
+                <i class="fas fa-save"></i> Save All Scores
+            </button>
+        </div>
+    </div>
+    <div id="studentListBody">
+        <div class="me-placeholder">
+            <div class="me-placeholder-icon"><i class="fas fa-users"></i></div>
+            <div class="me-placeholder-title">No Students Loaded</div>
+            <div class="me-placeholder-sub">Select a class, subject, and exam above, then click "Load Students".</div>
+        </div>
+    </div>
+</div>
+
+<!-- Sticky save bar -->
+<div class="me-save-bar" id="stickyBar" style="display:none;">
+    <div class="me-save-info"><strong id="stickyCount">0</strong> students loaded — enter scores above</div>
+    <button class="me-save-btn" onclick="saveAllMarks()">
+        <i class="fas fa-save"></i> Save All Scores
+    </button>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var CSRF = "{{ csrf_token }}";
+var GET_STUDENTS_URL = "{% url 'get_students_for_subject' %}";
+var SAVE_MARKS_URL   = "{% url 'mark_entry_create' %}";
+
+var currentStudents = [];
+var activePaperId = null;
+
+function onGradeChange() { /* future: filter subjects by grade level */ }
+function onFilterChange() { /* could auto-load on change */ }
+
+function loadStudents() {
+    var grade   = document.getElementById('filterGrade').value;
+    var subject = document.getElementById('filterSubject').value;
+    var exam    = document.getElementById('filterExam').value;
+    if (!grade || !subject || !exam) {
+        showToast('Please select class, subject, and exam.', 'warning');
+        return;
+    }
+    var btn = document.getElementById('loadStudentsBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading…';
+    btn.disabled = true;
+
+    var url = GET_STUDENTS_URL + '?grade_id=' + grade + '&subject_id=' + subject + '&exam_id=' + exam;
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = '<i class="fas fa-search"></i> Load Students';
+            btn.disabled = false;
+            if (data.error) { showToast(data.error, 'danger'); return; }
+            renderStudents(data);
+        })
+        .catch(() => {
+            btn.innerHTML = '<i class="fas fa-search"></i> Load Students';
+            btn.disabled = false;
+            showToast('Network error — please try again.', 'danger');
+        });
+}
+
+function renderStudents(data) {
+    var students = data.students || [];
+    var papers   = data.papers   || [];
+    var body = document.getElementById('studentListBody');
+    var title = document.getElementById('tableTitle');
+    var meta  = document.getElementById('tableMeta');
+    var saveTop = document.getElementById('saveBarTop');
+    var stickyBar = document.getElementById('stickyBar');
+    var stickyCount = document.getElementById('stickyCount');
+
+    currentStudents = students;
+
+    if (students.length === 0) {
+        body.innerHTML = '<div class="me-placeholder"><div class="me-placeholder-icon"><i class="fas fa-user-slash"></i></div><div class="me-placeholder-title">No Students Found</div><div class="me-placeholder-sub">No students are enrolled in this subject for the selected class.</div></div>';
+        saveTop.style.display = 'none';
+        stickyBar.style.display = 'none';
+        return;
+    }
+
+    // Title
+    title.textContent = 'Student Scores';
+    meta.textContent = students.length + ' student' + (students.length !== 1 ? 's' : '') + ' found';
+    saveTop.style.display = '';
+    stickyBar.style.display = '';
+    stickyCount.textContent = students.length;
+
+    // Paper tabs (if subject has papers)
+    var paperHtml = '';
+    if (papers.length > 0) {
+        activePaperId = papers[0].id;
+        paperHtml = '<div class="me-paper-tabs" id="paperTabs">';
+        papers.forEach(function(p, i) {
+            paperHtml += '<div class="me-paper-tab ' + (i === 0 ? 'active' : '') + '" onclick="switchPaper(' + p.id + ', this)" data-paper="' + p.id + '">' + escHtml(p.name) + '</div>';
+        });
+        paperHtml += '</div>';
+    }
+
+    // Students
+    var rows = students.map(function(s, idx) {
+        var sid = s.id;  // enrollment ID
+        var existingScore = '';
+        var existingGrade = '';
+        if (papers.length > 0) {
+            var m = (s.marks || {})[activePaperId] || {};
+            existingScore = m.score !== null && m.score !== undefined ? m.score : '';
+            existingGrade = m.grade || '';
+        } else {
+            var m = (s.marks || {})['default'] || {};
+            existingScore = m.score !== null && m.score !== undefined ? m.score : '';
+            existingGrade = m.grade || '';
+        }
+        var gc = gradeClass(existingGrade);
+        return '<div class="me-student-row" id="srow-' + sid + '">' +
+            '<div class="me-student-num">' + (idx + 1) + '</div>' +
+            '<div class="me-student-info">' +
+                '<div class="me-student-name">' + escHtml(s.name) + '</div>' +
+                '<div class="me-student-id">' + escHtml(s.admission_number || '') + '</div>' +
+            '</div>' +
+            '<div class="me-score-wrap">' +
+                '<input type="number" class="me-score-input" id="score-' + sid + '" ' +
+                    'min="0" max="100" step="0.5" placeholder="—" value="' + existingScore + '" ' +
+                    'oninput="updateGradeBadge(' + sid + ')" ' +
+                    'data-student="' + sid + '">' +
+                '<div class="me-grade-badge ' + gc + '" id="badge-' + sid + '">' + (existingGrade || '—') + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    body.innerHTML = paperHtml + '<div class="me-student-list" id="studentListRows">' + rows + '</div>';
+}
+
+function switchPaper(paperId, tabEl) {
+    activePaperId = paperId;
+    document.querySelectorAll('.me-paper-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    currentStudents.forEach(function(s) {
+        var m = (s.marks || {})[paperId] || {};
+        var inp = document.getElementById('score-' + s.id);
+        var badge = document.getElementById('badge-' + s.id);
+        if (inp) {
+            inp.value = m.score !== null && m.score !== undefined ? m.score : '';
+            inp.dataset.paper = paperId;
+        }
+        if (badge) {
+            badge.textContent = m.grade || '—';
+            badge.className = 'me-grade-badge ' + gradeClass(m.grade || '');
+        }
+    });
+}
+
+function updateGradeBadge(studentId) {
+    var inp = document.getElementById('score-' + studentId);
+    var badge = document.getElementById('badge-' + studentId);
+    if (!inp || !badge) return;
+    var score = parseFloat(inp.value);
+    var grade = scoreToGrade(score);
+    badge.textContent = grade;
+    badge.className = 'me-grade-badge ' + gradeClass(grade);
+}
+
+function scoreToGrade(score) {
+    if (isNaN(score)) return '—';
+    if (score >= 80) return 'A';
+    if (score >= 65) return 'B';
+    if (score >= 50) return 'C';
+    if (score >= 40) return 'D';
+    return 'F';
+}
+
+function gradeClass(grade) {
+    if (!grade || grade === '—') return 'grade-none';
+    var g = grade.charAt(0).toUpperCase();
+    return 'grade-' + g;
+}
+
+function saveAllMarks() {
+    var grade   = document.getElementById('filterGrade').value;
+    var subject = document.getElementById('filterSubject').value;
+    var exam    = document.getElementById('filterExam').value;
+    if (!grade || !subject || !exam || currentStudents.length === 0) {
+        showToast('Please load students first.', 'warning');
+        return;
+    }
+    var body = new FormData();
+    body.append('csrfmiddlewaretoken', CSRF);
+    body.append('grade', grade);
+    body.append('subject', subject);
+    body.append('exam', exam);
+
+    currentStudents.forEach(function(s) {
+        var inp = document.getElementById('score-' + s.id);
+        if (inp && inp.value !== '') {
+            body.append('score_' + s.id, inp.value);
+        }
+        if (activePaperId) {
+            body.append('paper_' + s.id, activePaperId);
+        }
+    });
+
+    var btn = document.querySelector('.me-save-btn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    btn.disabled = true;
+
+    fetch(SAVE_MARKS_URL, { method: 'POST', body: body })
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = '<i class="fas fa-save"></i> Save All Scores';
+            btn.disabled = false;
+            if (data.success) {
+                showToast('Scores saved successfully!', 'success');
+            } else {
+                showToast(data.error || 'Failed to save. Check form values.', 'danger');
+            }
+        })
+        .catch(() => {
+            btn.innerHTML = '<i class="fas fa-save"></i> Save All Scores';
+            btn.disabled = false;
+            showToast('Network error — please try again.', 'danger');
+        });
+}
+
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type) {
+    var c = document.createElement('div');
+    c.className = 'alert alert-' + (type || 'info');
+    c.style.cssText = 'position:fixed;top:76px;right:24px;z-index:9999;min-width:280px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,.15);border-radius:10px;animation:fadeInUp 200ms ease;';
+    c.textContent = msg;
+    document.body.appendChild(c);
+    setTimeout(() => { c.style.opacity = '0'; c.style.transition = 'opacity 300ms'; setTimeout(() => c.remove(), 300); }, 3000);
+}
+</script>
+{% endblock %}

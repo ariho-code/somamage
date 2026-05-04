@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>{{ title }}</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_grade">Grade:</label>
+                        <select name="grade" id="id_grade" class="form-control" required>
+                            <option value="">-- Select Grade --</option>
+                            {% for grade in form.grade.field.queryset %}
+                            <option value="{{ grade.id }}" {% if form.grade.value == grade.id %}selected{% endif %}>
+                                {{ grade.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_term">Term:</label>
+                        <select name="term" id="id_term" class="form-control" required>
+                            <option value="">-- Select Term --</option>
+                            {% for term in form.term.field.queryset %}
+                            <option value="{{ term.id }}" {% if form.term.value == term.id %}selected{% endif %}>
+                                {{ term.name }} ({{ term.academic_year.name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_amount">Amount:</label>
+                        <input type="number" name="amount" id="id_amount" class="form-control" step="0.01" min="0" value="{{ form.amount.value|default:'' }}" required>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label for="id_description">Description:</label>
+                        <textarea name="description" id="id_description" class="form-control" rows="3">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    <a href="{% url 'fee_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

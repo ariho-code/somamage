@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>{{ title }}</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    {% if not hide_school_field %}
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.school.id_for_label }}">School:</label>
+                        {{ form.school }}
+                        {% if form.school.errors %}
+                        <div class="text-danger small">{{ form.school.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <input type="hidden" name="school" value="{{ request.user.school.id }}">
+                    {% endif %}
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.level.id_for_label }}">Level:</label>
+                        {{ form.level }}
+                        {% if form.level.errors %}
+                        <div class="text-danger small">{{ form.level.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.name.id_for_label }}">Grade Name:</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.code.id_for_label }}">Code:</label>
+                        {{ form.code }}
+                        {% if form.code.errors %}
+                        <div class="text-danger small">{{ form.code.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.class_teacher.id_for_label }}">Class Teacher:</label>
+                        {{ form.class_teacher }}
+                        {% if form.class_teacher.errors %}
+                        <div class="text-danger small">{{ form.class_teacher.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Only teachers from your school will be displayed.</small>
+                    </div>
+                </div>
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    <a href="{% url 'grade_list' %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to update level options based on school type and refresh class teacher dropdown
+function updateLevelOptions() {
+    const schoolSelect = document.querySelector('#{{ form.school.id_for_label }}');
+    const levelSelect = document.querySelector('#{{ form.level.id_for_label }}');
+    const classTeacherSelect = document.querySelector('#{{ form.class_teacher.id_for_label }}');
+    const selectedSchoolId = schoolSelect.value;
+    
+    if (!selectedSchoolId) {
+        // Reset to all options if no school selected
+        levelSelect.innerHTML = `
+            <option value="">---------</option>
+            <option value="P">Primary</option>
+            <option value="O">O-Level</option>
+            <option value="A">A-Level</option>
+        `;
+        // Reset class teacher dropdown
+        if (classTeacherSelect) {
+            classTeacherSelect.innerHTML = '<option value="">---------</option>';
+        }
+        return;
+    }
+    
+    // Make AJAX call to get school type
+    fetch(`/core/get-school-type/${selectedSchoolId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Clear existing options
+            levelSelect.innerHTML = '<option value="">---------</option>';
+            
+            // Add appropriate level options based on school type
+            if (data.school_type === 'primary') {
+                levelSelect.innerHTML += '<option value="P">Primary</option>';
+            } else if (data.school_type === 'high') {
+                levelSelect.innerHTML += '<option value="O">O-Level</option>';
+                levelSelect.innerHTML += '<option value="A">A-Level</option>';
+            } else {
+                // Fallback to all options
+                levelSelect.innerHTML += '<option value="P">Primary</option>';
+                levelSelect.innerHTML += '<option value="O">O-Level</option>';
+                levelSelect.innerHTML += '<option value="A">A-Level</option>';
+            }
+            
+            // Update class teacher dropdown to show teachers from selected school
+            if (classTeacherSelect) {
+                updateClassTeacherDropdown(selectedSchoolId);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching school type:', error);
+        });
+}
+
+// Function to update class teacher dropdown based on selected school
+function updateClassTeacherDropdown(schoolId) {
+    const classTeacherSelect = document.querySelector('#{{ form.class_teacher.id_for_label }}');
+    if (!classTeacherSelect || !schoolId) {
+        return;
+    }
+    
+    // Get current selected value
+    const currentValue = classTeacherSelect.value;
+    
+    // Fetch teachers for this school
+    fetch(`/academics/get-teachers-for-school/${schoolId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Clear existing options
+            classTeacherSelect.innerHTML = '<option value="">---------</option>';
+            
+            // Add teachers from the school
+            if (data.teachers && data.teachers.length > 0) {
+                data.teachers.forEach(teacher => {
+                    const option = document.createElement('option');
+                    option.value = teacher.id;
+                    option.textContent = teacher.name;
+                    if (teacher.id == currentValue) {
+                        option.selected = true;
+                    }
+                    classTeacherSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching teachers for school:', error);
+        });
+}
+
+// Add event listener when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const schoolSelect = document.querySelector('#{{ form.school.id_for_label }}');
+    if (schoolSelect) {
+        // Update on school change
+        schoolSelect.addEventListener('change', updateLevelOptions);
+        // Also run on page load if school is already selected
+        if (schoolSelect.value) {
+            updateLevelOptions();
+        }
+    } else {
+        // School field is hidden, get school type from user's school
+        {% if hide_school_field and request.user.school %}
+        const schoolId = {{ request.user.school.id }};
+        const levelSelect = document.querySelector('#{{ form.level.id_for_label }}');
+        
+        if (levelSelect) {
+            fetch(`/core/get-school-type/${schoolId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    levelSelect.innerHTML = '<option value="">---------</option>';
+                    
+                    // Add appropriate level options based on school type
+                    if (data.school_type === 'primary') {
+                        levelSelect.innerHTML += '<option value="P">Primary</option>';
+                    } else if (data.school_type === 'high') {
+                        levelSelect.innerHTML += '<option value="O">O-Level</option>';
+                        levelSelect.innerHTML += '<option value="A">A-Level</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching school type:', error);
+                });
+        }
+        
+        // Also update class teacher dropdown on page load if school is already selected
+        {% if not hide_school_field %}
+        const schoolSelectOnLoad = document.querySelector('#{{ form.school.id_for_label }}');
+        if (schoolSelectOnLoad && schoolSelectOnLoad.value) {
+            updateClassTeacherDropdown(schoolSelectOnLoad.value);
+        }
+        {% elif request.user.school %}
+        // If school field is hidden, update class teacher dropdown for user's school
+        updateClassTeacherDropdown({{ request.user.school.id }});
+        {% endif %}
+        {% endif %}
+    }
+});
+</script>
+{% endblock %}

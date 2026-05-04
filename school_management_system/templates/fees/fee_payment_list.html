@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+{% load fees_filters %}
+{% block title %}Fee Payments{% endblock %}
+{% block page_title %}Fee Payments{% endblock %}
+
+{% block content %}
+<div class="fees-container">
+    <!-- Header Section -->
+    <div class="fees-header">
+        <div class="header-content">
+            <h1><i class="fas fa-receipt"></i> Fee Payments</h1>
+            <p>View all fee payment records and transaction history</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Payments List -->
+    {% if payments %}
+    <div class="fees-card">
+        <div class="card-header">
+            <h3><i class="fas fa-list"></i> Payment Records</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i> #</th>
+                            <th><i class="fas fa-user-graduate"></i> {% if school %}{{ school|student_or_pupil }}{% else %}Student{% endif %}</th>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-money-bill"></i> Amount Paid</th>
+                            <th><i class="fas fa-credit-card"></i> Payment Method</th>
+                            <th><i class="fas fa-receipt"></i> Receipt Number</th>
+                            <th><i class="fas fa-user-tie"></i> Recorded By</th>
+                            <th><i class="fas fa-sticky-note"></i> Notes</th>
+                            <th><i class="fas fa-cog"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ payment.enrollment.student.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ payment.enrollment.grade.name }}</small>
+                            </td>
+                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="fee-badge paid-fee">
+                                    {{ payment.amount_paid|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="payment-method-badge">
+                                    <i class="fas fa-{% if payment.payment_method == 'cash' %}money-bill{% elif payment.payment_method == 'bank' %}university{% elif payment.payment_method == 'mobile' %}mobile-alt{% elif payment.payment_method == 'cheque' %}file-invoice{% else %}ellipsis-h{% endif %}"></i>
+                                    {{ payment.get_payment_method_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if payment.receipt_number %}
+                                <span class="receipt-badge">{{ payment.receipt_number }}</span>
+                                {% else %}
+                                <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ payment.recorded_by.get_full_name|default:payment.recorded_by.username }}</small>
+                            </td>
+                            <td>
+                                {% if payment.notes %}
+                                <small class="text-muted" title="{{ payment.notes }}">{{ payment.notes|truncatewords:5 }}</small>
+                                {% else %}
+                                <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons" style="display: flex; gap: 8px; align-items: center;">
+                                    <button type="button" class="action-btn print-btn" 
+                                            onclick="window.open('{% url 'fee_payment_receipt' payment.id %}', '_blank')"
+                                            title="Print Receipt">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    <button type="button" class="action-btn edit-btn" 
+                                            onclick="editPayment({{ payment.id }}, '{{ payment.enrollment.id }}', '{{ payment.fee_structure.term.id|default:"" }}', '{{ payment.amount_paid }}', '{{ payment.payment_method }}', '{{ payment.notes|escapejs }}')"
+                                            title="Edit Payment">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="action-btn delete-btn" 
+                                            onclick="deletePayment({{ payment.id }}, '{{ payment.enrollment.student.get_full_name }}', '{{ payment.amount_paid }}')"
+                                            title="Delete Payment">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-receipt"></i>
+        </div>
+        <h3>No Payments Recorded</h3>
+        <p>No fee payments have been recorded yet. Start by recording a payment from the Fee Balances page.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.fees-container {
+    padding: 0;
+    animation: fadeInUp 0.8s ease-out;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.fees-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+}
+
+.fees-header .header-content h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.fees-header .header-content p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+}
+
+.fees-header .graphic-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: pulse 2s infinite;
+}
+
+.fees-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.fees-card .card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+}
+
+.fees-card .card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fees-card .card-body {
+    padding: 25px;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.modern-table thead th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    border: none;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8f9ff;
+    transform: scale(1.01);
+}
+
+.modern-table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.fee-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.paid-fee {
+    background: #10b981;
+    color: white;
+}
+
+.payment-method-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.receipt-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--gray-200);
+    color: var(--gray-700);
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #94a3b8;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.print-btn {
+    color: #3b82f6;
+}
+
+.print-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: scale(1.1);
+}
+
+.edit-btn {
+    color: #f59e0b;
+}
+
+.edit-btn:hover {
+    background: #f59e0b;
+    color: white;
+    transform: scale(1.1);
+}
+
+.delete-btn {
+    color: #ef4444;
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.1);
+}
+</style>
+
+<!-- Edit Payment Modal -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1" role="dialog" aria-labelledby="editPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modern-modal-header">
+                <h5 class="modal-title" id="editPaymentModalLabel">
+                    <i class="fas fa-edit"></i> Edit Payment
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="" id="editPaymentForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Update payment details. Receipt number cannot be changed.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_amount_paid"><i class="fas fa-money-bill"></i> Amount Paid *</label>
+                        <input type="number" class="form-control" name="amount_paid" id="edit_amount_paid" step="0.01" min="0" required placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_payment_method"><i class="fas fa-credit-card"></i> Payment Method *</label>
+                        <select class="form-control" name="payment_method" id="edit_payment_method" required>
+                            <option value="cash">Cash</option>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="mobile">Mobile Money</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_notes"><i class="fas fa-sticky-note"></i> Notes</label>
+                        <textarea class="form-control" name="notes" id="edit_notes" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer modern-modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Payment Modal -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1" role="dialog" aria-labelledby="deletePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content modern-modal">
+            <div class="modal-header modern-modal-header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <h5 class="modal-title" id="deletePaymentModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #f59e0b;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4 style="font-weight: 700; color: var(--gray-900); margin-bottom: 12px;">Delete Payment?</h4>
+                    <p style="color: var(--gray-600); margin-bottom: 0;" id="deletePaymentMessage"></p>
+                </div>
+            </div>
+            <form method="POST" action="" id="deletePaymentForm">
+                {% csrf_token %}
+                <div class="modal-footer modern-modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                        <i class="fas fa-trash"></i> Delete Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editPayment(paymentId, enrollmentId, termId, amountPaid, paymentMethod, notes) {
+    // Set form action
+    $('#editPaymentForm').attr('action', '/fees/payments/' + paymentId + '/edit/');
+    
+    // Populate form fields
+    $('#edit_amount_paid').val(amountPaid);
+    $('#edit_payment_method').val(paymentMethod);
+    $('#edit_notes').val(notes);
+    
+    // Show modal
+    $('#editPaymentModal').modal('show');
+}
+
+function deletePayment(paymentId, studentName, amountPaid) {
+    // Set form action
+    $('#deletePaymentForm').attr('action', '/fees/payments/' + paymentId + '/delete/');
+    
+    // Set message
+    $('#deletePaymentMessage').html(
+        'Are you sure you want to delete the payment of <strong>' + amountPaid + '</strong> for <strong>' + studentName + '</strong>? ' +
+        'This action cannot be undone and will update the student\'s fee balance.'
+    );
+    
+    // Show modal
+    $('#deletePaymentModal').modal('show');
+}
+
+// Handle edit payment form submission
+$('#editPaymentForm').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Updating...').prop('disabled', true);
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(data) {
+            if (data.success) {
+                $('#editPaymentModal').modal('hide');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update payment'));
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                let errorMsg = 'Please fix the following errors:\n';
+                for (let field in xhr.responseJSON.errors) {
+                    errorMsg += field + ': ' + xhr.responseJSON.errors[field].join(', ') + '\n';
+                }
+                alert(errorMsg);
+            } else {
+                alert('An error occurred while updating the payment');
+            }
+            submitBtn.html(originalText).prop('disabled', false);
+        }
+    });
+});
+
+// Handle delete payment form submission
+$('#deletePaymentForm').on('submit', function(e) {
+    e.preventDefault();
+    const form = $(this);
+    const submitBtn = form.find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    
+    submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Deleting...').prop('disabled', true);
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(data) {
+            if (data.success) {
+                $('#deletePaymentModal').modal('hide');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                alert('Error: ' + (data.error || 'Failed to delete payment'));
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                alert(xhr.responseJSON.error);
+            } else {
+                alert('An error occurred while deleting the payment');
+            }
+            submitBtn.html(originalText).prop('disabled', false);
+        }
+    });
+});
+
+// Reset modals when closed
+$('#editPaymentModal').on('hidden.bs.modal', function() {
+    $('#editPaymentForm')[0].reset();
+    $('#editPaymentForm').find('button[type="submit"]').html('<i class="fas fa-save"></i> Update Payment').prop('disabled', false);
+});
+</script>
+{% endblock %}
