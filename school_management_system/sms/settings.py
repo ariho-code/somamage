@@ -24,8 +24,25 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
+# Add Render external URL to ALLOWED_HOSTS
+render_url = os.environ.get('RENDER_EXTERNAL_URL')
+if render_url:
+    # Extract hostname from URL (e.g., https://somamage-web.onrender.com -> somamage-web.onrender.com)
+    from urllib.parse import urlparse
+    parsed = urlparse(render_url)
+    ALLOWED_HOSTS.append(parsed.hostname)
+
 # CSRF Trusted Origins (required for Django 4.0+)
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000', 
+    'http://127.0.0.1:8000', 
+    'http://localhost:3000'
+]
+
+# Add Render URL from environment
+render_url = os.environ.get('RENDER_EXTERNAL_URL')
+if render_url:
+    CSRF_TRUSTED_ORIGINS.append(render_url)
 
 INSTALLED_APPS = [
     "django.contrib.admin",

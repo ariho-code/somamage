@@ -1,0 +1,38 @@
+# SomaMange Production Environment Variables for Render
+# Copy these values to your Render Environment Variables section
+
+# Database Configuration (Render will auto-populate DATABASE_URL)
+DATABASE_URL=postgresql://somamage_user:password@host:5432/somamage
+
+# Security Settings
+SECRET_KEY=django-insecure-change-this-to-a-very-long-random-string-in-production-min-50-chars
+DEBUG=False
+ALLOWED_HOSTS=somamage-web.onrender.com
+
+# CORS Settings (update with your actual Render URL)
+CSRF_TRUSTED_ORIGINS=https://somamage-web.onrender.com
+CORS_ALLOWED_ORIGINS=https://somamage-web.onrender.com
+
+# Redis Configuration (Render will auto-populate REDIS_URL)
+REDIS_URL=redis://host:port
+
+# AI Features (optional - get from deepseek.com)
+DEEPSEEK_API_KEY=sk-your-deepseek-api-key-here
+
+# Email Configuration (optional - for notifications)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+
+# File Storage (optional - Cloudinary)
+CLOUDINARY_URL=cloudinary://your-cloudinary-url-here
+
+# Additional Settings
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+
+# Performance
+CONN_MAX_AGE=600

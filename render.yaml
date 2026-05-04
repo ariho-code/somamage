@@ -33,19 +33,19 @@ services:
         source: /static/*
         destination: /static/$1
 
-  # Redis Service (for Celery)
+  # Redis Service (for Celery - Free Tier)
   - type: redis
     name: somamage-redis
-    plan: starter
+    plan: free
     ipAllowList: []
 
-  # Celery Worker Service
+  # Celery Worker Service (Free Tier)
   - type: worker
     name: somamage-celery
     env: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A sms worker -l info
+    startCommand: celery -A sms worker -l info --concurrency=2
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -60,11 +60,11 @@ services:
           name: somamage-redis
           property: connectionString
 
-  # Celery Beat Service (for scheduled tasks)
+  # Celery Beat Service (Free Tier - for scheduled tasks)
   - type: worker
     name: somamage-celery-beat
     env: python
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A sms beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     envVars:
@@ -82,8 +82,8 @@ services:
           property: connectionString
 
 databases:
-  # PostgreSQL Database
+  # PostgreSQL Database (Free Tier)
   - name: somamage-db
     databaseName: somamage
     user: somamage_user
-    plan: starter
+    plan: free
