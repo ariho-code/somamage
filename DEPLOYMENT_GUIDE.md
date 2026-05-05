@@ -47,9 +47,9 @@
 
 **Build Settings:**
 - **Build Command**: 
-  ```
-  pip install -r requirements.txt && python manage.py collectstatic --noinput
-  ```
+  ```bash
+pip install -r requirements-render.txt && python manage.py migrate && python manage.py createsuperuser_auto && python manage.py setup_demo_data && python manage.py collectstatic --noinput
+```
 - **Start Command**: 
   ```
   gunicorn sms.wsgi:application --bind 0.0.0.0:$PORT
