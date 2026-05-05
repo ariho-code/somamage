@@ -20,20 +20,44 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(self.style.SUCCESS('Created Platform'))
 
-            # Create Demo School
-            school, created = School.objects.get_or_create(
-                name='SomaMange Demo School',
-                defaults={
+            # Create Demo Schools (both Primary and Secondary)
+            demo_schools = [
+                {
+                    'name': 'SomaMange Primary School',
+                    'school_type': 'primary',
                     'address': '123 Kampala Road, Kampala, Uganda',
                     'phone': '+256 760 730 254',
-                    'email': 'demo@somamage.com',
-                    'motto': 'Excellence in Education',
-                    'type': 'MIXED',
-                    'level': 'SECONDARY'
+                    'email': 'primary@somamage.com',
+                    'motto': 'Foundation for Excellence'
+                },
+                {
+                    'name': 'SomaMange Secondary School',
+                    'school_type': 'high',
+                    'address': '456 Jinja Road, Kampala, Uganda',
+                    'phone': '+256 760 730 255',
+                    'email': 'secondary@somamage.com',
+                    'motto': 'Excellence in Education'
                 }
-            )
-            if created:
-                self.stdout.write(self.style.SUCCESS('Created Demo School'))
+            ]
+            
+            created_schools = []
+            for school_data in demo_schools:
+                school, created = School.objects.get_or_create(
+                    name=school_data['name'],
+                    defaults={
+                        'school_type': school_data['school_type'],
+                        'address': school_data['address'],
+                        'phone': school_data['phone'],
+                        'email': school_data['email'],
+                        'motto': school_data['motto']
+                    }
+                )
+                created_schools.append(school)
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'Created {school.name} ({school.get_school_type_display()})'))
+            
+            # Use the first school for demo data setup
+            school = created_schools[0]
 
             # Create Academic Year
             academic_year, created = AcademicYear.objects.get_or_create(
@@ -68,52 +92,80 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f'Created {term.name}'))
 
-            # Create Demo Users with Different Roles
+            # Create Demo Users with Different Roles for Both Schools
             demo_users = [
+                # Primary School Users
                 {
-                    'username': 'headteacher',
-                    'email': 'headteacher@somamage.com',
+                    'username': 'primary_headteacher',
+                    'email': 'primary.headteacher@somamage.com',
                     'password': 'headteacher123',
                     'first_name': 'Sarah',
                     'last_name': 'Nakato',
                     'role': 'headteacher',
-                    'phone': '+256 760 730 255'
+                    'phone': '+256 760 730 255',
+                    'school': created_schools[0]  # Primary School
                 },
                 {
-                    'username': 'teacher',
-                    'email': 'teacher@somamage.com',
+                    'username': 'primary_teacher',
+                    'email': 'primary.teacher@somamage.com',
                     'password': 'teacher123',
                     'first_name': 'John',
                     'last_name': 'Mugisha',
                     'role': 'teacher',
-                    'phone': '+256 760 730 256'
+                    'phone': '+256 760 730 256',
+                    'school': created_schools[0]  # Primary School
                 },
+                # Secondary School Users
+                {
+                    'username': 'secondary_headteacher',
+                    'email': 'secondary.headteacher@somamage.com',
+                    'password': 'headteacher123',
+                    'first_name': 'Peter',
+                    'last_name': 'Ssekandi',
+                    'role': 'headteacher',
+                    'phone': '+256 760 730 260',
+                    'school': created_schools[1]  # Secondary School
+                },
+                {
+                    'username': 'secondary_teacher',
+                    'email': 'secondary.teacher@somamage.com',
+                    'password': 'teacher123',
+                    'first_name': 'Grace',
+                    'last_name': 'Nankya',
+                    'role': 'teacher',
+                    'phone': '+256 760 730 261',
+                    'school': created_schools[1]  # Secondary School
+                },
+                # Shared Users (can access both schools)
                 {
                     'username': 'bursar',
                     'email': 'bursar@somamage.com',
                     'password': 'bursar123',
-                    'first_name': 'Grace',
-                    'last_name': 'Nankya',
+                    'first_name': 'Joseph',
+                    'last_name': 'Lubega',
                     'role': 'bursar',
-                    'phone': '+256 760 730 257'
+                    'phone': '+256 760 730 257',
+                    'school': created_schools[0]  # Primary School
                 },
                 {
                     'username': 'dos',
                     'email': 'dos@somamage.com',
                     'password': 'dos123',
-                    'first_name': 'Peter',
-                    'last_name': 'Ssekandi',
+                    'first_name': 'Michael',
+                    'last_name': 'Kato',
                     'role': 'director_of_studies',
-                    'phone': '+256 760 730 258'
+                    'phone': '+256 760 730 258',
+                    'school': created_schools[1]  # Secondary School
                 },
                 {
                     'username': 'parent',
                     'email': 'parent@somamage.com',
                     'password': 'parent123',
-                    'first_name': 'Joseph',
-                    'last_name': 'Lubega',
+                    'first_name': 'Faith',
+                    'last_name': 'Nakimera',
                     'role': 'parent',
-                    'phone': '+256 760 730 259'
+                    'phone': '+256 760 730 259',
+                    'school': created_schools[0]  # Primary School
                 }
             ]
 
@@ -125,7 +177,7 @@ class Command(BaseCommand):
                         'first_name': user_data['first_name'],
                         'last_name': user_data['last_name'],
                         'role': user_data['role'],
-                        'school': school,
+                        'school': user_data['school'],
                         'phone_number': user_data['phone'],
                         'is_active': True
                     }
@@ -147,10 +199,23 @@ class Command(BaseCommand):
                     )
 
             self.stdout.write(self.style.SUCCESS('\n✅ Demo data setup complete!'))
+            self.stdout.write(self.style.SUCCESS('\n🏫 Schools Created:'))
+            self.stdout.write(self.style.SUCCESS('• SomaMange Primary School (P1-P7)'))
+            self.stdout.write(self.style.SUCCESS('• SomaMange Secondary School (S1-S6)'))
+            
             self.stdout.write(self.style.SUCCESS('\n🔑 Login Credentials:'))
-            self.stdout.write(self.style.SUCCESS('Headteacher: headteacher@somamage.com / headteacher123'))
-            self.stdout.write(self.style.SUCCESS('Teacher: teacher@somamage.com / teacher123'))
-            self.stdout.write(self.style.SUCCESS('Bursar: bursar@somamage.com / bursar123'))
-            self.stdout.write(self.style.SUCCESS('Director of Studies: dos@somamage.com / dos123'))
+            self.stdout.write(self.style.SUCCESS('\n📚 PRIMARY SCHOOL:'))
+            self.stdout.write(self.style.SUCCESS('Headteacher: primary.headteacher@somamage.com / headteacher123'))
+            self.stdout.write(self.style.SUCCESS('Teacher: primary.teacher@somamage.com / teacher123'))
             self.stdout.write(self.style.SUCCESS('Parent: parent@somamage.com / parent123'))
-            self.stdout.write(self.style.SUCCESS('\nSuper Admin: admin@somamage.com / admin123'))
+            
+            self.stdout.write(self.style.SUCCESS('\n🎓 SECONDARY SCHOOL:'))
+            self.stdout.write(self.style.SUCCESS('Headteacher: secondary.headteacher@somamage.com / headteacher123'))
+            self.stdout.write(self.style.SUCCESS('Teacher: secondary.teacher@somamage.com / teacher123'))
+            self.stdout.write(self.style.SUCCESS('Director of Studies: dos@somamage.com / dos123'))
+            
+            self.stdout.write(self.style.SUCCESS('\n💼 SHARED STAFF:'))
+            self.stdout.write(self.style.SUCCESS('Bursar: bursar@somamage.com / bursar123'))
+            
+            self.stdout.write(self.style.SUCCESS('\n👑 Super Admin: admin@somamage.com / admin123'))
+            self.stdout.write(self.style.SUCCESS('\n🎯 System supports both Primary (P1-P7) and Secondary (S1-S6) schools!'))
