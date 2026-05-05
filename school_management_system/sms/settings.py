@@ -169,6 +169,12 @@ if _db_url:
         )
     except ImportError:
         pass  # keep SQLite if dj-database-url not installed
+else:
+    # Fallback to SQLite for local development
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
