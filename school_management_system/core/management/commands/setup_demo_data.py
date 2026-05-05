@@ -85,8 +85,7 @@ class Command(BaseCommand):
                     name=term_data['name'],
                     defaults={
                         'start_date': term_data['start_date'],
-                        'end_date': term_data['end_date'],
-                        'is_active': term_data['name'] == 'Term 1'  # Term 1 is active
+                        'end_date': term_data['end_date']
                     }
                 )
                 if created:
